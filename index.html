@@ -6,89 +6,113 @@
 <title>Väderdashboard</title>
 
 <style>
+:root {
+  --bg: #0b1220;
+  --card: rgba(255,255,255,0.08);
+  --border: rgba(255,255,255,0.12);
+  --text: #eef4ff;
+  --muted: #a9b4c9;
+}
+
 body {
   margin:0;
   font-family: Arial, sans-serif;
-  background:#0f172a;
-  color:#e2e8f0;
+  color:var(--text);
+  background:linear-gradient(180deg,#08101d,#0b1220);
+}
+
+.container {
+  max-width:1100px;
+  margin:auto;
   padding:20px;
 }
 
-h1 { margin-bottom:10px; }
+.hero {
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
 
-.status { margin-bottom:20px; color:#93c5fd; }
+.hero h1 { margin:0; }
+
+.temp {
+  font-size:60px;
+  font-weight:bold;
+}
 
 .grid {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
   gap:16px;
 }
 
 .card {
-  background:#1e293b;
+  background:var(--card);
+  border:1px solid var(--border);
   border-radius:16px;
   padding:16px;
-  border:1px solid #334155;
 }
 
-.label { font-size:14px; color:#94a3b8; margin-bottom:6px; }
-.value { font-size:28px; font-weight:bold; }
+.label { color:var(--muted); font-size:14px; }
+.value { font-size:24px; font-weight:bold; }
 
-.error {
-  color:#fca5a5;
-  margin-top:10px;
-  white-space:pre-wrap;
-}
+.status { margin:10px 0; color:#69b7ff; }
+.error { color:#ff8b8b; white-space:pre-wrap; }
 </style>
 </head>
 
 <body>
 
-<h1>Väderdashboard</h1>
-<div id="status" class="status">Laddar data...</div>
+<div class="container">
+
+<div class="hero">
+  <div>
+    <h1>Väderdashboard</h1>
+    <div class="status" id="status">Laddar...</div>
+  </div>
+  <div class="temp" id="tempNow">--</div>
+</div>
+
 <div id="error" class="error"></div>
 
 <div class="grid">
 
-  <div class="card">
-    <div class="label">Temperatur</div>
-    <div class="value" id="temp">--</div>
-  </div>
+<div class="card">
+<div class="label">Nederbörd</div>
+<div class="value" id="rain">--</div>
+</div>
 
-  <div class="card">
-    <div class="label">Nederbörd (nästa timme)</div>
-    <div class="value" id="rain">--</div>
-  </div>
+<div class="card">
+<div class="label">Vind</div>
+<div class="value" id="wind">--</div>
+</div>
 
-  <div class="card">
-    <div class="label">Vind</div>
-    <div class="value" id="wind">--</div>
-  </div>
+<div class="card">
+<div class="label">Vindbyar</div>
+<div class="value" id="gust">--</div>
+</div>
 
-  <div class="card">
-    <div class="label">Vindbyar</div>
-    <div class="value" id="gust">--</div>
-  </div>
+<div class="card">
+<div class="label">Vindriktning</div>
+<div class="value" id="windDir">--</div>
+</div>
 
-  <div class="card">
-    <div class="label">Vindriktning</div>
-    <div class="value" id="windDir">--</div>
-  </div>
+<div class="card">
+<div class="label">Lufttryck</div>
+<div class="value" id="pressure">--</div>
+</div>
 
-  <div class="card">
-    <div class="label">Lufttryck</div>
-    <div class="value" id="pressure">--</div>
-  </div>
+<div class="card">
+<div class="label">Molnighet</div>
+<div class="value" id="clouds">--</div>
+</div>
 
-  <div class="card">
-    <div class="label">Molnighet</div>
-    <div class="value" id="clouds">--</div>
-  </div>
+<div class="card">
+<div class="label">Luftkvalitet</div>
+<div class="value">Kommer snart</div>
+</div>
 
-  <div class="card">
-    <div class="label">Luftkvalitet</div>
-    <div class="value">Kommer snart</div>
-  </div>
+</div>
 
 </div>
 
@@ -96,48 +120,47 @@ h1 { margin-bottom:10px; }
 const lat = 59.3293;
 const lon = 18.0686;
 
-function set(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = value;
+function set(id,val){
+  const el=document.getElementById(id);
+  if(el) el.textContent=val;
 }
 
-function format(v, d=1) {
-  if (v === undefined || v === null || Number.isNaN(Number(v))) return "--";
+function format(v,d=1){
+  if(v==null) return "--";
   return Number(v).toFixed(d);
 }
 
-function findBest(ts) {
-  return ts.find(x => x?.data?.instant?.details?.wind_speed_of_gust !== undefined) || ts[0];
+function pick(ts){
+  return ts.find(x=>x?.data?.instant?.details?.wind_speed_of_gust!==undefined)||ts[0];
 }
 
-async function load() {
-  const status = document.getElementById("status");
-  const error = document.getElementById("error");
+async function load(){
+  const status=document.getElementById("status");
+  const error=document.getElementById("error");
 
-  try {
-    const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
-    const text = await res.text();
+  try{
+    const res=await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
+    const txt=await res.text();
+    if(!res.ok) throw new Error(txt);
 
-    if (!res.ok) throw new Error(text);
+    const data=JSON.parse(txt);
+    const ts=pick(data.properties.timeseries);
 
-    const data = JSON.parse(text);
-    const ts = findBest(data.properties.timeseries);
+    const i=ts.data.instant.details;
+    const n=ts.data.next_1_hours?.details||{};
 
-    const instant = ts.data.instant.details;
-    const next1h = ts.data.next_1_hours?.details || {};
+    set("tempNow",format(i.air_temperature)+"°");
+    set("rain",format(n.precipitation_amount)+" mm");
+    set("wind",format(i.wind_speed)+" m/s");
+    set("gust",format(i.wind_speed_of_gust)+" m/s");
+    set("windDir",format(i.wind_from_direction,0)+"°");
+    set("pressure",format(i.air_pressure_at_sea_level)+" hPa");
+    set("clouds",format(i.cloud_area_fraction,0)+"%");
 
-    set("temp", format(instant.air_temperature) + " °C");
-    set("rain", format(next1h.precipitation_amount) + " mm");
-    set("wind", format(instant.wind_speed) + " m/s");
-    set("gust", format(instant.wind_speed_of_gust) + " m/s");
-    set("windDir", format(instant.wind_from_direction,0) + " °");
-    set("pressure", format(instant.air_pressure_at_sea_level) + " hPa");
-    set("clouds", format(instant.cloud_area_fraction,0) + " %");
-
-    status.textContent = "Live";
-  } catch (e) {
-    status.textContent = "Fel";
-    error.textContent = e.message;
+    status.textContent="Live";
+  }catch(e){
+    status.textContent="Fel";
+    error.textContent=e.message;
   }
 }
 
