@@ -380,6 +380,10 @@
             <div class="meta-row-value" id="weatherWindValue">--</div>
           </div>
           <div class="meta-row">
+            <div class="meta-row-label">Byvindar</div>
+            <div class="meta-row-value" id="weatherGustValue">--</div>
+          </div>
+          <div class="meta-row">
             <div class="meta-row-label">Lufttryck</div>
             <div class="meta-row-value" id="weatherPressureValue">--</div>
           </div>
@@ -649,11 +653,13 @@
 
         const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
         const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
+        const gust = instant.wind_speed_of_gust ?? instant.wind_speed_percentile_90 ?? null;
 
         setText("weatherTempValue", formatTemp(instant.air_temperature));
         setText("weatherRainValue", formatRain(precip));
         setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
         setText("weatherWindValue", formatWind(instant.wind_speed));
+        setText("weatherGustValue", formatWind(gust));
         setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
         setText("weatherStatusValue", "Prognos laddad");
 
