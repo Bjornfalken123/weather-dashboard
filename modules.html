@@ -182,7 +182,7 @@
 
     .module-card {
       padding: 20px;
-      min-height: 450px;
+      min-height: 470px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -334,9 +334,9 @@
 
     <section class="map-panel">
       <div class="map-toolbar">
-        <button class="mode-btn active" data-mode="weather" id="modeWeather">Väderpunkt</button>
-        <button class="mode-btn" data-mode="wave" id="modeWave">Boj / våg</button>
-        <button class="mode-btn" data-mode="lighthouse" id="modeLighthouse">Fyr / station</button>
+        <button class="mode-btn active" data-mode="weather">Väderpunkt</button>
+        <button class="mode-btn" data-mode="wave">Boj / våg</button>
+        <button class="mode-btn" data-mode="lighthouse">Fyr / station</button>
       </div>
 
       <div class="map-note" id="mapNote">
@@ -427,9 +427,9 @@
       <article class="module-card">
         <div class="module-header">
           <div>
-            <h2 class="module-title">Våg / boj</h2>
+            <h2 class="module-title">Boj / hav</h2>
             <p class="module-subtitle">
-              Välj en boj eller vågstation direkt på kartan för live våghöjd.
+              Alla vågstationer syns på kartan. Röd = aktuell data, blå = ingen aktuell data.
             </p>
           </div>
           <div class="module-badge">SMHI</div>
@@ -437,7 +437,7 @@
 
         <div class="module-meta">
           <div class="meta-row">
-            <div class="meta-row-label">Vald station</div>
+            <div class="meta-row-label">Vald vågstation</div>
             <div class="meta-row-value" id="waveStationValue">Inte vald</div>
           </div>
           <div class="meta-row">
@@ -445,8 +445,16 @@
             <div class="meta-row-value" id="waveHeightValue">--</div>
           </div>
           <div class="meta-row">
-            <div class="meta-row-label">Senaste observation</div>
+            <div class="meta-row-label">Vågobservation</div>
             <div class="meta-row-value" id="waveObsTimeValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vattenstånd</div>
+            <div class="meta-row-value" id="waterLevelValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vattenståndsstation</div>
+            <div class="meta-row-value" id="waterLevelStationValue">--</div>
           </div>
           <div class="meta-row">
             <div class="meta-row-label">Stationsposition</div>
@@ -459,7 +467,7 @@
         </div>
 
         <div class="module-empty">
-          Nästa steg här kan vara att lägga till vattentemperatur på samma station när du vill.
+          Nästa steg här kan vara att lägga till vattentemperatur när vi vet vilken parameter du vill använda.
         </div>
       </article>
 
@@ -552,6 +560,10 @@
       return v == null ? "--" : `${Number(v).toFixed(1)} m`;
     }
 
+    function formatWaterLevel(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} cm`;
+    }
+
     function formatForecastTime(isoTime) {
       if (!isoTime) return "--";
       const d = new Date(isoTime);
@@ -635,14 +647,7 @@
       return `${rounded}° • ${degreesToCompass(rounded)}`;
     }
 
-    function extractStationArray(data) {
-      if (Array.isArray(data?.station)) return data.station;
-      if (Array.isArray(data?.stations)) return data.stations;
-      if (Array.isArray(data?.resource)) return data.resource;
-      return [];
-    }
-
-    function extractLatestWaveValue(data) {
+    function extractLatestValue(data) {
       if (Array.isArray(data?.value) && data.value.length > 0) {
         return data.value[data.value.length - 1];
       }
@@ -650,6 +655,22 @@
         return data.values[data.values.length - 1];
       }
       return null;
+    }
+
+    function toRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function distanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
     }
 
     function updateModeUI() {
@@ -663,7 +684,7 @@
         if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
       } else if (activeMode === "wave") {
         setText("activeModeText", "Boj / våg");
-        setText("mapNote", "Klicka på en blå station på kartan för att välja boj / vågstation.");
+        setText("mapNote", "Röd station = aktuell vågdata. Blå station = ingen aktuell vågdata just nu.");
         ensureWaveStationsLoaded();
         if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
       } else {
@@ -803,31 +824,29 @@
         setText("waveStatusValue", "Laddar stationer...");
         const res = await fetch("/api/ocean-wave-stations");
         const data = await res.json();
-        const stations = extractStationArray(data);
 
-        waveStations = stations
-          .map((station) => {
-            const id = station.id || station.key || station.stationId;
-            const name = station.name || "Okänd station";
-            const lat = Number(station.latitude);
-            const lon = Number(station.longitude);
+        waveStations = Array.isArray(data?.stations) ? data.stations : [];
 
-            if (!id || Number.isNaN(lat) || Number.isNaN(lon)) return null;
-
-            return { id, name, lat, lon };
-          })
-          .filter(Boolean);
+        if (!waveStations.length) {
+          setText("waveStatusValue", "Inga vågstationer hittades");
+          return;
+        }
 
         waveStations.forEach((station) => {
-          const marker = L.circleMarker([station.lat, station.lon], {
-            radius: 6,
+          const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: station.hasLatestData ? 7 : 5,
             weight: 2,
-            color: "#8ef0d0",
-            fillColor: "#69b7ff",
-            fillOpacity: 0.85
+            color: station.hasLatestData ? "#ff8b8b" : "#69b7ff",
+            fillColor: station.hasLatestData ? "#ff8b8b" : "#69b7ff",
+            fillOpacity: station.hasLatestData ? 0.95 : 0.75
           });
 
-          marker.bindTooltip(station.name, { direction: "top" });
+          const label = station.hasLatestData
+            ? `${station.name} • aktuell data`
+            : `${station.name} • ingen aktuell data`;
+
+          marker.bindTooltip(label, { direction: "top" });
+
           marker.on("click", (event) => {
             L.DomEvent.stopPropagation(event);
             selectWaveStation(station);
@@ -851,7 +870,7 @@
 
         if (!res.ok) continue;
 
-        const latest = extractLatestWaveValue(data);
+        const latest = extractLatestValue(data);
         if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
           return { latest, period };
         }
@@ -860,26 +879,99 @@
       return null;
     }
 
+    async function findNearestWaterLevelForPoint(lat, lon) {
+      const stationsRes = await fetch("/api/ocean-stations");
+      const stationsData = await stationsRes.json();
+
+      const stations = Array.isArray(stationsData?.station)
+        ? stationsData.station
+        : Array.isArray(stationsData?.stations)
+        ? stationsData.stations
+        : Array.isArray(stationsData?.resource)
+        ? stationsData.resource
+        : [];
+
+      const ranked = stations
+        .map((station) => {
+          const stationId = station.id || station.key || station.stationId;
+          const stationName = station.name || "Okänd station";
+          const stationLat = Number(station.latitude);
+          const stationLon = Number(station.longitude);
+
+          if (!stationId || Number.isNaN(stationLat) || Number.isNaN(stationLon)) return null;
+
+          return {
+            id: stationId,
+            name: stationName,
+            latitude: stationLat,
+            longitude: stationLon,
+            distanceKm: distanceKm(lat, lon, stationLat, stationLon)
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.distanceKm - b.distanceKm)
+        .slice(0, 15);
+
+      for (const station of ranked) {
+        for (const period of ["latest-hour", "latest-day", "latest-months"]) {
+          const res = await fetch(`/api/ocean-water-level?stationId=${station.id}&period=${period}`);
+          const data = await res.json();
+
+          if (!res.ok) continue;
+
+          const latest = extractLatestValue(data);
+          if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
+            return {
+              station,
+              latest,
+              period
+            };
+          }
+        }
+      }
+
+      return null;
+    }
+
     async function selectWaveStation(station) {
-      saveSelection("wave", station);
-      setWaveSelectionMarker(station.lat, station.lon, station.name);
+      saveSelection("wave", {
+        id: station.id,
+        name: station.name,
+        lat: station.latitude,
+        lon: station.longitude
+      });
+
+      setWaveSelectionMarker(station.latitude, station.longitude, station.name);
 
       try {
-        const result = await fetchWaveDataForStation(station.id);
+        const [waveResult, waterResult] = await Promise.all([
+          fetchWaveDataForStation(station.id),
+          findNearestWaterLevelForPoint(station.latitude, station.longitude)
+        ]);
 
-        if (!result) {
+        if (waveResult) {
+          setText("waveHeightValue", formatWave(waveResult.latest.value));
+          setText(
+            "waveObsTimeValue",
+            `${formatObsTime(waveResult.latest.date || waveResult.latest.time)} (${waveResult.period})`
+          );
+        } else {
           setText("waveHeightValue", "--");
           setText("waveObsTimeValue", "--");
-          setText("waveStatusValue", "Ingen vågdata hittades");
-          return;
         }
 
-        setText("waveHeightValue", formatWave(result.latest.value));
-        setText("waveObsTimeValue", `${formatObsTime(result.latest.date || result.latest.time)} (${result.period})`);
-        setText("waveStatusValue", "Vågdata laddad");
+        if (waterResult) {
+          setText("waterLevelValue", formatWaterLevel(waterResult.latest.value));
+          setText("waterLevelStationValue", waterResult.station.name);
+        } else {
+          setText("waterLevelValue", "--");
+          setText("waterLevelStationValue", "Ingen hittad");
+        }
+
+        setText("waveStatusValue", "Havsdata laddad");
       } catch (error) {
         console.error(error);
-        setText("waveStatusValue", "Kunde inte ladda vågdata");
+        setText("waveStatusValue", "Kunde inte ladda havsdata");
       }
     }
 
