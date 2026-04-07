@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
   const stationId = req.query.stationId;
+  const period = req.query.period || "latest-hour";
 
   if (!stationId) {
     return res.status(400).json({
@@ -9,11 +10,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `https://opendata-download-ocobs.smhi.se/api/version/latest/parameter/6/station/${stationId}/period/latest-hour/data.json`;
+    const url = `https://opendata-download-ocobs.smhi.se/api/version/latest/parameter/6/station/${stationId}/period/${period}/data.json`;
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "weather-dashboard/1.0 bjorn.falkenang@gmail.com"
+        "User-Agent": "weather-dashboard/1.0 dinmail@example.com"
       }
     });
 
