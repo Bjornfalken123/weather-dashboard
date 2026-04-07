@@ -67,28 +67,31 @@ function extractValues(data) {
 export default async function handler(req, res) {
   try {
     const headers = {
-      "User-Agent": "weather-dashboard/1.0 dinmail@example.com"
+      "User-Agent": "weather-dashboard/1.0 bjorn.falkenang@gmail.com"
     };
 
     const stationUrls = Object.values(PARAMS).map(
       (param) => `https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/${param}.json`
     );
 
-    const activeWindUrl =
-      `https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/${PARAMS.windSpeed}/station-set/all/period/latest-hour/data.json`;
+    const latestHourUrls = Object.values(PARAMS).map(
+      (param) =>
+        `https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/${param}/station-set/all/period/latest-hour/data.json`
+    );
 
     const responses = await Promise.all([
       ...stationUrls.map((url) => fetch(url, { headers })),
-      fetch(activeWindUrl, { headers })
+      ...latestHourUrls.map((url) => fetch(url, { headers }))
     ]);
 
     const texts = await Promise.all(responses.map((r) => r.text()));
 
     const stationTexts = texts.slice(0, stationUrls.length);
-    const activeWindText = texts[texts.length - 1];
+    const latestTexts = texts.slice(stationUrls.length);
 
-    const stationMaps = new Map();
+    const stationMap = new Map();
 
+    // Bygg stationslista från parameternivåer
     stationTexts.forEach((text) => {
       const json = JSON.parse(text);
       const stations = extractStations(json);
@@ -102,37 +105,43 @@ export default async function handler(req, res) {
 
         if (!id || Number.isNaN(lat) || Number.isNaN(lon)) return;
 
-        if (!stationMaps.has(id)) {
-          stationMaps.set(id, {
+        if (!stationMap.has(id)) {
+          stationMap.set(id, {
             id,
             name: normalizeName(station),
             latitude: lat,
             longitude: lon,
-            hasCurrentWind: false
+            hasCurrentWind: false // används av UI, men betyder nu "har aktuell data"
           });
         }
       });
     });
 
-    try {
-      const activeWindJson = JSON.parse(activeWindText);
-      const activeWindValues = extractValues(activeWindJson);
+    // Union av alla stationer som har latest-hour-data i minst en parameter
+    const activeIds = new Set();
 
-      const activeIds = new Set(
-        activeWindValues
-          .map((item) => normalizeId(item.station ?? item.stationId ?? item.id ?? item.key))
-          .filter(Boolean)
-      );
+    latestTexts.forEach((text) => {
+      try {
+        const json = JSON.parse(text);
+        const values = extractValues(json);
 
-      for (const [id, station] of stationMaps.entries()) {
-        station.hasCurrentWind = activeIds.has(id);
-        stationMaps.set(id, station);
+        values.forEach((item) => {
+          const id = normalizeId(
+            item.station ?? item.stationId ?? item.id ?? item.key
+          );
+          if (id) activeIds.add(id);
+        });
+      } catch {
+        // ignorera felaktigt svar för en parameter
       }
-    } catch {
-      // lämna hasCurrentWind som false
+    });
+
+    for (const [id, station] of stationMap.entries()) {
+      station.hasCurrentWind = activeIds.has(id);
+      stationMap.set(id, station);
     }
 
-    const stations = Array.from(stationMaps.values()).sort((a, b) =>
+    const stations = Array.from(stationMap.values()).sort((a, b) =>
       a.name.localeCompare(b.name, "sv")
     );
 
