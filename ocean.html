@@ -488,7 +488,7 @@
     </div>
   </div>
 
-  <script>
+<script>
   const defaultLat = 59.3293;
   const defaultLon = 18.0686;
 
@@ -506,13 +506,46 @@
     setText("methodValue", "Standardplats");
     setText("positionValue", `${formatCoord(defaultLat)}, ${formatCoord(defaultLon)}`);
     setText("eventValue", "Förvald plats används");
-    setText("statusText", "Redo");
+    setText("statusText", "Hämtar station...");
   }
 
-  // INIT direkt
-  setDefaultPosition();
+  async function loadStations() {
+    try {
+      const res = await fetch("/api/ocean-stations");
+      const data = await res.json();
 
-  // KNAPPAR
+      const stations = data.station || [];
+
+      if (!stations.length) {
+        setText("eventValue", "Inga stationer hittades");
+        return;
+      }
+
+      // 🔥 bara första stationen (enkelt steg)
+      const station = stations[0];
+
+      const name = station.name;
+      const lat = station.latitude;
+      const lon = station.longitude;
+
+      setText("heroStation", name);
+      setText("methodValue", "Teststation (SMHI)");
+      setText("positionValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+      setText("eventValue", "Station hämtad från SMHI");
+      setText("statusText", "Redo");
+
+    } catch (e) {
+      setText("statusText", "Fel");
+      setText("eventValue", "Kunde inte hämta stationer");
+      console.error(e);
+    }
+  }
+
+  // INIT
+  setDefaultPosition();
+  loadStations();
+
+  // KNAPPAR (oförändrat)
   document.getElementById("nearMeBtn").addEventListener("click", () => {
     setText("statusText", "Blockerad");
     setText("eventValue", "Din enhet blockerar position (helt ok)");
