@@ -569,8 +569,8 @@
   </div>
 
   <script>
-  const lat = 59.33;
-  const lon = 18.06;
+  const lat = 59.3293;
+  const lon = 18.0686;
   const placeName = "Stockholm";
 
   function setText(id, value) {
@@ -584,7 +584,8 @@
   }
 
   function formatUpdatedTime() {
-    return new Date().toLocaleString("sv-SE", {
+    const now = new Date();
+    return now.toLocaleString("sv-SE", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -593,103 +594,70 @@
     });
   }
 
-  function getAirQualityLabel(pm25) {
-    const v = Number(pm25);
-    if (Number.isNaN(v)) return "Ingen data";
-    if (v <= 10) return "Bra";
-    if (v <= 20) return "Okej";
-    if (v <= 30) return "Förhöjd";
-    return "Hög";
-  }
-
-  async function fetchJson(url, label) {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(label + ": " + res.status + " " + text);
-    }
-    return res.json();
-  }
-
   async function loadDashboard() {
     const errorEl = document.getElementById("errorText");
-    errorEl.style.display = "none";
-    errorEl.textContent = "";
+    if (errorEl) {
+      errorEl.style.display = "none";
+      errorEl.textContent = "";
+    }
 
     setText("locationText", placeName + " • Live-data");
     setText("statusText", "Hämtar data...");
 
-    const weatherUrl =
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m&timezone=auto`;
-
-    const airUrl =
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5,nitrogen_dioxide,ozone,european_aqi&timezone=auto`;
-
     try {
-      const weather = await fetchJson(weatherUrl, "Väder-API");
-      let air = null;
+      const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
+      const text = await res.text();
 
-      try {
-        air = await fetchJson(airUrl, "Luftkvalitets-API");
-      } catch (airError) {
-        console.error(airError);
+      if (!res.ok) {
+        throw new Error(text);
       }
 
-      const temp = weather.current?.temperature_2m;
-      const precip = weather.current?.precipitation;
-      const wind = weather.current?.wind_speed_10m;
-      const gust = weather.current?.wind_gusts_10m;
+      const data = JSON.parse(text);
+      const ts = data.properties?.timeseries?.[0];
+
+      if (!ts) {
+        throw new Error("Ingen prognosdata hittades.");
+      }
+
+      const instant = ts.data?.instant?.details || {};
+      const next1h = ts.data?.next_1_hours?.details || {};
+
+      const temp = instant.air_temperature;
+      const precip = next1h.precipitation_amount ?? 0;
+      const wind = instant.wind_speed;
+      const windDir = instant.wind_from_direction;
+      const pressure = instant.air_pressure_at_sea_level;
+      const clouds = instant.cloud_area_fraction;
 
       setText("statusText", "Live");
       setText("updatedAt", formatUpdatedTime());
 
-      setText("tempNow", formatNumber(temp));
-      setText("rainNow", `${formatNumber(precip)} mm`);
-      setText("windNow", `${formatNumber(wind)} m/s`);
-      setText("gustNow", `${formatNumber(gust)} m/s`);
+      setText("tempNow", formatNumber(temp, 1));
+      setText("rainNow", `${formatNumber(precip, 1)} mm`);
+      setText("windNow", `${formatNumber(wind, 1)} m/s`);
+      setText("windDirNow", `${formatNumber(windDir, 0)} °`);
 
-      setText("temperatureCard", formatNumber(temp));
-      setText("precipCard", formatNumber(precip));
-      setText("windCard", formatNumber(wind));
-      setText("gustCard", formatNumber(gust));
+      setText("pressureTop", `${formatNumber(pressure, 1)} hPa`);
+      setText("cloudsTop", `${formatNumber(clouds, 0)} %`);
 
-      setText("temperatureList", `${formatNumber(temp)} °C`);
-      setText("precipList", `${formatNumber(precip)} mm`);
-      setText("windList", `${formatNumber(wind)} m/s`);
-      setText("gustList", `${formatNumber(gust)} m/s`);
+      setText("temperatureCard", formatNumber(temp, 1));
+      setText("precipCard", formatNumber(precip, 1));
+      setText("windCard", formatNumber(wind, 1));
+      setText("cloudsCard", formatNumber(clouds, 0));
 
-      if (air && air.current) {
-        const pm25 = air.current.pm2_5;
-        const pm10 = air.current.pm10;
-        const no2 = air.current.nitrogen_dioxide;
-        const o3 = air.current.ozone;
-        const europeanAqi = air.current.european_aqi;
-        const aqLabel = getAirQualityLabel(pm25);
-
-        setText("pm25Top", `${formatNumber(pm25)} µg/m³`);
-        setText("pm10Top", `${formatNumber(pm10)} µg/m³`);
-        setText("aqSummary", `${aqLabel}${europeanAqi != null ? " • AQI " + Math.round(europeanAqi) : ""}`);
-
-        setText("aqBadge", aqLabel);
-        setText("pm25List", `${formatNumber(pm25)} µg/m³`);
-        setText("pm10List", `${formatNumber(pm10)} µg/m³`);
-        setText("no2List", `${formatNumber(no2)} µg/m³`);
-        setText("o3List", `${formatNumber(o3)} µg/m³`);
-      } else {
-        setText("pm25Top", "Ingen data");
-        setText("pm10Top", "Ingen data");
-        setText("aqSummary", "Ingen data");
-        setText("aqBadge", "Ingen data");
-        setText("pm25List", "Ingen data");
-        setText("pm10List", "Ingen data");
-        setText("no2List", "Ingen data");
-        setText("o3List", "Ingen data");
-      }
+      setText("temperatureList", `${formatNumber(temp, 1)} °C`);
+      setText("precipList", `${formatNumber(precip, 1)} mm`);
+      setText("windList", `${formatNumber(wind, 1)} m/s`);
+      setText("windDirList", `${formatNumber(windDir, 0)} °`);
+      setText("pressureList", `${formatNumber(pressure, 1)} hPa`);
+      setText("cloudsList", `${formatNumber(clouds, 0)} %`);
     } catch (error) {
-      console.error(error);
       setText("statusText", "Fel");
-      errorEl.style.display = "block";
-      errorEl.textContent = "Kunde inte ladda data: " + error.message;
+      if (errorEl) {
+        errorEl.style.display = "block";
+        errorEl.textContent = "Kunde inte ladda data: " + error.message;
+      }
+      console.error(error);
     }
   }
 
