@@ -484,6 +484,37 @@
       return Number.isNaN(n) ? "--" : n.toFixed(decimals);
     }
 
+    function formatSmhiDate(value) {
+      if (value === null || value === undefined) return "--";
+
+      const num = Number(value);
+      if (!Number.isNaN(num) && String(value).length >= 10) {
+        const date = new Date(num);
+        if (!Number.isNaN(date.getTime())) {
+          return date.toLocaleString("sv-SE", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+      }
+
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toLocaleString("sv-SE", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      return String(value);
+    }
+
     function findStationArray(data) {
       if (Array.isArray(data?.station)) return data.station;
       if (Array.isArray(data?.stations)) return data.stations;
@@ -516,7 +547,6 @@
         throw new Error("Inga stationer hittades.");
       }
 
-      // Prova några stationer tills vi hittar en som faktiskt har data
       const candidates = stations.slice(0, 12);
 
       for (const station of candidates) {
@@ -537,7 +567,6 @@
               };
             }
           } catch (e) {
-            // prova nästa
           }
         }
       }
@@ -558,7 +587,8 @@
         const stationLat = station.latitude;
         const stationLon = station.longitude;
         const levelValue = latest.value;
-        const dateValue = latest.date || latest.time || "--";
+        const rawDateValue = latest.date || latest.time || "--";
+        const dateValue = formatSmhiDate(rawDateValue);
 
         setText("heroStation", stationName);
         setText("stationValue", stationName);
