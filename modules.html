@@ -355,7 +355,7 @@
               Fri punkt på kartan. Visar nu-data och kort prognos framåt.
             </p>
           </div>
-          <div class="module-badge">MET</div>
+          <div class="module-badge">MET + SMHI</div>
         </div>
 
         <div class="module-meta">
@@ -382,6 +382,10 @@
           <div class="meta-row">
             <div class="meta-row-label">Byvindar</div>
             <div class="meta-row-value" id="weatherGustValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Byvind källa</div>
+            <div class="meta-row-value" id="weatherGustSourceValue">--</div>
           </div>
           <div class="meta-row">
             <div class="meta-row-label">Lufttryck</div>
@@ -477,251 +481,248 @@
   </div>
 
   <script>
-  let activeMode = "weather";
+    let activeMode = "weather";
 
-  const savedSelections = {
-    weather: null,
-    wave: null,
-    lighthouse: null
-  };
-
-  const map = L.map("map").setView([58.6, 13.0], 6);
-
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap"
-  }).addTo(map);
-
-  let weatherMarker = null;
-  let waveMarker = null;
-  let lighthouseMarker = null;
-
-  function setText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  }
-
-  function formatCoord(v) {
-    return Number(v).toFixed(4);
-  }
-
-  function formatTemp(v) {
-    return v == null ? "--" : `${Number(v).toFixed(1)} °C`;
-  }
-
-  function formatRain(v) {
-    return v == null ? "--" : `${Number(v).toFixed(1)} mm`;
-  }
-
-  function formatWind(v) {
-    return v == null ? "--" : `${Number(v).toFixed(1)} m/s`;
-  }
-
-  function formatPressure(v) {
-    return v == null ? "--" : `${Number(v).toFixed(1)} hPa`;
-  }
-
-  function formatForecastTime(isoTime) {
-    if (!isoTime) return "--";
-    const d = new Date(isoTime);
-    return d.toLocaleString("sv-SE", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  }
-
-  function weatherLabelFromSymbol(symbolCode) {
-    if (!symbolCode) return "--";
-    const key = symbolCode.replace(/_(day|night|polartwilight)$/, "");
-
-    const labels = {
-      clearsky: "Klart",
-      fair: "Mest klart",
-      partlycloudy: "Delvis molnigt",
-      cloudy: "Molnigt",
-      lightrainshowers: "Lätta regnskurar",
-      rainshowers: "Regnskurar",
-      heavyrainshowers: "Kraftiga regnskurar",
-      lightrain: "Lätt regn",
-      rain: "Regn",
-      heavyrain: "Kraftigt regn",
-      lightsleet: "Lätt snöblandat",
-      sleet: "Snöblandat",
-      heavysleet: "Kraftigt snöblandat",
-      lightsnow: "Lätt snö",
-      snow: "Snö",
-      heavysnow: "Kraftig snö",
-      fog: "Dimma"
+    const savedSelections = {
+      weather: null,
+      wave: null,
+      lighthouse: null
     };
 
-    return labels[key] || key;
-  }
+    const map = L.map("map").setView([58.6, 13.0], 6);
 
-  function updateModeUI() {
-    document.querySelectorAll(".mode-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.mode === activeMode);
-    });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
 
-    if (activeMode === "weather") {
-      setText("activeModeText", "Väder");
-      setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
-    } else if (activeMode === "wave") {
-      setText("activeModeText", "Boj / våg");
-      setText("mapNote", "Klicka senare på en boj eller station för vågmodulen. Just nu sparar vi bara klickposition.");
-    } else {
-      setText("activeModeText", "Fyr / station");
-      setText("mapNote", "Klicka senare på en fyr eller station. Just nu sparar vi bara klickposition.");
-    }
-  }
+    let weatherMarker = null;
+    let waveMarker = null;
+    let lighthouseMarker = null;
 
-  function updateLastSelectionText() {
-    const current = savedSelections[activeMode];
-    if (!current) {
-      setText("lastSelectionText", "Inget valt ännu");
-      return;
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
     }
 
-    setText(
-      "lastSelectionText",
-      `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`
-    );
-  }
-
-  function saveSelection(mode, lat, lon) {
-    savedSelections[mode] = { lat, lon };
-
-    if (mode === "weather") {
-      setText("weatherPointValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-      setText("weatherStatusValue", "Hämtar väder...");
+    function formatCoord(v) {
+      return Number(v).toFixed(4);
     }
 
-    if (mode === "wave") {
-      setText("waveStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-      setText("waveStatusValue", "Punkt vald");
+    function formatTemp(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} °C`;
     }
 
-    if (mode === "lighthouse") {
-      setText("lighthouseStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-      setText("lighthouseStatusValue", "Punkt vald");
+    function formatRain(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} mm`;
     }
 
-    updateLastSelectionText();
-  }
-
-  function setMarker(mode, lat, lon) {
-    if (mode === "weather") {
-      if (weatherMarker) map.removeLayer(weatherMarker);
-      weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
+    function formatWind(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} m/s`;
     }
 
-    if (mode === "wave") {
-      if (waveMarker) map.removeLayer(waveMarker);
-      waveMarker = L.marker([lat, lon]).addTo(map).bindPopup("Boj / våg").openPopup();
+    function formatPressure(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} hPa`;
     }
 
-    if (mode === "lighthouse") {
-      if (lighthouseMarker) map.removeLayer(lighthouseMarker);
-      lighthouseMarker = L.marker([lat, lon]).addTo(map).bindPopup("Fyr / station").openPopup();
-    }
-  }
-
-  function getBestSeriesForGust(timeseries) {
-    if (!Array.isArray(timeseries) || !timeseries.length) return null;
-
-    const withRealGust = timeseries.find(
-      item => item?.data?.instant?.details?.wind_speed_of_gust !== undefined
-    );
-
-    if (withRealGust) return withRealGust;
-
-    const withP90 = timeseries.find(
-      item => item?.data?.instant?.details?.wind_speed_percentile_90 !== undefined
-    );
-
-    return withP90 || timeseries[0];
-  }
-
-  async function loadWeatherForPoint(lat, lon) {
-    try {
-      setText("weatherStatusValue", "Laddar prognos...");
-
-      const url = `/api/weather?lat=${lat}&lon=${lon}`;
-      const res = await fetch(url);
-      const text = await res.text();
-
-      if (!res.ok) {
-        throw new Error(text);
-      }
-
-      const data = JSON.parse(text);
-      const timeseries = data.properties?.timeseries || [];
-
-      if (!timeseries.length) {
-        throw new Error("Ingen väderdata hittades.");
-      }
-
-      const current = timeseries[0];
-      const gustSeries = getBestSeriesForGust(timeseries);
-
-      const instant = current.data?.instant?.details || {};
-      const gustInstant = gustSeries?.data?.instant?.details || {};
-      const next1 = current.data?.next_1_hours || {};
-      const next6 = current.data?.next_6_hours || {};
-
-      const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
-      const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
-      const gust = gustInstant.wind_speed_of_gust ?? gustInstant.wind_speed_percentile_90 ?? null;
-
-      setText("weatherTempValue", formatTemp(instant.air_temperature));
-      setText("weatherRainValue", formatRain(precip));
-      setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
-      setText("weatherWindValue", formatWind(instant.wind_speed));
-      setText("weatherGustValue", formatWind(gust));
-      setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
-      setText("weatherStatusValue", gustInstant.wind_speed_of_gust !== undefined ? "Prognos laddad" : "Prognos laddad (byvind uppskattad/senare tid)");
-
-      const forecastItems = timeseries.slice(0, 3);
-
-      forecastItems.forEach((item, index) => {
-        const i = item.data?.instant?.details || {};
-        const n1 = item.data?.next_1_hours || {};
-        const n6 = item.data?.next_6_hours || {};
-        const fPrecip = n1.details?.precipitation_amount ?? n6.details?.precipitation_amount ?? null;
-
-        setText(`forecast${index + 1}Time`, formatForecastTime(item.time));
-        setText(`forecast${index + 1}Temp`, formatTemp(i.air_temperature));
-        setText(`forecast${index + 1}Rain`, `Nederbörd: ${formatRain(fPrecip)}`);
+    function formatForecastTime(isoTime) {
+      if (!isoTime) return "--";
+      const d = new Date(isoTime);
+      return d.toLocaleString("sv-SE", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
       });
-    } catch (error) {
-      console.error(error);
-      setText("weatherStatusValue", "Kunde inte ladda väder");
     }
-  }
 
-  document.querySelectorAll(".mode-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      activeMode = btn.dataset.mode;
-      updateModeUI();
+    function weatherLabelFromSymbol(symbolCode) {
+      if (!symbolCode) return "--";
+      const key = symbolCode.replace(/_(day|night|polartwilight)$/, "");
+
+      const labels = {
+        clearsky: "Klart",
+        fair: "Mest klart",
+        partlycloudy: "Delvis molnigt",
+        cloudy: "Molnigt",
+        lightrainshowers: "Lätta regnskurar",
+        rainshowers: "Regnskurar",
+        heavyrainshowers: "Kraftiga regnskurar",
+        lightrain: "Lätt regn",
+        rain: "Regn",
+        heavyrain: "Kraftigt regn",
+        lightsleet: "Lätt snöblandat",
+        sleet: "Snöblandat",
+        heavysleet: "Kraftigt snöblandat",
+        lightsnow: "Lätt snö",
+        snow: "Snö",
+        heavysnow: "Kraftig snö",
+        fog: "Dimma"
+      };
+
+      return labels[key] || key;
+    }
+
+    function updateModeUI() {
+      document.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.mode === activeMode);
+      });
+
+      if (activeMode === "weather") {
+        setText("activeModeText", "Väder");
+        setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+      } else if (activeMode === "wave") {
+        setText("activeModeText", "Boj / våg");
+        setText("mapNote", "Klicka senare på en boj eller station för vågmodulen. Just nu sparar vi bara klickposition.");
+      } else {
+        setText("activeModeText", "Fyr / station");
+        setText("mapNote", "Klicka senare på en fyr eller station. Just nu sparar vi bara klickposition.");
+      }
+    }
+
+    function updateLastSelectionText() {
+      const current = savedSelections[activeMode];
+      if (!current) {
+        setText("lastSelectionText", "Inget valt ännu");
+        return;
+      }
+
+      setText(
+        "lastSelectionText",
+        `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`
+      );
+    }
+
+    function saveSelection(mode, lat, lon) {
+      savedSelections[mode] = { lat, lon };
+
+      if (mode === "weather") {
+        setText("weatherPointValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("weatherStatusValue", "Hämtar väder...");
+      }
+
+      if (mode === "wave") {
+        setText("waveStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("waveStatusValue", "Punkt vald");
+      }
+
+      if (mode === "lighthouse") {
+        setText("lighthouseStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("lighthouseStatusValue", "Punkt vald");
+      }
+
       updateLastSelectionText();
-    });
-  });
-
-  map.on("click", (event) => {
-    const lat = event.latlng.lat;
-    const lon = event.latlng.lng;
-
-    saveSelection(activeMode, lat, lon);
-    setMarker(activeMode, lat, lon);
-
-    if (activeMode === "weather") {
-      loadWeatherForPoint(lat, lon);
     }
-  });
 
-  updateModeUI();
-  updateLastSelectionText();
-</script>
+    function setMarker(mode, lat, lon) {
+      if (mode === "weather") {
+        if (weatherMarker) map.removeLayer(weatherMarker);
+        weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
+      }
+
+      if (mode === "wave") {
+        if (waveMarker) map.removeLayer(waveMarker);
+        waveMarker = L.marker([lat, lon]).addTo(map).bindPopup("Boj / våg").openPopup();
+      }
+
+      if (mode === "lighthouse") {
+        if (lighthouseMarker) map.removeLayer(lighthouseMarker);
+        lighthouseMarker = L.marker([lat, lon]).addTo(map).bindPopup("Fyr / station").openPopup();
+      }
+    }
+
+    async function loadWeatherForPoint(lat, lon) {
+      try {
+        setText("weatherStatusValue", "Laddar prognos...");
+        setText("weatherGustSourceValue", "Laddar...");
+
+        const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
+        const gustUrl = `/api/smhi-gust-nearest?lat=${lat}&lon=${lon}`;
+
+        const [weatherRes, gustRes] = await Promise.all([
+          fetch(weatherUrl),
+          fetch(gustUrl)
+        ]);
+
+        const weatherText = await weatherRes.text();
+        const gustText = await gustRes.text();
+
+        if (!weatherRes.ok) {
+          throw new Error(weatherText);
+        }
+
+        const weatherData = JSON.parse(weatherText);
+        const timeseries = weatherData.properties?.timeseries || [];
+
+        if (!timeseries.length) {
+          throw new Error("Ingen väderdata hittades.");
+        }
+
+        const current = timeseries[0];
+        const instant = current.data?.instant?.details || {};
+        const next1 = current.data?.next_1_hours || {};
+        const next6 = current.data?.next_6_hours || {};
+
+        const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
+        const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
+
+        setText("weatherTempValue", formatTemp(instant.air_temperature));
+        setText("weatherRainValue", formatRain(precip));
+        setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
+        setText("weatherWindValue", formatWind(instant.wind_speed));
+        setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
+
+        const forecastItems = timeseries.slice(0, 3);
+        forecastItems.forEach((item, index) => {
+          const i = item.data?.instant?.details || {};
+          const n1 = item.data?.next_1_hours || {};
+          const n6 = item.data?.next_6_hours || {};
+          const fPrecip = n1.details?.precipitation_amount ?? n6.details?.precipitation_amount ?? null;
+
+          setText(`forecast${index + 1}Time`, formatForecastTime(item.time));
+          setText(`forecast${index + 1}Temp`, formatTemp(i.air_temperature));
+          setText(`forecast${index + 1}Rain`, `Nederbörd: ${formatRain(fPrecip)}`);
+        });
+
+        if (gustRes.ok) {
+          const gustData = JSON.parse(gustText);
+          const dist = gustData.distanceKm != null ? `${Number(gustData.distanceKm).toFixed(0)} km` : "--";
+          setText("weatherGustValue", formatWind(gustData.value));
+          setText("weatherGustSourceValue", `${gustData.stationName} • ${dist}`);
+          setText("weatherStatusValue", "Prognos + byvind laddad");
+        } else {
+          setText("weatherGustValue", "--");
+          setText("weatherGustSourceValue", "Ingen SMHI-station nära nog");
+          setText("weatherStatusValue", "Prognos laddad");
+        }
+      } catch (error) {
+        console.error(error);
+        setText("weatherStatusValue", "Kunde inte ladda väder");
+      }
+    }
+
+    document.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeMode = btn.dataset.mode;
+        updateModeUI();
+        updateLastSelectionText();
+      });
+    });
+
+    map.on("click", (event) => {
+      const lat = event.latlng.lat;
+      const lon = event.latlng.lng;
+
+      saveSelection(activeMode, lat, lon);
+      setMarker(activeMode, lat, lon);
+
+      if (activeMode === "weather") {
+        loadWeatherForPoint(lat, lon);
+      }
+    });
+
+    updateModeUI();
+    updateLastSelectionText();
+  </script>
 </body>
 </html>
