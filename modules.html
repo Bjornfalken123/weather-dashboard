@@ -182,7 +182,7 @@
 
     .module-card {
       padding: 20px;
-      min-height: 380px;
+      min-height: 420px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -368,6 +368,10 @@
             <div class="meta-row-value" id="weatherTempValue">--</div>
           </div>
           <div class="meta-row">
+            <div class="meta-row-label">Luftfuktighet</div>
+            <div class="meta-row-value" id="weatherHumidityValue">--</div>
+          </div>
+          <div class="meta-row">
             <div class="meta-row-label">Nederbörd</div>
             <div class="meta-row-value" id="weatherRainValue">--</div>
           </div>
@@ -378,6 +382,10 @@
           <div class="meta-row">
             <div class="meta-row-label">Vind</div>
             <div class="meta-row-value" id="weatherWindValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vindriktning</div>
+            <div class="meta-row-value" id="weatherDirectionValue">--</div>
           </div>
           <div class="meta-row">
             <div class="meta-row-label">Byvindar</div>
@@ -491,7 +499,7 @@
 
     const map = L.map("map").setView([58.6, 13.0], 6);
 
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{y}/{x}.png".replace("/{y}/{x}","/{x}/{y}"), {
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap"
     }).addTo(map);
@@ -511,6 +519,10 @@
 
     function formatTemp(v) {
       return v == null ? "--" : `${Number(v).toFixed(1)} °C`;
+    }
+
+    function formatHumidity(v) {
+      return v == null ? "--" : `${Math.round(Number(v))} %`;
     }
 
     function formatRain(v) {
@@ -561,6 +573,20 @@
       };
 
       return labels[key] || key;
+    }
+
+    function degreesToCompass(deg) {
+      if (deg === null || deg === undefined || Number.isNaN(Number(deg))) return "--";
+      const directions = ["N", "NO", "O", "SO", "S", "SV", "V", "NV"];
+      const normalized = ((Number(deg) % 360) + 360) % 360;
+      const index = Math.round(normalized / 45) % 8;
+      return directions[index];
+    }
+
+    function formatWindDirection(deg) {
+      if (deg === null || deg === undefined || Number.isNaN(Number(deg))) return "--";
+      const rounded = Math.round(Number(deg));
+      return `${rounded}° • ${degreesToCompass(rounded)}`;
     }
 
     function updateModeUI() {
@@ -667,9 +693,11 @@
         const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
 
         setText("weatherTempValue", formatTemp(instant.air_temperature));
+        setText("weatherHumidityValue", formatHumidity(instant.relative_humidity));
         setText("weatherRainValue", formatRain(precip));
         setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
         setText("weatherWindValue", formatWind(instant.wind_speed));
+        setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
         setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
 
         const forecastItems = timeseries.slice(0, 3);
