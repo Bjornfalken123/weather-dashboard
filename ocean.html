@@ -341,7 +341,7 @@
       <div class="panel">
         <h2>Översikt</h2>
         <p>
-          Första riktiga havsdatan från SMHI: havsvattenstånd från en station.
+          Första riktiga havsdatan från SMHI: havsvattenstånd från en station som faktiskt har aktuell data.
         </p>
 
         <div class="meta-grid">
@@ -426,7 +426,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Vattenstånd</div>
-              <div class="list-subtitle">Senaste timmen</div>
+              <div class="list-subtitle">Senaste tillgängliga period</div>
             </div>
             <div class="list-value" id="waterLevelList">-- cm</div>
           </div>
@@ -447,7 +447,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nuvarande steg</div>
-              <div class="list-subtitle">Havsvattenstånd från SMHI</div>
+              <div class="list-subtitle">Väljer station med riktig data</div>
             </div>
             <div class="list-value placeholder">Aktivt</div>
           </div>
@@ -501,23 +501,64 @@
       return null;
     }
 
+    async function fetchWaterForStation(stationId, period) {
+      const res = await fetch(`/api/ocean-water-level?stationId=${stationId}&period=${period}`);
+      const data = await res.json();
+      return { res, data, period };
+    }
+
+    async function findWorkingStation() {
+      const stationsRes = await fetch("/api/ocean-stations");
+      const stationsData = await stationsRes.json();
+      const stations = findStationArray(stationsData);
+
+      if (!stations.length) {
+        throw new Error("Inga stationer hittades.");
+      }
+
+      // Prova några stationer tills vi hittar en som faktiskt har data
+      const candidates = stations.slice(0, 12);
+
+      for (const station of candidates) {
+        const stationId = station.id || station.key || station.stationId;
+        if (!stationId) continue;
+
+        for (const period of ["latest-hour", "latest-day"]) {
+          try {
+            const { res, data } = await fetchWaterForStation(stationId, period);
+            if (!res.ok) continue;
+
+            const latest = findLatestWaterValue(data);
+            if (latest && latest.value !== undefined && latest.value !== null) {
+              return {
+                station,
+                latest,
+                period
+              };
+            }
+          } catch (e) {
+            // prova nästa
+          }
+        }
+      }
+
+      throw new Error("Ingen station med tillgängligt vattenstånd hittades.");
+    }
+
     async function loadOceanPage() {
       try {
-        setText("statusText", "Hämtar station...");
-        const stationsRes = await fetch("/api/ocean-stations");
-        const stationsData = await stationsRes.json();
+        setText("statusText", "Letar station...");
+        const result = await findWorkingStation();
 
-        const stations = findStationArray(stationsData);
+        const station = result.station;
+        const latest = result.latest;
+        const period = result.period;
 
-        if (!stations.length) {
-          throw new Error("Inga stationer hittades.");
-        }
-
-        const station = stations[0];
-        const stationId = station.id || station.key || station.stationId;
         const stationName = station.name || "Okänd station";
         const stationLat = station.latitude;
         const stationLon = station.longitude;
+        const levelValue = latest.value;
+        const dateValue = latest.date || latest.time || "--";
 
         setText("heroStation", stationName);
         setText("stationValue", stationName);
@@ -525,21 +566,9 @@
         setText("positionValue", `${formatCoord(stationLat)}, ${formatCoord(stationLon)}`);
         setText("stationCoordsList", `${formatCoord(stationLat)}, ${formatCoord(stationLon)}`);
 
-        setText("statusText", "Hämtar vattenstånd...");
-        const levelRes = await fetch(`/api/ocean-water-level?stationId=${stationId}`);
-        const levelData = await levelRes.json();
-
-        if (!levelRes.ok) {
-          throw new Error(levelData?.body || levelData?.message || "Kunde inte hämta vattenstånd.");
-        }
-
-        const latest = findLatestWaterValue(levelData);
-        const levelValue = latest?.value;
-        const dateValue = latest?.date || latest?.time || "--";
-
         setText("waterLevelCard", formatValue(levelValue, 1));
         setText("waterLevelList", `${formatValue(levelValue, 1)} cm`);
-        setText("eventValue", dateValue);
+        setText("eventValue", `${dateValue} (${period})`);
         setText("statusText", "Live");
       } catch (error) {
         console.error(error);
