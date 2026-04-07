@@ -341,7 +341,7 @@
       <div class="panel">
         <h2>Översikt</h2>
         <p>
-          Första riktiga havsdatan från SMHI: havsvattenstånd från en station som faktiskt har aktuell data.
+          Havsvattenstånd och våghöjd från SMHI, hämtat från stationer som faktiskt har aktuell data.
         </p>
 
         <div class="meta-grid">
@@ -350,7 +350,7 @@
             <div class="meta-value" id="methodValue">Standardplats</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Station</div>
+            <div class="meta-label">Vattenståndsstation</div>
             <div class="meta-value" id="stationValue">--</div>
           </div>
           <div class="meta-item">
@@ -379,6 +379,17 @@
 
       <div class="metric-card">
         <div>
+          <div class="metric-icon">🌊</div>
+          <div class="metric-label">Våghöjd</div>
+        </div>
+        <div>
+          <div class="metric-value" id="waveHeightCard">--</div>
+          <div class="metric-unit">meter</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div>
           <div class="metric-icon">💨</div>
           <div class="metric-label">Vind</div>
         </div>
@@ -398,26 +409,15 @@
           <div class="metric-unit">kommer senare</div>
         </div>
       </div>
-
-      <div class="metric-card">
-        <div>
-          <div class="metric-icon">🌊</div>
-          <div class="metric-label">Våghöjd</div>
-        </div>
-        <div>
-          <div class="metric-value">--</div>
-          <div class="metric-unit">kommer senare</div>
-        </div>
-      </div>
     </section>
 
     <section class="bottom-grid">
       <div class="panel">
-        <h2 class="section-title">Nuvarande station</h2>
+        <h2 class="section-title">Nuvarande stationer</h2>
         <div class="list">
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Stationsnamn</div>
+              <div class="list-title">Vattenstånd</div>
               <div class="list-subtitle">SMHI oceanografi</div>
             </div>
             <div class="list-value" id="stationNameList">--</div>
@@ -425,16 +425,16 @@
 
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Vattenstånd</div>
-              <div class="list-subtitle">Senaste tillgängliga period</div>
+              <div class="list-title">Våghöjd</div>
+              <div class="list-subtitle">SMHI oceanografi</div>
             </div>
-            <div class="list-value" id="waterLevelList">-- cm</div>
+            <div class="list-value" id="waveStationList">--</div>
           </div>
 
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Lat/Lon</div>
-              <div class="list-subtitle">Stationsposition</div>
+              <div class="list-subtitle">Vattenståndsstation</div>
             </div>
             <div class="list-value" id="stationCoordsList">--</div>
           </div>
@@ -447,7 +447,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nuvarande steg</div>
-              <div class="list-subtitle">Väljer station med riktig data</div>
+              <div class="list-subtitle">Vattenstånd + våghöjd</div>
             </div>
             <div class="list-value placeholder">Aktivt</div>
           </div>
@@ -464,7 +464,7 @@
     </section>
 
     <div class="footer-note">
-      Steg 5: första riktiga havsdatan från SMHI
+      Steg 6: våghöjd från SMHI
     </div>
   </div>
 
@@ -522,7 +522,7 @@
       return [];
     }
 
-    function findLatestWaterValue(data) {
+    function findLatestValue(data) {
       if (Array.isArray(data?.value) && data.value.length > 0) {
         return data.value[data.value.length - 1];
       }
@@ -532,73 +532,105 @@
       return null;
     }
 
-    async function fetchWaterForStation(stationId, period) {
-      const res = await fetch(`/api/ocean-water-level?stationId=${stationId}&period=${period}`);
+    async function fetchSeries(url) {
+      const res = await fetch(url);
       const data = await res.json();
-      return { res, data, period };
+      return { res, data };
     }
 
-    async function findWorkingStation() {
+    async function findWorkingWaterStation() {
       const stationsRes = await fetch("/api/ocean-stations");
       const stationsData = await stationsRes.json();
       const stations = findStationArray(stationsData);
 
-      if (!stations.length) {
-        throw new Error("Inga stationer hittades.");
-      }
+      if (!stations.length) throw new Error("Inga vattenståndsstationer hittades.");
 
-      const candidates = stations.slice(0, 12);
-
-      for (const station of candidates) {
+      for (const station of stations.slice(0, 12)) {
         const stationId = station.id || station.key || station.stationId;
         if (!stationId) continue;
 
         for (const period of ["latest-hour", "latest-day"]) {
           try {
-            const { res, data } = await fetchWaterForStation(stationId, period);
+            const { res, data } = await fetchSeries(`/api/ocean-water-level?stationId=${stationId}&period=${period}`);
             if (!res.ok) continue;
 
-            const latest = findLatestWaterValue(data);
+            const latest = findLatestValue(data);
             if (latest && latest.value !== undefined && latest.value !== null) {
-              return {
-                station,
-                latest,
-                period
-              };
+              return { station, latest, period };
             }
-          } catch (e) {
-          }
+          } catch (e) {}
         }
       }
 
-      throw new Error("Ingen station med tillgängligt vattenstånd hittades.");
+      throw new Error("Ingen vattenståndsstation med data hittades.");
+    }
+
+    async function findWorkingWaveStation() {
+      const stationsRes = await fetch("/api/ocean-wave-stations");
+      const stationsData = await stationsRes.json();
+      const stations = findStationArray(stationsData);
+
+      if (!stations.length) throw new Error("Inga vågstationer hittades.");
+
+      for (const station of stations.slice(0, 12)) {
+        const stationId = station.id || station.key || station.stationId;
+        if (!stationId) continue;
+
+        for (const period of ["latest-hour", "latest-day"]) {
+          try {
+            const { res, data } = await fetchSeries(`/api/ocean-wave-height?stationId=${stationId}&period=${period}`);
+            if (!res.ok) continue;
+
+            const latest = findLatestValue(data);
+            if (latest && latest.value !== undefined && latest.value !== null) {
+              return { station, latest, period };
+            }
+          } catch (e) {}
+        }
+      }
+
+      throw new Error("Ingen vågstation med data hittades.");
     }
 
     async function loadOceanPage() {
       try {
-        setText("statusText", "Letar station...");
-        const result = await findWorkingStation();
+        setText("statusText", "Laddar...");
 
-        const station = result.station;
-        const latest = result.latest;
-        const period = result.period;
+        const [waterResult, waveResult] = await Promise.all([
+          findWorkingWaterStation(),
+          findWorkingWaveStation()
+        ]);
 
-        const stationName = station.name || "Okänd station";
-        const stationLat = station.latitude;
-        const stationLon = station.longitude;
-        const levelValue = latest.value;
-        const rawDateValue = latest.date || latest.time || "--";
-        const dateValue = formatSmhiDate(rawDateValue);
+        const waterStation = waterResult.station;
+        const waterLatest = waterResult.latest;
+        const waterPeriod = waterResult.period;
 
-        setText("heroStation", stationName);
-        setText("stationValue", stationName);
-        setText("stationNameList", stationName);
-        setText("positionValue", `${formatCoord(stationLat)}, ${formatCoord(stationLon)}`);
-        setText("stationCoordsList", `${formatCoord(stationLat)}, ${formatCoord(stationLon)}`);
+        const waveStation = waveResult.station;
+        const waveLatest = waveResult.latest;
 
-        setText("waterLevelCard", formatValue(levelValue, 1));
-        setText("waterLevelList", `${formatValue(levelValue, 1)} cm`);
-        setText("eventValue", `${dateValue} (${period})`);
+        const waterStationName = waterStation.name || "Okänd station";
+        const waveStationName = waveStation.name || "Okänd station";
+
+        const waterDate = formatSmhiDate(waterLatest.date || waterLatest.time || "--");
+
+        setText("heroStation", waterStationName);
+        setText("stationValue", waterStationName);
+        setText("stationNameList", waterStationName);
+        setText("waveStationList", waveStationName);
+        setText(
+          "positionValue",
+          `${formatCoord(waterStation.latitude)}, ${formatCoord(waterStation.longitude)}`
+        );
+        setText(
+          "stationCoordsList",
+          `${formatCoord(waterStation.latitude)}, ${formatCoord(waterStation.longitude)}`
+        );
+
+        setText("waterLevelCard", formatValue(waterLatest.value, 1));
+        setText("waterLevelList", `${formatValue(waterLatest.value, 1)} cm`);
+        setText("waveHeightCard", formatValue(waveLatest.value, 1));
+
+        setText("eventValue", `${waterDate} (${waterPeriod})`);
         setText("statusText", "Live");
       } catch (error) {
         console.error(error);
