@@ -805,7 +805,7 @@
       if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
     } else if (activeMode === "wave") {
       setText("activeModeText", "Boj / våg");
-      setText("mapNote", "Klicka på en station. Blå = ej kontrollerad, röd = gav data, grå = gav ingen data.");
+      setText("mapNote", "Klicka på en station. Blå = ej kontrollerad, röd = har någon havsdata, grå = ingen data.");
       ensureWaveStationsLoaded();
       if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
       if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
@@ -1002,6 +1002,8 @@
       ]);
 
       const hasWaveData = Boolean(waveResult);
+      const hasWaterData = Boolean(waterResult);
+      const hasAnySeaData = hasWaveData || hasWaterData;
 
       if (waveResult) {
         setText("waveHeightValue", formatObservedValue(formatWave(waveResult.latest.value), waveResult.latest));
@@ -1019,11 +1021,16 @@
         setText("waterLevelStationValue", "Ingen hittad");
       }
 
-      setText("waveStatusValue", hasWaveData ? "Havsdata laddad" : "Ingen vågdata");
+      if (hasAnySeaData) {
+        setText("waveStatusValue", "Havsdata laddad");
+      } else {
+        setText("waveStatusValue", "Ingen havsdata");
+      }
+
       setWaveMarkerColorById(
         station.id,
-        hasWaveData ? "active" : "inactive",
-        `${station.name} • ${hasWaveData ? "har vågdata" : "ingen vågdata"}`
+        hasAnySeaData ? "active" : "inactive",
+        `${station.name} • ${hasAnySeaData ? "har havsdata" : "ingen havsdata"}`
       );
     } catch (error) {
       console.error(error);
