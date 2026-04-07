@@ -128,6 +128,7 @@
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .btn {
@@ -142,6 +143,32 @@
 
     .btn:hover {
       background: rgba(255,255,255,0.12);
+    }
+
+    .select-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .select-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .place-select {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      min-width: 170px;
+      outline: none;
+    }
+
+    .place-select option {
+      color: #111827;
     }
 
     .panel {
@@ -307,6 +334,12 @@
         flex-direction: column;
         align-items: flex-start;
       }
+      .actions {
+        width: 100%;
+      }
+      .place-select {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -332,8 +365,19 @@
           </div>
 
           <div class="actions">
+            <div class="select-wrap">
+              <div class="select-label">Plats</div>
+              <select id="placeSelect" class="place-select">
+                <option value="stockholm">Stockholm</option>
+                <option value="goteborg">Göteborg</option>
+                <option value="malmo">Malmö</option>
+                <option value="visby">Visby</option>
+                <option value="sundsvall">Sundsvall</option>
+                <option value="lulea">Luleå</option>
+              </select>
+            </div>
+
             <button class="btn" type="button" id="nearMeBtn">📍 Nära mig</button>
-            <button class="btn" type="button" id="choosePlaceBtn">Välj plats</button>
           </div>
         </div>
       </div>
@@ -347,7 +391,7 @@
         <div class="meta-grid">
           <div class="meta-item">
             <div class="meta-label">Vald metod</div>
-            <div class="meta-value" id="methodValue">Standardplats</div>
+            <div class="meta-value" id="methodValue">Platsväljare</div>
           </div>
           <div class="meta-item">
             <div class="meta-label">Vattenståndsstation</div>
@@ -359,7 +403,7 @@
           </div>
           <div class="meta-item">
             <div class="meta-label">Vald position</div>
-            <div class="meta-value" id="positionValue">59.3293, 18.0686</div>
+            <div class="meta-value" id="positionValue">--</div>
           </div>
         </div>
       </div>
@@ -447,7 +491,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nuvarande steg</div>
-              <div class="list-subtitle">Närmaste station till vald plats</div>
+              <div class="list-subtitle">Platsväljare aktiv</div>
             </div>
             <div class="list-value placeholder">Aktivt</div>
           </div>
@@ -455,7 +499,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nästa steg</div>
-              <div class="list-subtitle">Lägg till platsväljare / nära mig</div>
+              <div class="list-subtitle">Koppla nära mig till samma logik</div>
             </div>
             <div class="list-value placeholder">Nästa</div>
           </div>
@@ -464,16 +508,21 @@
     </section>
 
     <div class="footer-note">
-      Steg 7: närmaste station utifrån vald plats
+      Steg 8: platsväljare för havssidan
     </div>
   </div>
 
   <script>
-    const selectedPlace = {
-      name: "Stockholm",
-      lat: 59.3293,
-      lon: 18.0686
+    const places = {
+      stockholm: { name: "Stockholm", lat: 59.3293, lon: 18.0686 },
+      goteborg: { name: "Göteborg", lat: 57.7089, lon: 11.9746 },
+      malmo: { name: "Malmö", lat: 55.6050, lon: 13.0038 },
+      visby: { name: "Visby", lat: 57.6348, lon: 18.2948 },
+      sundsvall: { name: "Sundsvall", lat: 62.3908, lon: 17.3069 },
+      lulea: { name: "Luleå", lat: 65.5848, lon: 22.1547 }
     };
+
+    let selectedPlace = places.stockholm;
 
     function setText(id, value) {
       const el = document.getElementById(id);
@@ -636,7 +685,7 @@
       try {
         setText("statusText", "Laddar...");
         setText("heroStation", selectedPlace.name);
-        setText("methodValue", "Standardplats");
+        setText("methodValue", "Platsväljare");
         setText("positionValue", `${formatCoord(selectedPlace.lat)}, ${formatCoord(selectedPlace.lon)}`);
 
         const [waterResult, waveResult] = await Promise.all([
@@ -664,7 +713,6 @@
         );
 
         setText("waterLevelCard", formatValue(waterLatest.value, 1));
-        setText("waterLevelList", `${formatValue(waterLatest.value, 1)} cm`);
         setText("waveHeightCard", formatValue(waveLatest.value, 1));
 
         setText("eventValue", `${waterDate} (${waterPeriod})`);
@@ -676,14 +724,14 @@
       }
     }
 
+    document.getElementById("placeSelect").addEventListener("change", (event) => {
+      selectedPlace = places[event.target.value];
+      loadOceanPage();
+    });
+
     document.getElementById("nearMeBtn").addEventListener("click", () => {
       setText("statusText", "Kommer snart");
       setText("eventValue", "Nära mig kopplas till samma stationslogik senare");
-    });
-
-    document.getElementById("choosePlaceBtn").addEventListener("click", () => {
-      setText("statusText", "Kommer snart");
-      setText("eventValue", "Platsväljare läggs till senare");
     });
 
     loadOceanPage();
