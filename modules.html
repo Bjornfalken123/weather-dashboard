@@ -759,24 +759,38 @@
     setText("lastSelectionText", `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`);
   }
 
-  function setWaveMarkerColor(marker, state) {
+  function setWaveMarkerColorById(stationId, state, tooltipText) {
+    const marker = waveMarkerMap.get(stationId);
     if (!marker) return;
+
     const styles = {
       unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
       active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
       inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7 }
     };
+
     marker.setStyle(styles[state] || styles.unknown);
+
+    if (tooltipText) {
+      marker.bindTooltip(tooltipText, { direction: "top" });
+    }
   }
 
-  function setLighthouseMarkerColor(marker, state) {
+  function setLighthouseMarkerColorById(stationId, state, tooltipText) {
+    const marker = lighthouseMarkerMap.get(stationId);
     if (!marker) return;
+
     const styles = {
       unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
       active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
       inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7 }
     };
+
     marker.setStyle(styles[state] || styles.unknown);
+
+    if (tooltipText) {
+      marker.bindTooltip(tooltipText, { direction: "top" });
+    }
   }
 
   function updateModeUI() {
@@ -893,7 +907,7 @@
 
         marker.on("click", (event) => {
           L.DomEvent.stopPropagation(event);
-          selectWaveStation(station, marker);
+          selectWaveStation(station);
         });
 
         waveMarkerMap.set(station.id, marker);
@@ -971,7 +985,7 @@
     return null;
   }
 
-  async function selectWaveStation(station, marker) {
+  async function selectWaveStation(station) {
     saveSelection("wave", {
       id: station.id,
       name: station.name,
@@ -1006,13 +1020,15 @@
       }
 
       setText("waveStatusValue", hasWaveData ? "Havsdata laddad" : "Ingen vågdata");
-      setWaveMarkerColor(marker, hasWaveData ? "active" : "inactive");
-      marker.setTooltipContent(`${station.name} • ${hasWaveData ? "har vågdata" : "ingen vågdata"}`);
+      setWaveMarkerColorById(
+        station.id,
+        hasWaveData ? "active" : "inactive",
+        `${station.name} • ${hasWaveData ? "har vågdata" : "ingen vågdata"}`
+      );
     } catch (error) {
       console.error(error);
       setText("waveStatusValue", "Kunde inte ladda havsdata");
-      setWaveMarkerColor(marker, "inactive");
-      marker.setTooltipContent(`${station.name} • kunde inte laddas`);
+      setWaveMarkerColorById(station.id, "inactive", `${station.name} • kunde inte laddas`);
     }
   }
 
@@ -1043,7 +1059,7 @@
 
         marker.on("click", (event) => {
           L.DomEvent.stopPropagation(event);
-          selectLighthouseStation(station, marker);
+          selectLighthouseStation(station);
         });
 
         lighthouseMarkerMap.set(station.id, marker);
@@ -1058,7 +1074,7 @@
     }
   }
 
-  async function selectLighthouseStation(station, marker) {
+  async function selectLighthouseStation(station) {
     saveSelection("lighthouse", {
       id: station.id,
       name: station.name,
@@ -1092,13 +1108,15 @@
       setText("lhPressureValue", formatObservedValue(formatPressure(obs.pressure?.value), obs.pressure));
       setText("lighthouseStatusValue", hasAnyData ? "Stationsdata laddad" : "Ingen aktuell data");
 
-      setLighthouseMarkerColor(marker, hasAnyData ? "active" : "inactive");
-      marker.setTooltipContent(`${station.name} • ${hasAnyData ? "har data" : "ingen data"}`);
+      setLighthouseMarkerColorById(
+        station.id,
+        hasAnyData ? "active" : "inactive",
+        `${station.name} • ${hasAnyData ? "har data" : "ingen data"}`
+      );
     } catch (error) {
       console.error(error);
       setText("lighthouseStatusValue", "Kunde inte ladda stationsdata");
-      setLighthouseMarkerColor(marker, "inactive");
-      marker.setTooltipContent(`${station.name} • kunde inte laddas`);
+      setLighthouseMarkerColorById(station.id, "inactive", `${station.name} • kunde inte laddas`);
     }
   }
 
