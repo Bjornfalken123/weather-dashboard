@@ -311,7 +311,7 @@
       <div class="panel">
         <h2>Översikt</h2>
         <p>
-          Den här sidan är nu optimerad bara för Tvestjärten. Vi använder stationer nära den positionen.
+          Den här sidan är optimerad för Tvestjärten. Bara stationer inom vald radie får användas.
         </p>
 
         <div class="meta-grid">
@@ -417,7 +417,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nuvarande läge</div>
-              <div class="list-subtitle">Appen är låst till Tvestjärten</div>
+              <div class="list-subtitle">Avståndsbegränsning aktiv</div>
             </div>
             <div class="list-value">Aktivt</div>
           </div>
@@ -434,7 +434,7 @@
     </section>
 
     <div class="footer-note">
-      Tvestjärten-läge: optimerad för en fast position
+      Tvestjärten-läge: bara stationer inom maxradie används
     </div>
   </div>
 
@@ -444,6 +444,10 @@
       lat: 58.17461,
       lon: 11.40517
     };
+
+    // Justera dessa om du vill vara mer eller mindre strikt
+    const MAX_WATER_DISTANCE_KM = 60;
+    const MAX_WAVE_DISTANCE_KM = 80;
 
     function setText(id, value) {
       const el = document.getElementById(id);
@@ -542,14 +546,22 @@
       return { res, data };
     }
 
-    async function findNearestWorkingStation({ stationsUrl, dataUrlBuilder, targetLat, targetLon }) {
+    async function findNearestWorkingStation({
+      stationsUrl,
+      dataUrlBuilder,
+      targetLat,
+      targetLon,
+      maxDistanceKm
+    }) {
       const stationsRes = await fetch(stationsUrl);
       const stationsData = await stationsRes.json();
       const stations = findStationArray(stationsData);
 
       if (!stations.length) throw new Error("Inga stationer hittades.");
 
-      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 50);
+      const ranked = sortStationsByDistance(stations, targetLat, targetLon)
+        .filter((item) => item.dist <= maxDistanceKm)
+        .slice(0, 25);
 
       for (const item of ranked) {
         const station = item.station;
@@ -582,13 +594,15 @@
             stationsUrl: "/api/ocean-stations",
             dataUrlBuilder: (stationId, period) => `/api/ocean-water-level?stationId=${stationId}&period=${period}`,
             targetLat: targetPlace.lat,
-            targetLon: targetPlace.lon
+            targetLon: targetPlace.lon,
+            maxDistanceKm: MAX_WATER_DISTANCE_KM
           }),
           findNearestWorkingStation({
             stationsUrl: "/api/ocean-wave-stations",
             dataUrlBuilder: (stationId, period) => `/api/ocean-wave-height?stationId=${stationId}&period=${period}`,
             targetLat: targetPlace.lat,
-            targetLon: targetPlace.lon
+            targetLon: targetPlace.lon,
+            maxDistanceKm: MAX_WAVE_DISTANCE_KM
           })
         ]);
 
@@ -605,11 +619,11 @@
           setText("waterLevelCard", formatValue(waterLatest.value, 1));
           setText("eventValue", `${waterDate} (${waterPeriod})`);
         } else {
-          setText("stationNameList", "Ingen data");
+          setText("stationNameList", "Ingen station nära nog");
           setText("waterStationShort", "--");
           setText("stationCoordsList", "--");
           setText("waterLevelCard", "--");
-          setText("eventValue", "Ingen vattenståndsdata hittades");
+          setText("eventValue", "Ingen vattenståndsstation inom vald radie");
         }
 
         if (waveResult) {
@@ -621,7 +635,7 @@
           setText("waveStationShort", waveStationName);
           setText("waveHeightCard", formatValue(waveLatest.value, 1));
         } else {
-          setText("waveStationList", "Ingen data");
+          setText("waveStationList", "Ingen boj nära nog");
           setText("waveStationShort", "--");
           setText("waveHeightCard", "--");
         }
