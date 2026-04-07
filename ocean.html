@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Havsobservationer</title>
+  <title>Havsobservationer – Tvestjärten</title>
   <style>
     :root {
       --bg: #0b1220;
@@ -122,53 +122,6 @@
       color: var(--muted);
       font-size: 16px;
       margin-top: 8px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .btn {
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.08);
-      color: var(--text);
-      padding: 12px 16px;
-      border-radius: 14px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .btn:hover {
-      background: rgba(255,255,255,0.12);
-    }
-
-    .select-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .select-label {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .place-select {
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.08);
-      color: var(--text);
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-size: 14px;
-      min-width: 170px;
-      outline: none;
-    }
-
-    .place-select option {
-      color: #111827;
     }
 
     .panel {
@@ -301,11 +254,6 @@
       text-align: right;
     }
 
-    .placeholder {
-      color: var(--muted);
-      font-style: italic;
-    }
-
     .footer-note {
       margin-top: 18px;
       color: var(--muted);
@@ -334,12 +282,6 @@
         flex-direction: column;
         align-items: flex-start;
       }
-      .actions {
-        width: 100%;
-      }
-      .place-select {
-        width: 100%;
-      }
     }
   </style>
 </head>
@@ -350,7 +292,7 @@
         <div class="hero-top">
           <div class="title-wrap">
             <h1>Havsobservationer</h1>
-            <p class="subtitle">Bojar, fyrar och stationer till havs</p>
+            <p class="subtitle">Tvestjärten • Orust</p>
           </div>
           <div class="status-pill">
             <span class="dot"></span>
@@ -360,25 +302,8 @@
 
         <div class="hero-bottom">
           <div>
-            <div class="big-value" id="heroStation">Stockholm</div>
-            <div class="big-label">Vald plats</div>
-          </div>
-
-          <div class="actions">
-            <div class="select-wrap">
-              <div class="select-label">Plats</div>
-              <select id="placeSelect" class="place-select">
-                <option value="stockholm">Stockholm</option>
-                <option value="goteborg">Göteborg</option>
-                <option value="malmo">Malmö</option>
-                <option value="visby">Visby</option>
-                <option value="sundsvall">Sundsvall</option>
-                <option value="lulea">Luleå</option>
-                <option value="tvestjarten">Tvestjärten</option>
-              </select>
-            </div>
-
-            <button class="btn" type="button" id="nearMeBtn">📍 Nära mig</button>
+            <div class="big-value">Tvestjärten</div>
+            <div class="big-label">Fast position</div>
           </div>
         </div>
       </div>
@@ -386,25 +311,25 @@
       <div class="panel">
         <h2>Översikt</h2>
         <p>
-          Havsvattenstånd och våghöjd från SMHI, hämtat från stationer närmast vald plats.
+          Den här sidan är nu optimerad bara för Tvestjärten. Vi använder stationer nära den positionen.
         </p>
 
         <div class="meta-grid">
           <div class="meta-item">
-            <div class="meta-label">Vald metod</div>
-            <div class="meta-value" id="methodValue">Platsväljare</div>
+            <div class="meta-label">Plats</div>
+            <div class="meta-value">Tvestjärten</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Vattenståndsstation</div>
-            <div class="meta-value" id="stationValue">--</div>
+            <div class="meta-label">Vald metod</div>
+            <div class="meta-value">Fast position</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Koordinater</div>
+            <div class="meta-value" id="positionValue">58.1746, 11.4052</div>
           </div>
           <div class="meta-item">
             <div class="meta-label">Senaste observation</div>
             <div class="meta-value" id="eventValue">--</div>
-          </div>
-          <div class="meta-item">
-            <div class="meta-label">Vald position</div>
-            <div class="meta-value" id="positionValue">--</div>
           </div>
         </div>
       </div>
@@ -435,35 +360,35 @@
 
       <div class="metric-card">
         <div>
-          <div class="metric-icon">💨</div>
-          <div class="metric-label">Vind</div>
+          <div class="metric-icon">📍</div>
+          <div class="metric-label">Vattenståndsstation</div>
         </div>
         <div>
-          <div class="metric-value">--</div>
-          <div class="metric-unit">kommer senare</div>
+          <div class="metric-value" id="waterStationShort">--</div>
+          <div class="metric-unit">närmast med data</div>
         </div>
       </div>
 
       <div class="metric-card">
         <div>
-          <div class="metric-icon">🌬️</div>
-          <div class="metric-label">Vindbyar</div>
+          <div class="metric-icon">🛟</div>
+          <div class="metric-label">Vågstation</div>
         </div>
         <div>
-          <div class="metric-value">--</div>
-          <div class="metric-unit">kommer senare</div>
+          <div class="metric-value" id="waveStationShort">--</div>
+          <div class="metric-unit">närmast med data</div>
         </div>
       </div>
     </section>
 
     <section class="bottom-grid">
       <div class="panel">
-        <h2 class="section-title">Nuvarande stationer</h2>
+        <h2 class="section-title">Stationer som används</h2>
         <div class="list">
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Vattenstånd</div>
-              <div class="list-subtitle">Närmsta station med data</div>
+              <div class="list-subtitle">Vald station för Tvestjärten</div>
             </div>
             <div class="list-value" id="stationNameList">--</div>
           </div>
@@ -471,14 +396,14 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Våghöjd</div>
-              <div class="list-subtitle">Närmsta station med data</div>
+              <div class="list-subtitle">Vald station för Tvestjärten</div>
             </div>
             <div class="list-value" id="waveStationList">--</div>
           </div>
 
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Lat/Lon</div>
+              <div class="list-title">Stationsposition</div>
               <div class="list-subtitle">Vattenståndsstation</div>
             </div>
             <div class="list-value" id="stationCoordsList">--</div>
@@ -491,40 +416,34 @@
         <div class="list">
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Nuvarande steg</div>
-              <div class="list-subtitle">Platsväljare aktiv</div>
+              <div class="list-title">Nuvarande läge</div>
+              <div class="list-subtitle">Appen är låst till Tvestjärten</div>
             </div>
-            <div class="list-value placeholder">Aktivt</div>
+            <div class="list-value">Aktivt</div>
           </div>
 
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Nästa steg</div>
-              <div class="list-subtitle">Koppla nära mig till samma logik</div>
+              <div class="list-title">Nästa förbättring</div>
+              <div class="list-subtitle">Låsa specifika stationer manuellt</div>
             </div>
-            <div class="list-value placeholder">Nästa</div>
+            <div class="list-value">Nästa</div>
           </div>
         </div>
       </div>
     </section>
 
     <div class="footer-note">
-      Steg 8: platsväljare för havssidan
+      Tvestjärten-läge: optimerad för en fast position
     </div>
   </div>
 
   <script>
-    const places = {
-      stockholm: { name: "Stockholm", lat: 59.3293, lon: 18.0686 },
-      goteborg: { name: "Göteborg", lat: 57.7089, lon: 11.9746 },
-      malmo: { name: "Malmö", lat: 55.6050, lon: 13.0038 },
-      visby: { name: "Visby", lat: 57.6348, lon: 18.2948 },
-      sundsvall: { name: "Sundsvall", lat: 62.3908, lon: 17.3069 },
-      lulea: { name: "Luleå", lat: 65.5848, lon: 22.1547 },
-      tvestjarten: { name: "Tvestjärten", lat: 58.17461, lon: 11.40517 }
+    const targetPlace = {
+      name: "Tvestjärten",
+      lat: 58.17461,
+      lon: 11.40517
     };
-
-    let selectedPlace = places.stockholm;
 
     function setText(id, value) {
       const el = document.getElementById(id);
@@ -630,7 +549,7 @@
 
       if (!stations.length) throw new Error("Inga stationer hittades.");
 
-      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 40);
+      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 50);
 
       for (const item of ranked) {
         const station = item.station;
@@ -653,25 +572,23 @@
       return null;
     }
 
-    async function loadOceanPage() {
+    async function loadTvestjartenPage() {
       try {
         setText("statusText", "Laddar...");
-        setText("heroStation", selectedPlace.name);
-        setText("methodValue", "Platsväljare");
-        setText("positionValue", `${formatCoord(selectedPlace.lat)}, ${formatCoord(selectedPlace.lon)}`);
+        setText("positionValue", `${formatCoord(targetPlace.lat)}, ${formatCoord(targetPlace.lon)}`);
 
         const [waterResult, waveResult] = await Promise.all([
           findNearestWorkingStation({
             stationsUrl: "/api/ocean-stations",
             dataUrlBuilder: (stationId, period) => `/api/ocean-water-level?stationId=${stationId}&period=${period}`,
-            targetLat: selectedPlace.lat,
-            targetLon: selectedPlace.lon
+            targetLat: targetPlace.lat,
+            targetLon: targetPlace.lon
           }),
           findNearestWorkingStation({
             stationsUrl: "/api/ocean-wave-stations",
             dataUrlBuilder: (stationId, period) => `/api/ocean-wave-height?stationId=${stationId}&period=${period}`,
-            targetLat: selectedPlace.lat,
-            targetLon: selectedPlace.lon
+            targetLat: targetPlace.lat,
+            targetLon: targetPlace.lon
           })
         ]);
 
@@ -682,14 +599,14 @@
           const waterStationName = waterStation.name || "Okänd station";
           const waterDate = formatSmhiDate(waterLatest.date || waterLatest.time || "--");
 
-          setText("stationValue", waterStationName);
           setText("stationNameList", waterStationName);
+          setText("waterStationShort", waterStationName);
           setText("stationCoordsList", `${formatCoord(waterStation.latitude)}, ${formatCoord(waterStation.longitude)}`);
           setText("waterLevelCard", formatValue(waterLatest.value, 1));
           setText("eventValue", `${waterDate} (${waterPeriod})`);
         } else {
-          setText("stationValue", "Ingen data nära vald plats");
           setText("stationNameList", "Ingen data");
+          setText("waterStationShort", "--");
           setText("stationCoordsList", "--");
           setText("waterLevelCard", "--");
           setText("eventValue", "Ingen vattenståndsdata hittades");
@@ -701,9 +618,11 @@
           const waveStationName = waveStation.name || "Okänd station";
 
           setText("waveStationList", waveStationName);
+          setText("waveStationShort", waveStationName);
           setText("waveHeightCard", formatValue(waveLatest.value, 1));
         } else {
           setText("waveStationList", "Ingen data");
+          setText("waveStationShort", "--");
           setText("waveHeightCard", "--");
         }
 
@@ -715,17 +634,7 @@
       }
     }
 
-    document.getElementById("placeSelect").addEventListener("change", (event) => {
-      selectedPlace = places[event.target.value];
-      loadOceanPage();
-    });
-
-    document.getElementById("nearMeBtn").addEventListener("click", () => {
-      setText("statusText", "Kommer snart");
-      setText("eventValue", "Nära mig kopplas till samma stationslogik senare");
-    });
-
-    loadOceanPage();
+    loadTvestjartenPage();
   </script>
 </body>
 </html>
