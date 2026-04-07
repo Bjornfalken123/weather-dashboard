@@ -341,19 +341,19 @@
           </div>
           <div class="status-pill">
             <span class="dot"></span>
-            <span>Steg 1</span>
+            <span id="statusText">Steg 2</span>
           </div>
         </div>
 
         <div class="hero-bottom">
           <div>
-            <div class="big-value">--</div>
-            <div class="big-label">Närmaste station</div>
+            <div class="big-value" id="heroStation">--</div>
+            <div class="big-label">Vald position</div>
           </div>
 
           <div class="actions">
-            <button class="btn" type="button">📍 Nära mig</button>
-            <button class="btn" type="button">Välj plats</button>
+            <button class="btn" type="button" id="nearMeBtn">📍 Nära mig</button>
+            <button class="btn" type="button" id="choosePlaceBtn">Välj plats</button>
           </div>
         </div>
       </div>
@@ -367,19 +367,19 @@
         <div class="meta-grid">
           <div class="meta-item">
             <div class="meta-label">Vald metod</div>
-            <div class="meta-value">Inte vald ännu</div>
+            <div class="meta-value" id="methodValue">Inte vald ännu</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Station</div>
-            <div class="meta-value">Ingen vald</div>
+            <div class="meta-label">Position</div>
+            <div class="meta-value" id="positionValue">Ingen vald</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Senaste observation</div>
-            <div class="meta-value">--</div>
+            <div class="meta-label">Senaste händelse</div>
+            <div class="meta-value" id="eventValue">--</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Avstånd</div>
-            <div class="meta-value">--</div>
+            <div class="meta-label">Nästa steg</div>
+            <div class="meta-value">Hitta närmaste station</div>
           </div>
         </div>
       </div>
@@ -467,15 +467,15 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nuvarande steg</div>
-              <div class="list-subtitle">Vi bygger bara sidan först</div>
+              <div class="list-subtitle">Knappen nära mig fungerar</div>
             </div>
-            <div class="list-value placeholder">Klar</div>
+            <div class="list-value placeholder">Pågår</div>
           </div>
 
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nästa steg</div>
-              <div class="list-subtitle">Koppla knapp för nära mig</div>
+              <div class="list-subtitle">Koppla SMHI-stationer</div>
             </div>
             <div class="list-value placeholder">Nästa</div>
           </div>
@@ -484,8 +484,63 @@
     </section>
 
     <div class="footer-note">
-      Steg 1: design och struktur för havssidan
+      Steg 2: position via knappen Nära mig
     </div>
   </div>
+
+  <script>
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function formatCoord(value) {
+      return Number(value).toFixed(4);
+    }
+
+    function setPositionState(lat, lon) {
+      setText("heroStation", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+      setText("methodValue", "Nära mig");
+      setText("positionValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+      setText("eventValue", "Position hämtad");
+      setText("statusText", "Position klar");
+    }
+
+    function setErrorState(message) {
+      setText("eventValue", message);
+      setText("statusText", "Fel");
+    }
+
+    document.getElementById("nearMeBtn").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setErrorState("Geolocation stöds inte i din webbläsare.");
+        return;
+      }
+
+      setText("statusText", "Hämtar position...");
+      setText("eventValue", "Försöker läsa din position");
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          setPositionState(lat, lon);
+        },
+        () => {
+          setErrorState("Kunde inte hämta din position.");
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        }
+      );
+    });
+
+    document.getElementById("choosePlaceBtn").addEventListener("click", () => {
+      setText("statusText", "Kommer snart");
+      setText("eventValue", "Platsväljare läggs till i nästa steg");
+    });
+  </script>
 </body>
 </html>
