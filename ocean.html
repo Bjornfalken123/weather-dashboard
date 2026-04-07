@@ -327,8 +327,8 @@
 
         <div class="hero-bottom">
           <div>
-            <div class="big-value" id="heroStation">--</div>
-            <div class="big-label">Aktiv station</div>
+            <div class="big-value" id="heroStation">Stockholm</div>
+            <div class="big-label">Vald plats</div>
           </div>
 
           <div class="actions">
@@ -341,7 +341,7 @@
       <div class="panel">
         <h2>Översikt</h2>
         <p>
-          Havsvattenstånd och våghöjd från SMHI, hämtat från stationer som faktiskt har aktuell data.
+          Havsvattenstånd och våghöjd från SMHI, hämtat från stationer närmast vald plats.
         </p>
 
         <div class="meta-grid">
@@ -358,8 +358,8 @@
             <div class="meta-value" id="eventValue">--</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Position</div>
-            <div class="meta-value" id="positionValue">--</div>
+            <div class="meta-label">Vald position</div>
+            <div class="meta-value" id="positionValue">59.3293, 18.0686</div>
           </div>
         </div>
       </div>
@@ -418,7 +418,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Vattenstånd</div>
-              <div class="list-subtitle">SMHI oceanografi</div>
+              <div class="list-subtitle">Närmsta station med data</div>
             </div>
             <div class="list-value" id="stationNameList">--</div>
           </div>
@@ -426,7 +426,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Våghöjd</div>
-              <div class="list-subtitle">SMHI oceanografi</div>
+              <div class="list-subtitle">Närmsta station med data</div>
             </div>
             <div class="list-value" id="waveStationList">--</div>
           </div>
@@ -447,7 +447,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nuvarande steg</div>
-              <div class="list-subtitle">Vattenstånd + våghöjd</div>
+              <div class="list-subtitle">Närmaste station till vald plats</div>
             </div>
             <div class="list-value placeholder">Aktivt</div>
           </div>
@@ -455,7 +455,7 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nästa steg</div>
-              <div class="list-subtitle">Hitta närmaste station</div>
+              <div class="list-subtitle">Lägg till platsväljare / nära mig</div>
             </div>
             <div class="list-value placeholder">Nästa</div>
           </div>
@@ -464,11 +464,17 @@
     </section>
 
     <div class="footer-note">
-      Steg 6: våghöjd från SMHI
+      Steg 7: närmaste station utifrån vald plats
     </div>
   </div>
 
   <script>
+    const selectedPlace = {
+      name: "Stockholm",
+      lat: 59.3293,
+      lon: 18.0686
+    };
+
     function setText(id, value) {
       const el = document.getElementById(id);
       if (el) el.textContent = value;
@@ -532,20 +538,51 @@
       return null;
     }
 
+    function toRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function distanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function sortStationsByDistance(stations, targetLat, targetLon) {
+      return stations
+        .map((station) => {
+          const lat = Number(station.latitude);
+          const lon = Number(station.longitude);
+          const dist = distanceKm(targetLat, targetLon, lat, lon);
+          return { station, dist };
+        })
+        .filter((item) => !Number.isNaN(item.dist))
+        .sort((a, b) => a.dist - b.dist);
+    }
+
     async function fetchSeries(url) {
       const res = await fetch(url);
       const data = await res.json();
       return { res, data };
     }
 
-    async function findWorkingWaterStation() {
+    async function findNearestWorkingWaterStation(targetLat, targetLon) {
       const stationsRes = await fetch("/api/ocean-stations");
       const stationsData = await stationsRes.json();
       const stations = findStationArray(stationsData);
 
       if (!stations.length) throw new Error("Inga vattenståndsstationer hittades.");
 
-      for (const station of stations.slice(0, 12)) {
+      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 15);
+
+      for (const item of ranked) {
+        const station = item.station;
         const stationId = station.id || station.key || station.stationId;
         if (!stationId) continue;
 
@@ -556,7 +593,7 @@
 
             const latest = findLatestValue(data);
             if (latest && latest.value !== undefined && latest.value !== null) {
-              return { station, latest, period };
+              return { station, latest, period, distanceKm: item.dist };
             }
           } catch (e) {}
         }
@@ -565,14 +602,17 @@
       throw new Error("Ingen vattenståndsstation med data hittades.");
     }
 
-    async function findWorkingWaveStation() {
+    async function findNearestWorkingWaveStation(targetLat, targetLon) {
       const stationsRes = await fetch("/api/ocean-wave-stations");
       const stationsData = await stationsRes.json();
       const stations = findStationArray(stationsData);
 
       if (!stations.length) throw new Error("Inga vågstationer hittades.");
 
-      for (const station of stations.slice(0, 12)) {
+      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 15);
+
+      for (const item of ranked) {
+        const station = item.station;
         const stationId = station.id || station.key || station.stationId;
         if (!stationId) continue;
 
@@ -583,7 +623,7 @@
 
             const latest = findLatestValue(data);
             if (latest && latest.value !== undefined && latest.value !== null) {
-              return { station, latest, period };
+              return { station, latest, period, distanceKm: item.dist };
             }
           } catch (e) {}
         }
@@ -595,10 +635,13 @@
     async function loadOceanPage() {
       try {
         setText("statusText", "Laddar...");
+        setText("heroStation", selectedPlace.name);
+        setText("methodValue", "Standardplats");
+        setText("positionValue", `${formatCoord(selectedPlace.lat)}, ${formatCoord(selectedPlace.lon)}`);
 
         const [waterResult, waveResult] = await Promise.all([
-          findWorkingWaterStation(),
-          findWorkingWaveStation()
+          findNearestWorkingWaterStation(selectedPlace.lat, selectedPlace.lon),
+          findNearestWorkingWaveStation(selectedPlace.lat, selectedPlace.lon)
         ]);
 
         const waterStation = waterResult.station;
@@ -610,17 +653,11 @@
 
         const waterStationName = waterStation.name || "Okänd station";
         const waveStationName = waveStation.name || "Okänd station";
-
         const waterDate = formatSmhiDate(waterLatest.date || waterLatest.time || "--");
 
-        setText("heroStation", waterStationName);
-        setText("stationValue", waterStationName);
-        setText("stationNameList", waterStationName);
-        setText("waveStationList", waveStationName);
-        setText(
-          "positionValue",
-          `${formatCoord(waterStation.latitude)}, ${formatCoord(waterStation.longitude)}`
-        );
+        setText("stationValue", `${waterStationName}`);
+        setText("stationNameList", `${waterStationName}`);
+        setText("waveStationList", `${waveStationName}`);
         setText(
           "stationCoordsList",
           `${formatCoord(waterStation.latitude)}, ${formatCoord(waterStation.longitude)}`
@@ -641,7 +678,7 @@
 
     document.getElementById("nearMeBtn").addEventListener("click", () => {
       setText("statusText", "Kommer snart");
-      setText("eventValue", "Nära mig kopplas efter stationslogiken");
+      setText("eventValue", "Nära mig kopplas till samma stationslogik senare");
     });
 
     document.getElementById("choosePlaceBtn").addEventListener("click", () => {
