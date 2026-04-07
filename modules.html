@@ -429,7 +429,7 @@
           <div>
             <h2 class="module-title">Boj / hav</h2>
             <p class="module-subtitle">
-              Alla vågstationer syns på kartan. Röd = aktuell data, blå = ingen aktuell data.
+              Båda havsparametrarna kan komma från olika stationer.
             </p>
           </div>
           <div class="module-badge">SMHI</div>
@@ -467,7 +467,7 @@
         </div>
 
         <div class="module-empty">
-          Nästa steg här kan vara att lägga till vattentemperatur när vi vet vilken parameter du vill använda.
+          Nästa steg här kan vara vattentemperatur.
         </div>
       </article>
 
@@ -476,10 +476,10 @@
           <div>
             <h2 class="module-title">Fyr / station</h2>
             <p class="module-subtitle">
-              Välj en fyr eller station. Här ska vi visa live vind, temperatur och andra observationer.
+              Välj en SMHI-station på kartan för live temperatur, vind, riktning, tryck och byvind.
             </p>
           </div>
-          <div class="module-badge">SMHI</div>
+          <div class="module-badge">SMHI live</div>
         </div>
 
         <div class="module-meta">
@@ -488,17 +488,37 @@
             <div class="meta-row-value" id="lighthouseStationValue">Inte vald</div>
           </div>
           <div class="meta-row">
-            <div class="meta-row-label">Kommande data</div>
-            <div class="meta-row-value">Vind, temp, tryck, fler live-observationer</div>
+            <div class="meta-row-label">Temperatur</div>
+            <div class="meta-row-value" id="lhTempValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vind</div>
+            <div class="meta-row-value" id="lhWindValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vindriktning</div>
+            <div class="meta-row-value" id="lhWindDirValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Byvind</div>
+            <div class="meta-row-value" id="lhGustValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Lufttryck</div>
+            <div class="meta-row-value" id="lhPressureValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Stationsposition</div>
+            <div class="meta-row-value" id="lhCoordsValue">--</div>
           </div>
           <div class="meta-row">
             <div class="meta-row-label">Status</div>
-            <div class="meta-row-value" id="lighthouseStatusValue">Redo för nästa steg</div>
+            <div class="meta-row-value" id="lighthouseStatusValue">Välj läget Fyr / station</div>
           </div>
         </div>
 
         <div class="module-empty">
-          Nästa steg för den här modulen blir att välja station på kartan och koppla live-data från rätt källa.
+          Röd station = har aktuell vinddata. Blå = station finns men saknar aktuell vind just nu.
         </div>
       </article>
     </section>
@@ -522,10 +542,13 @@
 
     let weatherMarker = null;
     let waveSelectionMarker = null;
-    let lighthouseMarker = null;
+    let lighthouseSelectionMarker = null;
     let waveStationsLoaded = false;
     let waveStations = [];
     let waveStationsLayer = L.layerGroup();
+    let lighthouseStationsLoaded = false;
+    let lighthouseStations = [];
+    let lighthouseStationsLayer = L.layerGroup();
 
     function setText(id, value) {
       const el = document.getElementById(id);
@@ -682,14 +705,18 @@
         setText("activeModeText", "Väder");
         setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
         if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
+        if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
       } else if (activeMode === "wave") {
         setText("activeModeText", "Boj / våg");
-        setText("mapNote", "Röd station = aktuell vågdata. Blå station = ingen aktuell vågdata just nu.");
+        setText("mapNote", "Boj / hav-steg färdigställs senare.");
         ensureWaveStationsLoaded();
         if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
+        if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
       } else {
         setText("activeModeText", "Fyr / station");
-        setText("mapNote", "Fyrmodulen kopplas i nästa steg.");
+        setText("mapNote", "Klicka på en station på kartan. Röd = aktuell vinddata.");
+        ensureLighthouseStationsLoaded();
+        if (!map.hasLayer(lighthouseStationsLayer)) map.addLayer(lighthouseStationsLayer);
         if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
       }
     }
@@ -701,7 +728,7 @@
         return;
       }
 
-      if (activeMode === "wave" && current.name) {
+      if ((activeMode === "wave" || activeMode === "lighthouse") && current.name) {
         setText("lastSelectionText", current.name);
         return;
       }
@@ -724,8 +751,9 @@
       }
 
       if (mode === "lighthouse") {
-        setText("lighthouseStationValue", payload.name || `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
-        setText("lighthouseStatusValue", "Punkt vald");
+        setText("lighthouseStationValue", payload.name || "Okänd station");
+        setText("lhCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+        setText("lighthouseStatusValue", "Hämtar stationsdata...");
       }
 
       updateLastSelectionText();
@@ -741,9 +769,9 @@
       waveSelectionMarker = L.marker([lat, lon]).addTo(map).bindPopup(name || "Vald vågstation").openPopup();
     }
 
-    function setLighthouseMarker(lat, lon) {
-      if (lighthouseMarker) map.removeLayer(lighthouseMarker);
-      lighthouseMarker = L.marker([lat, lon]).addTo(map).bindPopup("Fyr / station").openPopup();
+    function setLighthouseSelectionMarker(lat, lon, name) {
+      if (lighthouseSelectionMarker) map.removeLayer(lighthouseSelectionMarker);
+      lighthouseSelectionMarker = L.marker([lat, lon]).addTo(map).bindPopup(name || "Vald station").openPopup();
     }
 
     async function loadWeatherForPoint(lat, lon) {
@@ -819,159 +847,83 @@
 
     async function ensureWaveStationsLoaded() {
       if (waveStationsLoaded) return;
+      waveStationsLoaded = true;
+    }
+
+    async function ensureLighthouseStationsLoaded() {
+      if (lighthouseStationsLoaded) return;
 
       try {
-        setText("waveStatusValue", "Laddar stationer...");
-        const res = await fetch("/api/ocean-wave-stations");
+        setText("lighthouseStatusValue", "Laddar stationer...");
+        const res = await fetch("/api/lighthouse-stations");
         const data = await res.json();
 
-        waveStations = Array.isArray(data?.stations) ? data.stations : [];
+        lighthouseStations = Array.isArray(data?.stations) ? data.stations : [];
 
-        if (!waveStations.length) {
-          setText("waveStatusValue", "Inga vågstationer hittades");
+        if (!lighthouseStations.length) {
+          setText("lighthouseStatusValue", "Inga stationer hittades");
           return;
         }
 
-        waveStations.forEach((station) => {
+        lighthouseStations.forEach((station) => {
           const marker = L.circleMarker([station.latitude, station.longitude], {
-            radius: station.hasLatestData ? 7 : 5,
+            radius: station.hasCurrentWind ? 7 : 5,
             weight: 2,
-            color: station.hasLatestData ? "#ff8b8b" : "#69b7ff",
-            fillColor: station.hasLatestData ? "#ff8b8b" : "#69b7ff",
-            fillOpacity: station.hasLatestData ? 0.95 : 0.75
+            color: station.hasCurrentWind ? "#ff8b8b" : "#69b7ff",
+            fillColor: station.hasCurrentWind ? "#ff8b8b" : "#69b7ff",
+            fillOpacity: station.hasCurrentWind ? 0.95 : 0.75
           });
 
-          const label = station.hasLatestData
-            ? `${station.name} • aktuell data`
-            : `${station.name} • ingen aktuell data`;
+          const label = station.hasCurrentWind
+            ? `${station.name} • aktuell vinddata`
+            : `${station.name} • station utan aktuell vind just nu`;
 
           marker.bindTooltip(label, { direction: "top" });
-
           marker.on("click", (event) => {
             L.DomEvent.stopPropagation(event);
-            selectWaveStation(station);
+            selectLighthouseStation(station);
           });
 
-          waveStationsLayer.addLayer(marker);
+          lighthouseStationsLayer.addLayer(marker);
         });
 
-        waveStationsLoaded = true;
-        setText("waveStatusValue", "Välj en station på kartan");
+        lighthouseStationsLoaded = true;
+        setText("lighthouseStatusValue", "Välj en station på kartan");
       } catch (error) {
         console.error(error);
-        setText("waveStatusValue", "Kunde inte ladda stationer");
+        setText("lighthouseStatusValue", "Kunde inte ladda stationer");
       }
     }
 
-    async function fetchWaveDataForStation(stationId) {
-      for (const period of ["latest-hour", "latest-day", "latest-months"]) {
-        const res = await fetch(`/api/ocean-wave-height?stationId=${stationId}&period=${period}`);
-        const data = await res.json();
-
-        if (!res.ok) continue;
-
-        const latest = extractLatestValue(data);
-        if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
-          return { latest, period };
-        }
-      }
-
-      return null;
-    }
-
-    async function findNearestWaterLevelForPoint(lat, lon) {
-      const stationsRes = await fetch("/api/ocean-stations");
-      const stationsData = await stationsRes.json();
-
-      const stations = Array.isArray(stationsData?.station)
-        ? stationsData.station
-        : Array.isArray(stationsData?.stations)
-        ? stationsData.stations
-        : Array.isArray(stationsData?.resource)
-        ? stationsData.resource
-        : [];
-
-      const ranked = stations
-        .map((station) => {
-          const stationId = station.id || station.key || station.stationId;
-          const stationName = station.name || "Okänd station";
-          const stationLat = Number(station.latitude);
-          const stationLon = Number(station.longitude);
-
-          if (!stationId || Number.isNaN(stationLat) || Number.isNaN(stationLon)) return null;
-
-          return {
-            id: stationId,
-            name: stationName,
-            latitude: stationLat,
-            longitude: stationLon,
-            distanceKm: distanceKm(lat, lon, stationLat, stationLon)
-          };
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.distanceKm - b.distanceKm)
-        .slice(0, 15);
-
-      for (const station of ranked) {
-        for (const period of ["latest-hour", "latest-day", "latest-months"]) {
-          const res = await fetch(`/api/ocean-water-level?stationId=${station.id}&period=${period}`);
-          const data = await res.json();
-
-          if (!res.ok) continue;
-
-          const latest = extractLatestValue(data);
-          if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
-            return {
-              station,
-              latest,
-              period
-            };
-          }
-        }
-      }
-
-      return null;
-    }
-
-    async function selectWaveStation(station) {
-      saveSelection("wave", {
+    async function selectLighthouseStation(station) {
+      saveSelection("lighthouse", {
         id: station.id,
         name: station.name,
         lat: station.latitude,
         lon: station.longitude
       });
 
-      setWaveSelectionMarker(station.latitude, station.longitude, station.name);
+      setLighthouseSelectionMarker(station.latitude, station.longitude, station.name);
 
       try {
-        const [waveResult, waterResult] = await Promise.all([
-          fetchWaveDataForStation(station.id),
-          findNearestWaterLevelForPoint(station.latitude, station.longitude)
-        ]);
+        const res = await fetch(`/api/lighthouse-observations?stationId=${station.id}`);
+        const data = await res.json();
 
-        if (waveResult) {
-          setText("waveHeightValue", formatWave(waveResult.latest.value));
-          setText(
-            "waveObsTimeValue",
-            `${formatObsTime(waveResult.latest.date || waveResult.latest.time)} (${waveResult.period})`
-          );
-        } else {
-          setText("waveHeightValue", "--");
-          setText("waveObsTimeValue", "--");
+        if (!res.ok) {
+          throw new Error(data?.message || "Kunde inte ladda stationsdata");
         }
 
-        if (waterResult) {
-          setText("waterLevelValue", formatWaterLevel(waterResult.latest.value));
-          setText("waterLevelStationValue", waterResult.station.name);
-        } else {
-          setText("waterLevelValue", "--");
-          setText("waterLevelStationValue", "Ingen hittad");
-        }
+        const obs = data.observations || {};
 
-        setText("waveStatusValue", "Havsdata laddad");
+        setText("lhTempValue", formatTemp(obs.temp?.value));
+        setText("lhWindValue", formatWind(obs.windSpeed?.value));
+        setText("lhWindDirValue", formatWindDirection(obs.windDir?.value));
+        setText("lhGustValue", formatWind(obs.gust?.value));
+        setText("lhPressureValue", formatPressure(obs.pressure?.value));
+        setText("lighthouseStatusValue", "Stationsdata laddad");
       } catch (error) {
         console.error(error);
-        setText("waveStatusValue", "Kunde inte ladda havsdata");
+        setText("lighthouseStatusValue", "Kunde inte ladda stationsdata");
       }
     }
 
@@ -991,11 +943,6 @@
         saveSelection("weather", { lat, lon });
         setWeatherMarker(lat, lon);
         loadWeatherForPoint(lat, lon);
-      }
-
-      if (activeMode === "lighthouse") {
-        saveSelection("lighthouse", { lat, lon, name: "Vald punkt" });
-        setLighthouseMarker(lat, lon);
       }
     });
 
