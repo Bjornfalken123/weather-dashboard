@@ -182,7 +182,7 @@
 
     .module-card {
       padding: 20px;
-      min-height: 320px;
+      min-height: 380px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -244,6 +244,37 @@
       text-align: right;
     }
 
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .forecast-item {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .forecast-time {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .forecast-temp {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .forecast-rain {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
     .module-empty {
       margin-top: auto;
       color: var(--muted);
@@ -265,6 +296,10 @@
       #map {
         height: 360px;
       }
+
+      .forecast-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -279,7 +314,7 @@
 
         <div class="status-pill">
           <span class="dot"></span>
-          <span id="pageStatus">Steg 1: struktur klar</span>
+          <span id="pageStatus">Vädermodul aktiv</span>
         </div>
       </div>
 
@@ -317,7 +352,7 @@
           <div>
             <h2 class="module-title">Väder</h2>
             <p class="module-subtitle">
-              Fri punkt på kartan. Här ska vi visa live/nu-data och prognos några dagar framåt.
+              Fri punkt på kartan. Visar nu-data och kort prognos framåt.
             </p>
           </div>
           <div class="module-badge">MET</div>
@@ -329,17 +364,47 @@
             <div class="meta-row-value" id="weatherPointValue">Inte vald</div>
           </div>
           <div class="meta-row">
-            <div class="meta-row-label">Kommande data</div>
-            <div class="meta-row-value">Temp, nederbörd, vädertyp, vind, lufttryck</div>
+            <div class="meta-row-label">Temperatur</div>
+            <div class="meta-row-value" id="weatherTempValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Nederbörd</div>
+            <div class="meta-row-value" id="weatherRainValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vädertyp</div>
+            <div class="meta-row-value" id="weatherTypeValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vind</div>
+            <div class="meta-row-value" id="weatherWindValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Lufttryck</div>
+            <div class="meta-row-value" id="weatherPressureValue">--</div>
           </div>
           <div class="meta-row">
             <div class="meta-row-label">Status</div>
-            <div class="meta-row-value" id="weatherStatusValue">Redo för nästa steg</div>
+            <div class="meta-row-value" id="weatherStatusValue">Redo för kartklick</div>
           </div>
         </div>
 
-        <div class="module-empty">
-          Nästa steg för den här modulen blir att koppla kartklick till MET-prognos för vald lat/lon.
+        <div class="forecast-grid">
+          <div class="forecast-item">
+            <div class="forecast-time" id="forecast1Time">--</div>
+            <div class="forecast-temp" id="forecast1Temp">--</div>
+            <div class="forecast-rain" id="forecast1Rain">--</div>
+          </div>
+          <div class="forecast-item">
+            <div class="forecast-time" id="forecast2Time">--</div>
+            <div class="forecast-temp" id="forecast2Temp">--</div>
+            <div class="forecast-rain" id="forecast2Rain">--</div>
+          </div>
+          <div class="forecast-item">
+            <div class="forecast-time" id="forecast3Time">--</div>
+            <div class="forecast-temp" id="forecast3Temp">--</div>
+            <div class="forecast-rain" id="forecast3Rain">--</div>
+          </div>
         </div>
       </article>
 
@@ -436,6 +501,60 @@
       return Number(v).toFixed(4);
     }
 
+    function formatTemp(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} °C`;
+    }
+
+    function formatRain(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} mm`;
+    }
+
+    function formatWind(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} m/s`;
+    }
+
+    function formatPressure(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} hPa`;
+    }
+
+    function formatForecastTime(isoTime) {
+      if (!isoTime) return "--";
+      const d = new Date(isoTime);
+      return d.toLocaleString("sv-SE", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function weatherLabelFromSymbol(symbolCode) {
+      if (!symbolCode) return "--";
+      const key = symbolCode.replace(/_(day|night|polartwilight)$/, "");
+
+      const labels = {
+        clearsky: "Klart",
+        fair: "Mest klart",
+        partlycloudy: "Delvis molnigt",
+        cloudy: "Molnigt",
+        lightrainshowers: "Lätta regnskurar",
+        rainshowers: "Regnskurar",
+        heavyrainshowers: "Kraftiga regnskurar",
+        lightrain: "Lätt regn",
+        rain: "Regn",
+        heavyrain: "Kraftigt regn",
+        lightsleet: "Lätt snöblandat",
+        sleet: "Snöblandat",
+        heavysleet: "Kraftigt snöblandat",
+        lightsnow: "Lätt snö",
+        snow: "Snö",
+        heavysnow: "Kraftig snö",
+        fog: "Dimma"
+      };
+
+      return labels[key] || key;
+    }
+
     function updateModeUI() {
       document.querySelectorAll(".mode-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.mode === activeMode);
@@ -471,7 +590,7 @@
 
       if (mode === "weather") {
         setText("weatherPointValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-        setText("weatherStatusValue", "Punkt vald");
+        setText("weatherStatusValue", "Hämtar väder...");
       }
 
       if (mode === "wave") {
@@ -504,6 +623,58 @@
       }
     }
 
+    async function loadWeatherForPoint(lat, lon) {
+      try {
+        setText("weatherStatusValue", "Laddar prognos...");
+
+        const url = `/api/weather?lat=${lat}&lon=${lon}`;
+        const res = await fetch(url);
+        const text = await res.text();
+
+        if (!res.ok) {
+          throw new Error(text);
+        }
+
+        const data = JSON.parse(text);
+        const timeseries = data.properties?.timeseries || [];
+
+        if (!timeseries.length) {
+          throw new Error("Ingen väderdata hittades.");
+        }
+
+        const current = timeseries[0];
+        const instant = current.data?.instant?.details || {};
+        const next1 = current.data?.next_1_hours || {};
+        const next6 = current.data?.next_6_hours || {};
+
+        const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
+        const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
+
+        setText("weatherTempValue", formatTemp(instant.air_temperature));
+        setText("weatherRainValue", formatRain(precip));
+        setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
+        setText("weatherWindValue", formatWind(instant.wind_speed));
+        setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
+        setText("weatherStatusValue", "Prognos laddad");
+
+        const forecastItems = timeseries.slice(0, 3);
+
+        forecastItems.forEach((item, index) => {
+          const i = item.data?.instant?.details || {};
+          const n1 = item.data?.next_1_hours || {};
+          const n6 = item.data?.next_6_hours || {};
+          const fPrecip = n1.details?.precipitation_amount ?? n6.details?.precipitation_amount ?? null;
+
+          setText(`forecast${index + 1}Time`, formatForecastTime(item.time));
+          setText(`forecast${index + 1}Temp`, formatTemp(i.air_temperature));
+          setText(`forecast${index + 1}Rain`, `Nederbörd: ${formatRain(fPrecip)}`);
+        });
+      } catch (error) {
+        console.error(error);
+        setText("weatherStatusValue", "Kunde inte ladda väder");
+      }
+    }
+
     document.querySelectorAll(".mode-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         activeMode = btn.dataset.mode;
@@ -518,6 +689,10 @@
 
       saveSelection(activeMode, lat, lon);
       setMarker(activeMode, lat, lon);
+
+      if (activeMode === "weather") {
+        loadWeatherForPoint(lat, lon);
+      }
     });
 
     updateModeUI();
