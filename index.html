@@ -1,58 +1,45 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Väderdashboard</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Väderdashboard</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      padding: 20px;
-    }
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:20px;
+}
 
-    h1 {
-      margin-bottom: 10px;
-    }
+h1 { margin-bottom:10px; }
 
-    .status {
-      margin-bottom: 20px;
-      color: #93c5fd;
-    }
+.status { margin-bottom:20px; color:#93c5fd; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-    }
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+}
 
-    .card {
-      background: #1e293b;
-      border-radius: 16px;
-      padding: 16px;
-      border: 1px solid #334155;
-    }
+.card {
+  background:#1e293b;
+  border-radius:16px;
+  padding:16px;
+  border:1px solid #334155;
+}
 
-    .label {
-      font-size: 14px;
-      color: #94a3b8;
-      margin-bottom: 6px;
-    }
+.label { font-size:14px; color:#94a3b8; margin-bottom:6px; }
+.value { font-size:28px; font-weight:bold; }
 
-    .value {
-      font-size: 28px;
-      font-weight: bold;
-    }
-
-    .error {
-      color: #fca5a5;
-      margin-top: 10px;
-      white-space: pre-wrap;
-    }
-  </style>
+.error {
+  color:#fca5a5;
+  margin-top:10px;
+  white-space:pre-wrap;
+}
+</style>
 </head>
 
 <body>
@@ -69,7 +56,7 @@
   </div>
 
   <div class="card">
-    <div class="label">Nederbörd nästa timme</div>
+    <div class="label">Nederbörd (nästa timme)</div>
     <div class="value" id="rain">--</div>
   </div>
 
@@ -110,11 +97,12 @@ const lat = 59.3293;
 const lon = 18.0686;
 
 function set(id, value) {
-  document.getElementById(id).textContent = value;
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
 }
 
 function format(v, d=1) {
-  if (v === undefined || v === null) return "--";
+  if (v === undefined || v === null || Number.isNaN(Number(v))) return "--";
   return Number(v).toFixed(d);
 }
 
@@ -142,9 +130,9 @@ async function load() {
     set("rain", format(next1h.precipitation_amount) + " mm");
     set("wind", format(instant.wind_speed) + " m/s");
     set("gust", format(instant.wind_speed_of_gust) + " m/s");
-    set("windDir", format(instant.wind_from_direction, 0) + " °");
+    set("windDir", format(instant.wind_from_direction,0) + " °");
     set("pressure", format(instant.air_pressure_at_sea_level) + " hPa");
-    set("clouds", format(instant.cloud_area_fraction, 0) + " %");
+    set("clouds", format(instant.cloud_area_fraction,0) + " %");
 
     status.textContent = "Live";
   } catch (e) {
