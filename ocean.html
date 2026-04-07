@@ -374,6 +374,7 @@
                 <option value="visby">Visby</option>
                 <option value="sundsvall">Sundsvall</option>
                 <option value="lulea">Luleå</option>
+                <option value="tvestjarten">Tvestjärten</option>
               </select>
             </div>
 
@@ -519,7 +520,8 @@
       malmo: { name: "Malmö", lat: 55.6050, lon: 13.0038 },
       visby: { name: "Visby", lat: 57.6348, lon: 18.2948 },
       sundsvall: { name: "Sundsvall", lat: 62.3908, lon: 17.3069 },
-      lulea: { name: "Luleå", lat: 65.5848, lon: 22.1547 }
+      lulea: { name: "Luleå", lat: 65.5848, lon: 22.1547 },
+      tvestjarten: { name: "Tvestjärten", lat: 58.17461, lon: 11.40517 }
     };
 
     let selectedPlace = places.stockholm;
@@ -621,23 +623,23 @@
       return { res, data };
     }
 
-    async function findNearestWorkingWaterStation(targetLat, targetLon) {
-      const stationsRes = await fetch("/api/ocean-stations");
+    async function findNearestWorkingStation({ stationsUrl, dataUrlBuilder, targetLat, targetLon }) {
+      const stationsRes = await fetch(stationsUrl);
       const stationsData = await stationsRes.json();
       const stations = findStationArray(stationsData);
 
-      if (!stations.length) throw new Error("Inga vattenståndsstationer hittades.");
+      if (!stations.length) throw new Error("Inga stationer hittades.");
 
-      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 15);
+      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 40);
 
       for (const item of ranked) {
         const station = item.station;
         const stationId = station.id || station.key || station.stationId;
         if (!stationId) continue;
 
-        for (const period of ["latest-hour", "latest-day"]) {
+        for (const period of ["latest-hour", "latest-day", "latest-months"]) {
           try {
-            const { res, data } = await fetchSeries(`/api/ocean-water-level?stationId=${stationId}&period=${period}`);
+            const { res, data } = await fetchSeries(dataUrlBuilder(stationId, period));
             if (!res.ok) continue;
 
             const latest = findLatestValue(data);
@@ -648,37 +650,7 @@
         }
       }
 
-      throw new Error("Ingen vattenståndsstation med data hittades.");
-    }
-
-    async function findNearestWorkingWaveStation(targetLat, targetLon) {
-      const stationsRes = await fetch("/api/ocean-wave-stations");
-      const stationsData = await stationsRes.json();
-      const stations = findStationArray(stationsData);
-
-      if (!stations.length) throw new Error("Inga vågstationer hittades.");
-
-      const ranked = sortStationsByDistance(stations, targetLat, targetLon).slice(0, 15);
-
-      for (const item of ranked) {
-        const station = item.station;
-        const stationId = station.id || station.key || station.stationId;
-        if (!stationId) continue;
-
-        for (const period of ["latest-hour", "latest-day"]) {
-          try {
-            const { res, data } = await fetchSeries(`/api/ocean-wave-height?stationId=${stationId}&period=${period}`);
-            if (!res.ok) continue;
-
-            const latest = findLatestValue(data);
-            if (latest && latest.value !== undefined && latest.value !== null) {
-              return { station, latest, period, distanceKm: item.dist };
-            }
-          } catch (e) {}
-        }
-      }
-
-      throw new Error("Ingen vågstation med data hittades.");
+      return null;
     }
 
     async function loadOceanPage() {
@@ -689,33 +661,52 @@
         setText("positionValue", `${formatCoord(selectedPlace.lat)}, ${formatCoord(selectedPlace.lon)}`);
 
         const [waterResult, waveResult] = await Promise.all([
-          findNearestWorkingWaterStation(selectedPlace.lat, selectedPlace.lon),
-          findNearestWorkingWaveStation(selectedPlace.lat, selectedPlace.lon)
+          findNearestWorkingStation({
+            stationsUrl: "/api/ocean-stations",
+            dataUrlBuilder: (stationId, period) => `/api/ocean-water-level?stationId=${stationId}&period=${period}`,
+            targetLat: selectedPlace.lat,
+            targetLon: selectedPlace.lon
+          }),
+          findNearestWorkingStation({
+            stationsUrl: "/api/ocean-wave-stations",
+            dataUrlBuilder: (stationId, period) => `/api/ocean-wave-height?stationId=${stationId}&period=${period}`,
+            targetLat: selectedPlace.lat,
+            targetLon: selectedPlace.lon
+          })
         ]);
 
-        const waterStation = waterResult.station;
-        const waterLatest = waterResult.latest;
-        const waterPeriod = waterResult.period;
+        if (waterResult) {
+          const waterStation = waterResult.station;
+          const waterLatest = waterResult.latest;
+          const waterPeriod = waterResult.period;
+          const waterStationName = waterStation.name || "Okänd station";
+          const waterDate = formatSmhiDate(waterLatest.date || waterLatest.time || "--");
 
-        const waveStation = waveResult.station;
-        const waveLatest = waveResult.latest;
+          setText("stationValue", waterStationName);
+          setText("stationNameList", waterStationName);
+          setText("stationCoordsList", `${formatCoord(waterStation.latitude)}, ${formatCoord(waterStation.longitude)}`);
+          setText("waterLevelCard", formatValue(waterLatest.value, 1));
+          setText("eventValue", `${waterDate} (${waterPeriod})`);
+        } else {
+          setText("stationValue", "Ingen data nära vald plats");
+          setText("stationNameList", "Ingen data");
+          setText("stationCoordsList", "--");
+          setText("waterLevelCard", "--");
+          setText("eventValue", "Ingen vattenståndsdata hittades");
+        }
 
-        const waterStationName = waterStation.name || "Okänd station";
-        const waveStationName = waveStation.name || "Okänd station";
-        const waterDate = formatSmhiDate(waterLatest.date || waterLatest.time || "--");
+        if (waveResult) {
+          const waveStation = waveResult.station;
+          const waveLatest = waveResult.latest;
+          const waveStationName = waveStation.name || "Okänd station";
 
-        setText("stationValue", `${waterStationName}`);
-        setText("stationNameList", `${waterStationName}`);
-        setText("waveStationList", `${waveStationName}`);
-        setText(
-          "stationCoordsList",
-          `${formatCoord(waterStation.latitude)}, ${formatCoord(waterStation.longitude)}`
-        );
+          setText("waveStationList", waveStationName);
+          setText("waveHeightCard", formatValue(waveLatest.value, 1));
+        } else {
+          setText("waveStationList", "Ingen data");
+          setText("waveHeightCard", "--");
+        }
 
-        setText("waterLevelCard", formatValue(waterLatest.value, 1));
-        setText("waveHeightCard", formatValue(waveLatest.value, 1));
-
-        setText("eventValue", `${waterDate} (${waterPeriod})`);
         setText("statusText", "Live");
       } catch (error) {
         console.error(error);
