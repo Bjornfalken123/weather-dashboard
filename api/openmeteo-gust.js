@@ -15,6 +15,7 @@ export default async function handler(req, res) {
       `?latitude=${lat}&longitude=${lon}` +
       `&current=wind_gusts_10m` +
       `&hourly=wind_gusts_10m` +
+      `&wind_speed_unit=ms` +
       `&timezone=auto&forecast_days=1`;
 
     const response = await fetch(url);
@@ -36,7 +37,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       value: currentValue,
       time: currentTime,
-      source: "Open-Meteo"
+      source: "Open-Meteo",
+      unit: "m/s"
     });
   } catch (error) {
     return res.status(500).json({
