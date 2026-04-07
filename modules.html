@@ -355,7 +355,7 @@
               Fri punkt på kartan. Visar nu-data och kort prognos framåt.
             </p>
           </div>
-          <div class="module-badge">MET + SMHI</div>
+          <div class="module-badge">MET + Open-Meteo</div>
         </div>
 
         <div class="module-meta">
@@ -499,7 +499,7 @@
 
     const map = L.map("map").setView([58.6, 13.0], 6);
 
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{y}/{x}.png".replace("/{y}/{x}","/{x}/{y}"), {
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap"
     }).addTo(map);
@@ -663,7 +663,7 @@
         setText("weatherGustSourceValue", "Laddar...");
 
         const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
-        const gustUrl = `/api/smhi-gust-nearest?lat=${lat}&lon=${lon}`;
+        const gustUrl = `/api/openmeteo-gust?lat=${lat}&lon=${lon}`;
 
         const [weatherRes, gustRes] = await Promise.all([
           fetch(weatherUrl),
@@ -714,13 +714,12 @@
 
         if (gustRes.ok) {
           const gustData = JSON.parse(gustText);
-          const dist = gustData.distanceKm != null ? `${Number(gustData.distanceKm).toFixed(0)} km` : "--";
           setText("weatherGustValue", formatWind(gustData.value));
-          setText("weatherGustSourceValue", `${gustData.stationName} • ${dist}`);
+          setText("weatherGustSourceValue", "Open-Meteo • punktdata");
           setText("weatherStatusValue", "Prognos + byvind laddad");
         } else {
           setText("weatherGustValue", "--");
-          setText("weatherGustSourceValue", "Ingen SMHI-station nära nog");
+          setText("weatherGustSourceValue", "Ingen byvind tillgänglig");
           setText("weatherStatusValue", "Prognos laddad");
         }
       } catch (error) {
