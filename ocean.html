@@ -19,9 +19,7 @@
       --radius: 20px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -47,9 +45,7 @@
       margin-bottom: 22px;
     }
 
-    .hero-card,
-    .panel,
-    .metric-card {
+    .hero-card, .panel, .metric-card {
       background: var(--card);
       border: 1px solid var(--card-border);
       backdrop-filter: blur(14px);
@@ -291,39 +287,23 @@
     }
 
     @media (max-width: 980px) {
-      .hero,
-      .bottom-grid,
-      .metrics-grid {
+      .hero, .bottom-grid, .metrics-grid {
         grid-template-columns: 1fr 1fr;
       }
-
-      .hero {
-        grid-template-columns: 1fr;
-      }
-
-      .bottom-grid {
-        grid-template-columns: 1fr;
-      }
+      .hero { grid-template-columns: 1fr; }
+      .bottom-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 700px) {
-      .container {
-        padding: 16px;
-      }
-
-      .metrics-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+      .container { padding: 16px; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 520px) {
-      .metrics-grid,
-      .meta-grid {
+      .metrics-grid, .meta-grid {
         grid-template-columns: 1fr;
       }
-
-      .hero-top,
-      .hero-bottom {
+      .hero-top, .hero-bottom {
         flex-direction: column;
         align-items: flex-start;
       }
@@ -341,14 +321,14 @@
           </div>
           <div class="status-pill">
             <span class="dot"></span>
-            <span id="statusText">Steg 2</span>
+            <span id="statusText">Laddar...</span>
           </div>
         </div>
 
         <div class="hero-bottom">
           <div>
             <div class="big-value" id="heroStation">--</div>
-            <div class="big-label">Vald position</div>
+            <div class="big-label">Aktiv station</div>
           </div>
 
           <div class="actions">
@@ -361,25 +341,25 @@
       <div class="panel">
         <h2>Översikt</h2>
         <p>
-          Här kommer vi visa havsdata från närmaste relevanta station utifrån vald plats eller din position.
+          Första riktiga havsdatan från SMHI: havsvattenstånd från en station.
         </p>
 
         <div class="meta-grid">
           <div class="meta-item">
             <div class="meta-label">Vald metod</div>
-            <div class="meta-value" id="methodValue">Inte vald ännu</div>
+            <div class="meta-value" id="methodValue">Standardplats</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Position</div>
-            <div class="meta-value" id="positionValue">Ingen vald</div>
+            <div class="meta-label">Station</div>
+            <div class="meta-value" id="stationValue">--</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Senaste händelse</div>
+            <div class="meta-label">Senaste observation</div>
             <div class="meta-value" id="eventValue">--</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Nästa steg</div>
-            <div class="meta-value">Hitta närmaste station</div>
+            <div class="meta-label">Position</div>
+            <div class="meta-value" id="positionValue">--</div>
           </div>
         </div>
       </div>
@@ -388,12 +368,23 @@
     <section class="metrics-grid">
       <div class="metric-card">
         <div>
+          <div class="metric-icon">📏</div>
+          <div class="metric-label">Vattenstånd</div>
+        </div>
+        <div>
+          <div class="metric-value" id="waterLevelCard">--</div>
+          <div class="metric-unit">centimeter</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div>
           <div class="metric-icon">💨</div>
           <div class="metric-label">Vind</div>
         </div>
         <div>
           <div class="metric-value">--</div>
-          <div class="metric-unit">meter per sekund</div>
+          <div class="metric-unit">kommer senare</div>
         </div>
       </div>
 
@@ -404,7 +395,7 @@
         </div>
         <div>
           <div class="metric-value">--</div>
-          <div class="metric-unit">meter per sekund</div>
+          <div class="metric-unit">kommer senare</div>
         </div>
       </div>
 
@@ -415,48 +406,37 @@
         </div>
         <div>
           <div class="metric-value">--</div>
-          <div class="metric-unit">meter</div>
-        </div>
-      </div>
-
-      <div class="metric-card">
-        <div>
-          <div class="metric-icon">📏</div>
-          <div class="metric-label">Vattenstånd</div>
-        </div>
-        <div>
-          <div class="metric-value">--</div>
-          <div class="metric-unit">centimeter</div>
+          <div class="metric-unit">kommer senare</div>
         </div>
       </div>
     </section>
 
     <section class="bottom-grid">
       <div class="panel">
-        <h2 class="section-title">Kommer visas här</h2>
+        <h2 class="section-title">Nuvarande station</h2>
         <div class="list">
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Stationsnamn</div>
-              <div class="list-subtitle">Närmaste fyr eller boj</div>
+              <div class="list-subtitle">SMHI oceanografi</div>
             </div>
-            <div class="list-value">--</div>
+            <div class="list-value" id="stationNameList">--</div>
           </div>
 
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Vindriktning</div>
-              <div class="list-subtitle">Observation från station</div>
+              <div class="list-title">Vattenstånd</div>
+              <div class="list-subtitle">Senaste timmen</div>
             </div>
-            <div class="list-value">--</div>
+            <div class="list-value" id="waterLevelList">-- cm</div>
           </div>
 
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Vattentemperatur</div>
-              <div class="list-subtitle">När tillgängligt</div>
+              <div class="list-title">Lat/Lon</div>
+              <div class="list-subtitle">Stationsposition</div>
             </div>
-            <div class="list-value">--</div>
+            <div class="list-value" id="stationCoordsList">--</div>
           </div>
         </div>
       </div>
@@ -467,15 +447,15 @@
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nuvarande steg</div>
-              <div class="list-subtitle">Knappen nära mig fungerar</div>
+              <div class="list-subtitle">Havsvattenstånd från SMHI</div>
             </div>
-            <div class="list-value placeholder">Pågår</div>
+            <div class="list-value placeholder">Aktivt</div>
           </div>
 
           <div class="list-row">
             <div class="list-row-left">
               <div class="list-title">Nästa steg</div>
-              <div class="list-subtitle">Koppla SMHI-stationer</div>
+              <div class="list-subtitle">Hitta närmaste station</div>
             </div>
             <div class="list-value placeholder">Nästa</div>
           </div>
@@ -484,77 +464,101 @@
     </section>
 
     <div class="footer-note">
-      Steg 2: position via knappen Nära mig
+      Steg 5: första riktiga havsdatan från SMHI
     </div>
   </div>
 
-<script>
-  const defaultLat = 59.3293;
-  const defaultLon = 18.0686;
-
-  function setText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  }
-
-  function formatCoord(v) {
-    return Number(v).toFixed(4);
-  }
-
-  function setDefaultPosition() {
-    setText("heroStation", "Stockholm");
-    setText("methodValue", "Standardplats");
-    setText("positionValue", `${formatCoord(defaultLat)}, ${formatCoord(defaultLon)}`);
-    setText("eventValue", "Förvald plats används");
-    setText("statusText", "Hämtar station...");
-  }
-
-  async function loadStations() {
-    try {
-      const res = await fetch("/api/ocean-stations");
-      const data = await res.json();
-
-      const stations = data.station || [];
-
-      if (!stations.length) {
-        setText("eventValue", "Inga stationer hittades");
-        return;
-      }
-
-      // 🔥 bara första stationen (enkelt steg)
-      const station = stations[0];
-
-      const name = station.name;
-      const lat = station.latitude;
-      const lon = station.longitude;
-
-      setText("heroStation", name);
-      setText("methodValue", "Teststation (SMHI)");
-      setText("positionValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-      setText("eventValue", "Station hämtad från SMHI");
-      setText("statusText", "Redo");
-
-    } catch (e) {
-      setText("statusText", "Fel");
-      setText("eventValue", "Kunde inte hämta stationer");
-      console.error(e);
+  <script>
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
     }
-  }
 
-  // INIT
-  setDefaultPosition();
-  loadStations();
+    function formatCoord(v) {
+      const n = Number(v);
+      return Number.isNaN(n) ? "--" : n.toFixed(4);
+    }
 
-  // KNAPPAR (oförändrat)
-  document.getElementById("nearMeBtn").addEventListener("click", () => {
-    setText("statusText", "Blockerad");
-    setText("eventValue", "Din enhet blockerar position (helt ok)");
-  });
+    function formatValue(v, decimals = 1) {
+      const n = Number(v);
+      return Number.isNaN(n) ? "--" : n.toFixed(decimals);
+    }
 
-  document.getElementById("choosePlaceBtn").addEventListener("click", () => {
-    setText("statusText", "Kommer snart");
-    setText("eventValue", "Platsväljare kommer i nästa steg");
-  });
-</script>
+    function findStationArray(data) {
+      if (Array.isArray(data?.station)) return data.station;
+      if (Array.isArray(data?.stations)) return data.stations;
+      if (Array.isArray(data?.resource)) return data.resource;
+      return [];
+    }
+
+    function findLatestWaterValue(data) {
+      if (Array.isArray(data?.value) && data.value.length > 0) {
+        return data.value[data.value.length - 1];
+      }
+      if (Array.isArray(data?.values) && data.values.length > 0) {
+        return data.values[data.values.length - 1];
+      }
+      return null;
+    }
+
+    async function loadOceanPage() {
+      try {
+        setText("statusText", "Hämtar station...");
+        const stationsRes = await fetch("/api/ocean-stations");
+        const stationsData = await stationsRes.json();
+
+        const stations = findStationArray(stationsData);
+
+        if (!stations.length) {
+          throw new Error("Inga stationer hittades.");
+        }
+
+        const station = stations[0];
+        const stationId = station.id || station.key || station.stationId;
+        const stationName = station.name || "Okänd station";
+        const stationLat = station.latitude;
+        const stationLon = station.longitude;
+
+        setText("heroStation", stationName);
+        setText("stationValue", stationName);
+        setText("stationNameList", stationName);
+        setText("positionValue", `${formatCoord(stationLat)}, ${formatCoord(stationLon)}`);
+        setText("stationCoordsList", `${formatCoord(stationLat)}, ${formatCoord(stationLon)}`);
+
+        setText("statusText", "Hämtar vattenstånd...");
+        const levelRes = await fetch(`/api/ocean-water-level?stationId=${stationId}`);
+        const levelData = await levelRes.json();
+
+        if (!levelRes.ok) {
+          throw new Error(levelData?.body || levelData?.message || "Kunde inte hämta vattenstånd.");
+        }
+
+        const latest = findLatestWaterValue(levelData);
+        const levelValue = latest?.value;
+        const dateValue = latest?.date || latest?.time || "--";
+
+        setText("waterLevelCard", formatValue(levelValue, 1));
+        setText("waterLevelList", `${formatValue(levelValue, 1)} cm`);
+        setText("eventValue", dateValue);
+        setText("statusText", "Live");
+      } catch (error) {
+        console.error(error);
+        setText("statusText", "Fel");
+        setText("eventValue", "Kunde inte ladda data");
+      }
+    }
+
+    document.getElementById("nearMeBtn").addEventListener("click", () => {
+      setText("statusText", "Kommer snart");
+      setText("eventValue", "Nära mig kopplas efter stationslogiken");
+    });
+
+    document.getElementById("choosePlaceBtn").addEventListener("click", () => {
+      setText("statusText", "Kommer snart");
+      setText("eventValue", "Platsväljare läggs till senare");
+    });
+
+    loadOceanPage();
+  </script>
 </body>
 </html>
