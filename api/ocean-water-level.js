@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "weather-dashboard/1.0 dinmail@example.com"
+        "User-Agent": "weather-dashboard/1.0 bjorn.falkenang@gmail.com"
       }
     });
 
