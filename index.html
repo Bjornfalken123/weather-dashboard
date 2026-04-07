@@ -569,111 +569,131 @@
   </div>
 
   <script>
-    const lat = 59.33;
-    const lon = 18.06;
-    const placeName = "Stockholm";
+  const lat = 59.33;
+  const lon = 18.06;
+  const placeName = "Stockholm";
 
-    function setText(id, value) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function formatNumber(value, decimals = 1) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+    return Number(value).toFixed(decimals);
+  }
+
+  function formatUpdatedTime() {
+    return new Date().toLocaleString("sv-SE", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function getAirQualityLabel(pm25) {
+    const v = Number(pm25);
+    if (Number.isNaN(v)) return "Ingen data";
+    if (v <= 10) return "Bra";
+    if (v <= 20) return "Okej";
+    if (v <= 30) return "Förhöjd";
+    return "Hög";
+  }
+
+  async function fetchJson(url, label) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(label + ": " + res.status + " " + text);
     }
+    return res.json();
+  }
 
-    function formatNumber(value, decimals = 1) {
-      if (value === null || value === undefined || Number.isNaN(value)) return "--";
-      return Number(value).toFixed(decimals);
-    }
+  async function loadDashboard() {
+    const errorEl = document.getElementById("errorText");
+    errorEl.style.display = "none";
+    errorEl.textContent = "";
 
-    function formatUpdatedTime() {
-      const now = new Date();
-      return now.toLocaleString("sv-SE", {
-        hour: "2-digit",
-        minute: "2-digit",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      });
-    }
+    setText("locationText", placeName + " • Live-data");
+    setText("statusText", "Hämtar data...");
 
-    function getAirQualityLabel(pm25) {
-      if (pm25 === null || pm25 === undefined || Number.isNaN(pm25)) return "Ingen data";
-      if (pm25 <= 10) return "Bra";
-      if (pm25 <= 20) return "Okej";
-      if (pm25 <= 30) return "Förhöjd";
-      return "Hög";
-    }
+    const weatherUrl =
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m&timezone=auto`;
 
-    async function loadDashboard() {
+    const airUrl =
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5,nitrogen_dioxide,ozone,european_aqi&timezone=auto`;
+
+    try {
+      const weather = await fetchJson(weatherUrl, "Väder-API");
+      let air = null;
+
       try {
-        setText("locationText", placeName + " • Live-data");
-        setText("statusText", "Hämtar data...");
+        air = await fetchJson(airUrl, "Luftkvalitets-API");
+      } catch (airError) {
+        console.error(airError);
+      }
 
-        const weatherUrl =
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m`;
+      const temp = weather.current?.temperature_2m;
+      const precip = weather.current?.precipitation;
+      const wind = weather.current?.wind_speed_10m;
+      const gust = weather.current?.wind_gusts_10m;
 
-        const airUrl =
-          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5,nitrogen_dioxide,ozone`;
+      setText("statusText", "Live");
+      setText("updatedAt", formatUpdatedTime());
 
-        const [weatherRes, airRes] = await Promise.all([
-          fetch(weatherUrl),
-          fetch(airUrl)
-        ]);
+      setText("tempNow", formatNumber(temp));
+      setText("rainNow", `${formatNumber(precip)} mm`);
+      setText("windNow", `${formatNumber(wind)} m/s`);
+      setText("gustNow", `${formatNumber(gust)} m/s`);
 
-        if (!weatherRes.ok || !airRes.ok) {
-          throw new Error("Kunde inte hämta data från API.");
-        }
+      setText("temperatureCard", formatNumber(temp));
+      setText("precipCard", formatNumber(precip));
+      setText("windCard", formatNumber(wind));
+      setText("gustCard", formatNumber(gust));
 
-        const weather = await weatherRes.json();
-        const air = await airRes.json();
+      setText("temperatureList", `${formatNumber(temp)} °C`);
+      setText("precipList", `${formatNumber(precip)} mm`);
+      setText("windList", `${formatNumber(wind)} m/s`);
+      setText("gustList", `${formatNumber(gust)} m/s`);
 
-        const temp = weather.current?.temperature_2m;
-        const precip = weather.current?.precipitation;
-        const wind = weather.current?.wind_speed_10m;
-        const gust = weather.current?.wind_gusts_10m;
-
-        const pm25 = air.current?.pm2_5;
-        const pm10 = air.current?.pm10;
-        const no2 = air.current?.nitrogen_dioxide;
-        const o3 = air.current?.ozone;
-
+      if (air && air.current) {
+        const pm25 = air.current.pm2_5;
+        const pm10 = air.current.pm10;
+        const no2 = air.current.nitrogen_dioxide;
+        const o3 = air.current.ozone;
+        const europeanAqi = air.current.european_aqi;
         const aqLabel = getAirQualityLabel(pm25);
 
-        setText("statusText", "Live");
-        setText("updatedAt", formatUpdatedTime());
-
-        setText("tempNow", formatNumber(temp, 1));
-        setText("rainNow", `${formatNumber(precip, 1)} mm`);
-        setText("windNow", `${formatNumber(wind, 1)} m/s`);
-        setText("gustNow", `${formatNumber(gust, 1)} m/s`);
-
-        setText("temperatureCard", formatNumber(temp, 1));
-        setText("precipCard", formatNumber(precip, 1));
-        setText("windCard", formatNumber(wind, 1));
-        setText("gustCard", formatNumber(gust, 1));
-
-        setText("temperatureList", `${formatNumber(temp, 1)} °C`);
-        setText("precipList", `${formatNumber(precip, 1)} mm`);
-        setText("windList", `${formatNumber(wind, 1)} m/s`);
-        setText("gustList", `${formatNumber(gust, 1)} m/s`);
-
-        setText("pm25Top", `${formatNumber(pm25, 1)} µg/m³`);
-        setText("pm10Top", `${formatNumber(pm10, 1)} µg/m³`);
-        setText("aqSummary", aqLabel);
+        setText("pm25Top", `${formatNumber(pm25)} µg/m³`);
+        setText("pm10Top", `${formatNumber(pm10)} µg/m³`);
+        setText("aqSummary", `${aqLabel}${europeanAqi != null ? " • AQI " + Math.round(europeanAqi) : ""}`);
 
         setText("aqBadge", aqLabel);
-        setText("pm25List", `${formatNumber(pm25, 1)} µg/m³`);
-        setText("pm10List", `${formatNumber(pm10, 1)} µg/m³`);
-        setText("no2List", `${formatNumber(no2, 1)} µg/m³`);
-        setText("o3List", `${formatNumber(o3, 1)} µg/m³`);
-      } catch (error) {
-        setText("statusText", "Fel");
-        const errorEl = document.getElementById("errorText");
-        errorEl.style.display = "block";
-        errorEl.textContent = "Kunde inte ladda data just nu.";
-        console.error(error);
+        setText("pm25List", `${formatNumber(pm25)} µg/m³`);
+        setText("pm10List", `${formatNumber(pm10)} µg/m³`);
+        setText("no2List", `${formatNumber(no2)} µg/m³`);
+        setText("o3List", `${formatNumber(o3)} µg/m³`);
+      } else {
+        setText("pm25Top", "Ingen data");
+        setText("pm10Top", "Ingen data");
+        setText("aqSummary", "Ingen data");
+        setText("aqBadge", "Ingen data");
+        setText("pm25List", "Ingen data");
+        setText("pm10List", "Ingen data");
+        setText("no2List", "Ingen data");
+        setText("o3List", "Ingen data");
       }
+    } catch (error) {
+      console.error(error);
+      setText("statusText", "Fel");
+      errorEl.style.display = "block";
+      errorEl.textContent = "Kunde inte ladda data: " + error.message;
     }
+  }
 
-    loadDashboard();
-  </script>
+  loadDashboard();
+</script>
 </body>
 </html>
