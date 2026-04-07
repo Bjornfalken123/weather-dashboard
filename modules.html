@@ -182,7 +182,7 @@
 
     .module-card {
       padding: 20px;
-      min-height: 420px;
+      min-height: 450px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -429,7 +429,7 @@
           <div>
             <h2 class="module-title">Våg / boj</h2>
             <p class="module-subtitle">
-              Välj en boj eller vågstation. Här ska vi visa live våghöjd, vattentemperatur och annan havsdata.
+              Välj en boj eller vågstation direkt på kartan för live våghöjd.
             </p>
           </div>
           <div class="module-badge">SMHI</div>
@@ -441,17 +441,25 @@
             <div class="meta-row-value" id="waveStationValue">Inte vald</div>
           </div>
           <div class="meta-row">
-            <div class="meta-row-label">Kommande data</div>
-            <div class="meta-row-value">Våghöjd, vattentemp, senare mer havsdata</div>
+            <div class="meta-row-label">Våghöjd</div>
+            <div class="meta-row-value" id="waveHeightValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Senaste observation</div>
+            <div class="meta-row-value" id="waveObsTimeValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Stationsposition</div>
+            <div class="meta-row-value" id="waveCoordsValue">--</div>
           </div>
           <div class="meta-row">
             <div class="meta-row-label">Status</div>
-            <div class="meta-row-value" id="waveStatusValue">Redo för nästa steg</div>
+            <div class="meta-row-value" id="waveStatusValue">Välj läget Boj / våg</div>
           </div>
         </div>
 
         <div class="module-empty">
-          Nästa steg för den här modulen blir att visa riktiga bojar på kartan och spara vald station.
+          Nästa steg här kan vara att lägga till vattentemperatur på samma station när du vill.
         </div>
       </article>
 
@@ -505,8 +513,11 @@
     }).addTo(map);
 
     let weatherMarker = null;
-    let waveMarker = null;
+    let waveSelectionMarker = null;
     let lighthouseMarker = null;
+    let waveStationsLoaded = false;
+    let waveStations = [];
+    let waveStationsLayer = L.layerGroup();
 
     function setText(id, value) {
       const el = document.getElementById(id);
@@ -537,6 +548,10 @@
       return v == null ? "--" : `${Number(v).toFixed(1)} hPa`;
     }
 
+    function formatWave(v) {
+      return v == null ? "--" : `${Number(v).toFixed(1)} m`;
+    }
+
     function formatForecastTime(isoTime) {
       if (!isoTime) return "--";
       const d = new Date(isoTime);
@@ -546,6 +561,37 @@
         hour: "2-digit",
         minute: "2-digit"
       });
+    }
+
+    function formatObsTime(value) {
+      if (!value) return "--";
+      const asNumber = Number(value);
+
+      if (!Number.isNaN(asNumber) && String(value).length >= 10) {
+        const d = new Date(asNumber);
+        if (!Number.isNaN(d.getTime())) {
+          return d.toLocaleString("sv-SE", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+      }
+
+      const d = new Date(value);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleString("sv-SE", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      return String(value);
     }
 
     function weatherLabelFromSymbol(symbolCode) {
@@ -589,6 +635,23 @@
       return `${rounded}° • ${degreesToCompass(rounded)}`;
     }
 
+    function extractStationArray(data) {
+      if (Array.isArray(data?.station)) return data.station;
+      if (Array.isArray(data?.stations)) return data.stations;
+      if (Array.isArray(data?.resource)) return data.resource;
+      return [];
+    }
+
+    function extractLatestWaveValue(data) {
+      if (Array.isArray(data?.value) && data.value.length > 0) {
+        return data.value[data.value.length - 1];
+      }
+      if (Array.isArray(data?.values) && data.values.length > 0) {
+        return data.values[data.values.length - 1];
+      }
+      return null;
+    }
+
     function updateModeUI() {
       document.querySelectorAll(".mode-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.mode === activeMode);
@@ -597,12 +660,16 @@
       if (activeMode === "weather") {
         setText("activeModeText", "Väder");
         setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+        if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
       } else if (activeMode === "wave") {
         setText("activeModeText", "Boj / våg");
-        setText("mapNote", "Klicka senare på en boj eller station för vågmodulen. Just nu sparar vi bara klickposition.");
+        setText("mapNote", "Klicka på en blå station på kartan för att välja boj / vågstation.");
+        ensureWaveStationsLoaded();
+        if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
       } else {
         setText("activeModeText", "Fyr / station");
-        setText("mapNote", "Klicka senare på en fyr eller station. Just nu sparar vi bara klickposition.");
+        setText("mapNote", "Fyrmodulen kopplas i nästa steg.");
+        if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
       }
     }
 
@@ -613,48 +680,49 @@
         return;
       }
 
-      setText(
-        "lastSelectionText",
-        `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`
-      );
+      if (activeMode === "wave" && current.name) {
+        setText("lastSelectionText", current.name);
+        return;
+      }
+
+      setText("lastSelectionText", `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`);
     }
 
-    function saveSelection(mode, lat, lon) {
-      savedSelections[mode] = { lat, lon };
+    function saveSelection(mode, payload) {
+      savedSelections[mode] = payload;
 
       if (mode === "weather") {
-        setText("weatherPointValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("weatherPointValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
         setText("weatherStatusValue", "Hämtar väder...");
       }
 
       if (mode === "wave") {
-        setText("waveStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-        setText("waveStatusValue", "Punkt vald");
+        setText("waveStationValue", payload.name || "Okänd station");
+        setText("waveCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+        setText("waveStatusValue", "Hämtar vågdata...");
       }
 
       if (mode === "lighthouse") {
-        setText("lighthouseStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("lighthouseStationValue", payload.name || `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
         setText("lighthouseStatusValue", "Punkt vald");
       }
 
       updateLastSelectionText();
     }
 
-    function setMarker(mode, lat, lon) {
-      if (mode === "weather") {
-        if (weatherMarker) map.removeLayer(weatherMarker);
-        weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
-      }
+    function setWeatherMarker(lat, lon) {
+      if (weatherMarker) map.removeLayer(weatherMarker);
+      weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
+    }
 
-      if (mode === "wave") {
-        if (waveMarker) map.removeLayer(waveMarker);
-        waveMarker = L.marker([lat, lon]).addTo(map).bindPopup("Boj / våg").openPopup();
-      }
+    function setWaveSelectionMarker(lat, lon, name) {
+      if (waveSelectionMarker) map.removeLayer(waveSelectionMarker);
+      waveSelectionMarker = L.marker([lat, lon]).addTo(map).bindPopup(name || "Vald vågstation").openPopup();
+    }
 
-      if (mode === "lighthouse") {
-        if (lighthouseMarker) map.removeLayer(lighthouseMarker);
-        lighthouseMarker = L.marker([lat, lon]).addTo(map).bindPopup("Fyr / station").openPopup();
-      }
+    function setLighthouseMarker(lat, lon) {
+      if (lighthouseMarker) map.removeLayer(lighthouseMarker);
+      lighthouseMarker = L.marker([lat, lon]).addTo(map).bindPopup("Fyr / station").openPopup();
     }
 
     async function loadWeatherForPoint(lat, lon) {
@@ -728,6 +796,93 @@
       }
     }
 
+    async function ensureWaveStationsLoaded() {
+      if (waveStationsLoaded) return;
+
+      try {
+        setText("waveStatusValue", "Laddar stationer...");
+        const res = await fetch("/api/ocean-wave-stations");
+        const data = await res.json();
+        const stations = extractStationArray(data);
+
+        waveStations = stations
+          .map((station) => {
+            const id = station.id || station.key || station.stationId;
+            const name = station.name || "Okänd station";
+            const lat = Number(station.latitude);
+            const lon = Number(station.longitude);
+
+            if (!id || Number.isNaN(lat) || Number.isNaN(lon)) return null;
+
+            return { id, name, lat, lon };
+          })
+          .filter(Boolean);
+
+        waveStations.forEach((station) => {
+          const marker = L.circleMarker([station.lat, station.lon], {
+            radius: 6,
+            weight: 2,
+            color: "#8ef0d0",
+            fillColor: "#69b7ff",
+            fillOpacity: 0.85
+          });
+
+          marker.bindTooltip(station.name, { direction: "top" });
+          marker.on("click", (event) => {
+            L.DomEvent.stopPropagation(event);
+            selectWaveStation(station);
+          });
+
+          waveStationsLayer.addLayer(marker);
+        });
+
+        waveStationsLoaded = true;
+        setText("waveStatusValue", "Välj en station på kartan");
+      } catch (error) {
+        console.error(error);
+        setText("waveStatusValue", "Kunde inte ladda stationer");
+      }
+    }
+
+    async function fetchWaveDataForStation(stationId) {
+      for (const period of ["latest-hour", "latest-day", "latest-months"]) {
+        const res = await fetch(`/api/ocean-wave-height?stationId=${stationId}&period=${period}`);
+        const data = await res.json();
+
+        if (!res.ok) continue;
+
+        const latest = extractLatestWaveValue(data);
+        if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
+          return { latest, period };
+        }
+      }
+
+      return null;
+    }
+
+    async function selectWaveStation(station) {
+      saveSelection("wave", station);
+      setWaveSelectionMarker(station.lat, station.lon, station.name);
+
+      try {
+        const result = await fetchWaveDataForStation(station.id);
+
+        if (!result) {
+          setText("waveHeightValue", "--");
+          setText("waveObsTimeValue", "--");
+          setText("waveStatusValue", "Ingen vågdata hittades");
+          return;
+        }
+
+        setText("waveHeightValue", formatWave(result.latest.value));
+        setText("waveObsTimeValue", `${formatObsTime(result.latest.date || result.latest.time)} (${result.period})`);
+        setText("waveStatusValue", "Vågdata laddad");
+      } catch (error) {
+        console.error(error);
+        setText("waveStatusValue", "Kunde inte ladda vågdata");
+      }
+    }
+
     document.querySelectorAll(".mode-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         activeMode = btn.dataset.mode;
@@ -740,11 +895,15 @@
       const lat = event.latlng.lat;
       const lon = event.latlng.lng;
 
-      saveSelection(activeMode, lat, lon);
-      setMarker(activeMode, lat, lon);
-
       if (activeMode === "weather") {
+        saveSelection("weather", { lat, lon });
+        setWeatherMarker(lat, lon);
         loadWeatherForPoint(lat, lon);
+      }
+
+      if (activeMode === "lighthouse") {
+        saveSelection("lighthouse", { lat, lon, name: "Vald punkt" });
+        setLighthouseMarker(lat, lon);
       }
     });
 
