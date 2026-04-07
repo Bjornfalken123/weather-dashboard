@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moduler – väder, boj och fyr</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <style>
+    :root {
+      --bg: #0b1220;
+      --bg-soft: #121a2b;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #eef4ff;
+      --muted: #a9b4c9;
+      --accent: #69b7ff;
+      --accent-2: #8ef0d0;
+      --danger: #ff8b8b;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #173057 0%, transparent 35%),
+        radial-gradient(circle at top right, #0f4c5c 0%, transparent 30%),
+        linear-gradient(180deg, #08101d 0%, #0b1220 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .hero,
+    .map-panel,
+    .module-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .title-wrap h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(105, 183, 255, 0.14);
+      color: #d8ebff;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      box-shadow: 0 0 12px var(--accent-2);
+    }
+
+    .hero-bottom {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+
+    .hero-info {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .hero-block-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .hero-block-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .map-panel {
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .map-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .mode-btn {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .mode-btn.active {
+      background: rgba(105, 183, 255, 0.18);
+      border-color: rgba(105, 183, 255, 0.35);
+    }
+
+    .map-note {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    #map {
+      width: 100%;
+      height: 460px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .module-card {
+      padding: 20px;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .module-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .module-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0 0 6px;
+    }
+
+    .module-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .module-badge {
+      font-size: 12px;
+      color: #d8ebff;
+      background: rgba(105, 183, 255, 0.14);
+      border-radius: 999px;
+      padding: 8px 10px;
+      white-space: nowrap;
+    }
+
+    .module-meta {
+      display: grid;
+      gap: 10px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .meta-row-label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .meta-row-value {
+      font-weight: 700;
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .module-empty {
+      margin-top: auto;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1050px) {
+      .modules-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        padding: 16px;
+      }
+
+      #map {
+        height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="title-wrap">
+          <h1>Modulöversikt</h1>
+          <p class="subtitle">En sida med separata moduler för väder, bojar och fyrar/stationer.</p>
+        </div>
+
+        <div class="status-pill">
+          <span class="dot"></span>
+          <span id="pageStatus">Steg 1: struktur klar</span>
+        </div>
+      </div>
+
+      <div class="hero-bottom">
+        <div class="hero-info">
+          <div>
+            <div class="hero-block-label">Aktivt kartläge</div>
+            <div class="hero-block-value" id="activeModeText">Väder</div>
+          </div>
+          <div>
+            <div class="hero-block-label">Senaste kartval</div>
+            <div class="hero-block-value" id="lastSelectionText">Inget valt ännu</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="map-panel">
+      <div class="map-toolbar">
+        <button class="mode-btn active" data-mode="weather" id="modeWeather">Väderpunkt</button>
+        <button class="mode-btn" data-mode="wave" id="modeWave">Boj / våg</button>
+        <button class="mode-btn" data-mode="lighthouse" id="modeLighthouse">Fyr / station</button>
+      </div>
+
+      <div class="map-note" id="mapNote">
+        Klicka på kartan för att välja en punkt för vädermodulen.
+      </div>
+
+      <div id="map"></div>
+    </section>
+
+    <section class="modules-grid">
+      <article class="module-card">
+        <div class="module-header">
+          <div>
+            <h2 class="module-title">Väder</h2>
+            <p class="module-subtitle">
+              Fri punkt på kartan. Här ska vi visa live/nu-data och prognos några dagar framåt.
+            </p>
+          </div>
+          <div class="module-badge">MET</div>
+        </div>
+
+        <div class="module-meta">
+          <div class="meta-row">
+            <div class="meta-row-label">Vald punkt</div>
+            <div class="meta-row-value" id="weatherPointValue">Inte vald</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Kommande data</div>
+            <div class="meta-row-value">Temp, nederbörd, vädertyp, vind, lufttryck</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Status</div>
+            <div class="meta-row-value" id="weatherStatusValue">Redo för nästa steg</div>
+          </div>
+        </div>
+
+        <div class="module-empty">
+          Nästa steg för den här modulen blir att koppla kartklick till MET-prognos för vald lat/lon.
+        </div>
+      </article>
+
+      <article class="module-card">
+        <div class="module-header">
+          <div>
+            <h2 class="module-title">Våg / boj</h2>
+            <p class="module-subtitle">
+              Välj en boj eller vågstation. Här ska vi visa live våghöjd, vattentemperatur och annan havsdata.
+            </p>
+          </div>
+          <div class="module-badge">SMHI</div>
+        </div>
+
+        <div class="module-meta">
+          <div class="meta-row">
+            <div class="meta-row-label">Vald station</div>
+            <div class="meta-row-value" id="waveStationValue">Inte vald</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Kommande data</div>
+            <div class="meta-row-value">Våghöjd, vattentemp, senare mer havsdata</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Status</div>
+            <div class="meta-row-value" id="waveStatusValue">Redo för nästa steg</div>
+          </div>
+        </div>
+
+        <div class="module-empty">
+          Nästa steg för den här modulen blir att visa riktiga bojar på kartan och spara vald station.
+        </div>
+      </article>
+
+      <article class="module-card">
+        <div class="module-header">
+          <div>
+            <h2 class="module-title">Fyr / station</h2>
+            <p class="module-subtitle">
+              Välj en fyr eller station. Här ska vi visa live vind, temperatur och andra observationer.
+            </p>
+          </div>
+          <div class="module-badge">SMHI</div>
+        </div>
+
+        <div class="module-meta">
+          <div class="meta-row">
+            <div class="meta-row-label">Vald station</div>
+            <div class="meta-row-value" id="lighthouseStationValue">Inte vald</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Kommande data</div>
+            <div class="meta-row-value">Vind, temp, tryck, fler live-observationer</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Status</div>
+            <div class="meta-row-value" id="lighthouseStatusValue">Redo för nästa steg</div>
+          </div>
+        </div>
+
+        <div class="module-empty">
+          Nästa steg för den här modulen blir att välja station på kartan och koppla live-data från rätt källa.
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    let activeMode = "weather";
+
+    const savedSelections = {
+      weather: null,
+      wave: null,
+      lighthouse: null
+    };
+
+    const map = L.map("map").setView([58.6, 13.0], 6);
+
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    let weatherMarker = null;
+    let waveMarker = null;
+    let lighthouseMarker = null;
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function formatCoord(v) {
+      return Number(v).toFixed(4);
+    }
+
+    function updateModeUI() {
+      document.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.mode === activeMode);
+      });
+
+      if (activeMode === "weather") {
+        setText("activeModeText", "Väder");
+        setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+      } else if (activeMode === "wave") {
+        setText("activeModeText", "Boj / våg");
+        setText("mapNote", "Klicka senare på en boj eller station för vågmodulen. Just nu sparar vi bara klickposition.");
+      } else {
+        setText("activeModeText", "Fyr / station");
+        setText("mapNote", "Klicka senare på en fyr eller station. Just nu sparar vi bara klickposition.");
+      }
+    }
+
+    function updateLastSelectionText() {
+      const current = savedSelections[activeMode];
+      if (!current) {
+        setText("lastSelectionText", "Inget valt ännu");
+        return;
+      }
+
+      setText(
+        "lastSelectionText",
+        `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`
+      );
+    }
+
+    function saveSelection(mode, lat, lon) {
+      savedSelections[mode] = { lat, lon };
+
+      if (mode === "weather") {
+        setText("weatherPointValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("weatherStatusValue", "Punkt vald");
+      }
+
+      if (mode === "wave") {
+        setText("waveStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("waveStatusValue", "Punkt vald");
+      }
+
+      if (mode === "lighthouse") {
+        setText("lighthouseStationValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
+        setText("lighthouseStatusValue", "Punkt vald");
+      }
+
+      updateLastSelectionText();
+    }
+
+    function setMarker(mode, lat, lon) {
+      if (mode === "weather") {
+        if (weatherMarker) map.removeLayer(weatherMarker);
+        weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
+      }
+
+      if (mode === "wave") {
+        if (waveMarker) map.removeLayer(waveMarker);
+        waveMarker = L.marker([lat, lon]).addTo(map).bindPopup("Boj / våg").openPopup();
+      }
+
+      if (mode === "lighthouse") {
+        if (lighthouseMarker) map.removeLayer(lighthouseMarker);
+        lighthouseMarker = L.marker([lat, lon]).addTo(map).bindPopup("Fyr / station").openPopup();
+      }
+    }
+
+    document.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeMode = btn.dataset.mode;
+        updateModeUI();
+        updateLastSelectionText();
+      });
+    });
+
+    map.on("click", (event) => {
+      const lat = event.latlng.lat;
+      const lon = event.latlng.lng;
+
+      saveSelection(activeMode, lat, lon);
+      setMarker(activeMode, lat, lon);
+    });
+
+    updateModeUI();
+    updateLastSelectionText();
+  </script>
+</body>
+</html>
