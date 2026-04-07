@@ -489,58 +489,39 @@
   </div>
 
   <script>
-    function setText(id, value) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
-    }
+  const defaultLat = 59.3293;
+  const defaultLon = 18.0686;
 
-    function formatCoord(value) {
-      return Number(value).toFixed(4);
-    }
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
 
-    function setPositionState(lat, lon) {
-      setText("heroStation", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-      setText("methodValue", "Nära mig");
-      setText("positionValue", `${formatCoord(lat)}, ${formatCoord(lon)}`);
-      setText("eventValue", "Position hämtad");
-      setText("statusText", "Position klar");
-    }
+  function formatCoord(v) {
+    return Number(v).toFixed(4);
+  }
 
-    function setErrorState(message) {
-      setText("eventValue", message);
-      setText("statusText", "Fel");
-    }
+  function setDefaultPosition() {
+    setText("heroStation", "Stockholm");
+    setText("methodValue", "Standardplats");
+    setText("positionValue", `${formatCoord(defaultLat)}, ${formatCoord(defaultLon)}`);
+    setText("eventValue", "Förvald plats används");
+    setText("statusText", "Redo");
+  }
 
-    document.getElementById("nearMeBtn").addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        setErrorState("Geolocation stöds inte i din webbläsare.");
-        return;
-      }
+  // INIT direkt
+  setDefaultPosition();
 
-      setText("statusText", "Hämtar position...");
-      setText("eventValue", "Försöker läsa din position");
+  // KNAPPAR
+  document.getElementById("nearMeBtn").addEventListener("click", () => {
+    setText("statusText", "Blockerad");
+    setText("eventValue", "Din enhet blockerar position (helt ok)");
+  });
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          setPositionState(lat, lon);
-        },
-        () => {
-          setErrorState("Kunde inte hämta din position.");
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        }
-      );
-    });
-
-    document.getElementById("choosePlaceBtn").addEventListener("click", () => {
-      setText("statusText", "Kommer snart");
-      setText("eventValue", "Platsväljare läggs till i nästa steg");
-    });
-  </script>
+  document.getElementById("choosePlaceBtn").addEventListener("click", () => {
+    setText("statusText", "Kommer snart");
+    setText("eventValue", "Platsväljare kommer i nästa steg");
+  });
+</script>
 </body>
 </html>
