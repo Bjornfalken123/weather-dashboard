@@ -1,171 +1,685 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Väderdashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Väderdashboard</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --bg-soft: #121a2b;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #eef4ff;
+      --muted: #a9b4c9;
+      --accent: #69b7ff;
+      --accent-2: #8ef0d0;
+      --danger: #ff8b8b;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      --radius: 20px;
+    }
 
-<style>
-:root {
-  --bg: #0b1220;
-  --card: rgba(255,255,255,0.08);
-  --border: rgba(255,255,255,0.12);
-  --text: #eef4ff;
-  --muted: #a9b4c9;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  color:var(--text);
-  background:linear-gradient(180deg,#08101d,#0b1220);
-}
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #173057 0%, transparent 35%),
+        radial-gradient(circle at top right, #0f4c5c 0%, transparent 30%),
+        linear-gradient(180deg, #08101d 0%, #0b1220 100%);
+      min-height: 100vh;
+    }
 
-.container {
-  max-width:1100px;
-  margin:auto;
-  padding:20px;
-}
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
 
-.hero {
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:20px;
-}
+    .hero {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
 
-.hero h1 { margin:0; }
+    .hero-card,
+    .panel,
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
 
-.temp {
-  font-size:60px;
-  font-weight:bold;
-}
+    .hero-card {
+      padding: 28px;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
 
-.grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:16px;
-}
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
 
-.card {
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:16px;
-}
+    .title-wrap h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
 
-.label { color:var(--muted); font-size:14px; }
-.value { font-size:24px; font-weight:bold; }
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
 
-.status { margin:10px 0; color:#69b7ff; }
-.error { color:#ff8b8b; white-space:pre-wrap; }
-</style>
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(105, 183, 255, 0.14);
+      color: #d8ebff;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      box-shadow: 0 0 12px var(--accent-2);
+    }
+
+    .hero-bottom {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    .temp-block {
+      display: flex;
+      align-items: end;
+      gap: 10px;
+    }
+
+    .temp-now {
+      font-size: 76px;
+      line-height: 0.9;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .temp-unit {
+      font-size: 26px;
+      margin-bottom: 10px;
+      color: var(--muted);
+    }
+
+    .quick-stats {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+
+    .quick-stat-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .quick-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .meta-grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .meta-item {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .meta-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .meta-value {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .metric-card {
+      padding: 20px;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .metric-icon {
+      font-size: 26px;
+      margin-bottom: 14px;
+    }
+
+    .metric-value {
+      font-size: 32px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-unit {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .list-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .list-row-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .list-title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .list-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .list-value {
+      font-weight: 800;
+      font-size: 16px;
+      text-align: right;
+    }
+
+    .aqi-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      background: rgba(142, 240, 208, 0.15);
+      color: #dffff5;
+    }
+
+    .placeholder {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .error {
+      color: var(--danger);
+      font-weight: 600;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .bottom-grid,
+      .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .bottom-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        padding: 16px;
+      }
+
+      .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .temp-now {
+        font-size: 58px;
+      }
+
+      .hero-card,
+      .panel,
+      .metric-card {
+        border-radius: 18px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .metrics-grid,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-top,
+      .hero-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .temp-now {
+        font-size: 50px;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="hero-top">
+          <div class="title-wrap">
+            <h1>Väderdashboard</h1>
+            <p class="subtitle" id="locationText">Stockholm • Live-data</p>
+          </div>
+          <div class="status-pill">
+            <span class="dot"></span>
+            <span id="statusText">Hämtar data...</span>
+          </div>
+        </div>
 
-<div class="container">
+        <div class="hero-bottom">
+          <div class="temp-block">
+            <div class="temp-now" id="tempNow">--</div>
+            <div class="temp-unit">°C</div>
+          </div>
 
-<div class="hero">
-  <div>
-    <h1>Väderdashboard</h1>
-    <div class="status" id="status">Laddar...</div>
+          <div class="quick-stats">
+            <div>
+              <div class="quick-stat-label">Nederbörd nästa timme</div>
+              <div class="quick-stat-value" id="rainNow">-- mm</div>
+            </div>
+            <div>
+              <div class="quick-stat-label">Vind</div>
+              <div class="quick-stat-value" id="windNow">-- m/s</div>
+            </div>
+            <div>
+              <div class="quick-stat-label">Vindbyar</div>
+              <div class="quick-stat-value" id="gustNow">-- m/s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Översikt</h2>
+        <p>
+          En snabb och tydlig överblick av aktuellt väder från MET Norway.
+        </p>
+
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-label">Senast uppdaterad</div>
+            <div class="meta-value" id="updatedAt">--</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Datakälla</div>
+            <div class="meta-value">MET Norway</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Lufttryck</div>
+            <div class="meta-value" id="pressureTop">--</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Molnighet</div>
+            <div class="meta-value" id="cloudsTop">--</div>
+          </div>
+        </div>
+
+        <div class="error" id="errorText" style="display:none;"></div>
+      </div>
+    </section>
+
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div>
+          <div class="metric-icon">🌡️</div>
+          <div class="metric-label">Temperatur</div>
+        </div>
+        <div>
+          <div class="metric-value" id="temperatureCard">--</div>
+          <div class="metric-unit">grader celsius</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div>
+          <div class="metric-icon">🌧️</div>
+          <div class="metric-label">Nederbörd</div>
+        </div>
+        <div>
+          <div class="metric-value" id="precipCard">--</div>
+          <div class="metric-unit">nästa timme</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div>
+          <div class="metric-icon">💨</div>
+          <div class="metric-label">Vind</div>
+        </div>
+        <div>
+          <div class="metric-value" id="windCard">--</div>
+          <div class="metric-unit">meter per sekund</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div>
+          <div class="metric-icon">🌬️</div>
+          <div class="metric-label">Vindbyar</div>
+        </div>
+        <div>
+          <div class="metric-value" id="gustCard">--</div>
+          <div class="metric-unit">meter per sekund</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom-grid">
+      <div class="panel">
+        <h2 class="section-title">Nuvarande vädervärden</h2>
+        <div class="list">
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Temperatur</div>
+              <div class="list-subtitle">Aktuell temperatur</div>
+            </div>
+            <div class="list-value" id="temperatureList">-- °C</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Nederbörd</div>
+              <div class="list-subtitle">Nästa timme</div>
+            </div>
+            <div class="list-value" id="precipList">-- mm</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Vindhastighet</div>
+              <div class="list-subtitle">Genomsnittlig vind</div>
+            </div>
+            <div class="list-value" id="windList">-- m/s</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Vindbyar</div>
+              <div class="list-subtitle">Max byvind</div>
+            </div>
+            <div class="list-value" id="gustList">-- m/s</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Vindriktning</div>
+              <div class="list-subtitle">Var vinden kommer från</div>
+            </div>
+            <div class="list-value" id="windDirList">-- °</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Lufttryck</div>
+              <div class="list-subtitle">Vid havsnivå</div>
+            </div>
+            <div class="list-value" id="pressureList">-- hPa</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Molnighet</div>
+              <div class="list-subtitle">Total molntäcke</div>
+            </div>
+            <div class="list-value" id="cloudsList">-- %</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="section-title">Kommer snart</h2>
+        <div class="list">
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Vattenstånd</div>
+              <div class="list-subtitle">Planerad widget</div>
+            </div>
+            <div class="list-value placeholder">Snart</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Våghöjd</div>
+              <div class="list-subtitle">Planerad widget</div>
+            </div>
+            <div class="list-value placeholder">Snart</div>
+          </div>
+
+          <div class="list-row">
+            <div class="list-row-left">
+              <div class="list-title">Luftkvalitet</div>
+              <div class="list-subtitle">Planerad widget</div>
+            </div>
+            <div class="list-value placeholder">Snart</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      Dashboarden hämtar väder via din egen Vercel-funktion
+    </div>
   </div>
-  <div class="temp" id="tempNow">--</div>
-</div>
 
-<div id="error" class="error"></div>
+  <script>
+    const lat = 59.3293;
+    const lon = 18.0686;
+    const placeName = "Stockholm";
 
-<div class="grid">
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
 
-<div class="card">
-<div class="label">Nederbörd</div>
-<div class="value" id="rain">--</div>
-</div>
+    function formatNumber(value, decimals = 1) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+      return Number(value).toFixed(decimals);
+    }
 
-<div class="card">
-<div class="label">Vind</div>
-<div class="value" id="wind">--</div>
-</div>
+    function formatUpdatedTime() {
+      const now = new Date();
+      return now.toLocaleString("sv-SE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
 
-<div class="card">
-<div class="label">Vindbyar</div>
-<div class="value" id="gust">--</div>
-</div>
+    function findBestTimeseries(timeseries) {
+      if (!Array.isArray(timeseries) || timeseries.length === 0) return null;
 
-<div class="card">
-<div class="label">Vindriktning</div>
-<div class="value" id="windDir">--</div>
-</div>
+      const withGust = timeseries.find(
+        (item) => item?.data?.instant?.details?.wind_speed_of_gust !== undefined
+      );
 
-<div class="card">
-<div class="label">Lufttryck</div>
-<div class="value" id="pressure">--</div>
-</div>
+      return withGust || timeseries[0];
+    }
 
-<div class="card">
-<div class="label">Molnighet</div>
-<div class="value" id="clouds">--</div>
-</div>
+    async function loadDashboard() {
+      const errorEl = document.getElementById("errorText");
+      errorEl.style.display = "none";
+      errorEl.textContent = "";
 
-<div class="card">
-<div class="label">Luftkvalitet</div>
-<div class="value">Kommer snart</div>
-</div>
+      setText("locationText", placeName + " • Live-data");
+      setText("statusText", "Hämtar data...");
 
-</div>
+      try {
+        const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
+        const text = await res.text();
 
-</div>
+        if (!res.ok) {
+          throw new Error(text);
+        }
 
-<script>
-const lat = 59.3293;
-const lon = 18.0686;
+        const data = JSON.parse(text);
+        const timeseries = data.properties?.timeseries || [];
+        const ts = findBestTimeseries(timeseries);
 
-function set(id,val){
-  const el=document.getElementById(id);
-  if(el) el.textContent=val;
-}
+        if (!ts) {
+          throw new Error("Ingen prognosdata hittades.");
+        }
 
-function format(v,d=1){
-  if(v==null) return "--";
-  return Number(v).toFixed(d);
-}
+        const instant = ts.data?.instant?.details || {};
+        const next1h = ts.data?.next_1_hours?.details || {};
 
-function pick(ts){
-  return ts.find(x=>x?.data?.instant?.details?.wind_speed_of_gust!==undefined)||ts[0];
-}
+        const temp = instant.air_temperature;
+        const precip = next1h.precipitation_amount ?? 0;
+        const wind = instant.wind_speed;
+        const gust = instant.wind_speed_of_gust;
+        const windDir = instant.wind_from_direction;
+        const pressure = instant.air_pressure_at_sea_level;
+        const clouds = instant.cloud_area_fraction;
 
-async function load(){
-  const status=document.getElementById("status");
-  const error=document.getElementById("error");
+        setText("statusText", "Live");
+        setText("updatedAt", formatUpdatedTime());
 
-  try{
-    const res=await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
-    const txt=await res.text();
-    if(!res.ok) throw new Error(txt);
+        setText("tempNow", formatNumber(temp, 1));
+        setText("rainNow", `${formatNumber(precip, 1)} mm`);
+        setText("windNow", `${formatNumber(wind, 1)} m/s`);
+        setText("gustNow", `${formatNumber(gust, 1)} m/s`);
 
-    const data=JSON.parse(txt);
-    const ts=pick(data.properties.timeseries);
+        setText("pressureTop", `${formatNumber(pressure, 1)} hPa`);
+        setText("cloudsTop", `${formatNumber(clouds, 0)} %`);
 
-    const i=ts.data.instant.details;
-    const n=ts.data.next_1_hours?.details||{};
+        setText("temperatureCard", formatNumber(temp, 1));
+        setText("precipCard", formatNumber(precip, 1));
+        setText("windCard", formatNumber(wind, 1));
+        setText("gustCard", formatNumber(gust, 1));
 
-    set("tempNow",format(i.air_temperature)+"°");
-    set("rain",format(n.precipitation_amount)+" mm");
-    set("wind",format(i.wind_speed)+" m/s");
-    set("gust",format(i.wind_speed_of_gust)+" m/s");
-    set("windDir",format(i.wind_from_direction,0)+"°");
-    set("pressure",format(i.air_pressure_at_sea_level)+" hPa");
-    set("clouds",format(i.cloud_area_fraction,0)+"%");
+        setText("temperatureList", `${formatNumber(temp, 1)} °C`);
+        setText("precipList", `${formatNumber(precip, 1)} mm`);
+        setText("windList", `${formatNumber(wind, 1)} m/s`);
+        setText("gustList", `${formatNumber(gust, 1)} m/s`);
+        setText("windDirList", `${formatNumber(windDir, 0)} °`);
+        setText("pressureList", `${formatNumber(pressure, 1)} hPa`);
+        setText("cloudsList", `${formatNumber(clouds, 0)} %`);
+      } catch (error) {
+        setText("statusText", "Fel");
+        errorEl.style.display = "block";
+        errorEl.textContent = "Kunde inte ladda data: " + error.message;
+        console.error(error);
+      }
+    }
 
-    status.textContent="Live";
-  }catch(e){
-    status.textContent="Fel";
-    error.textContent=e.message;
-  }
-}
-
-load();
-</script>
-
+    loadDashboard();
+  </script>
 </body>
 </html>
