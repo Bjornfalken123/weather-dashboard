@@ -398,7 +398,7 @@
               <div class="quick-stat-value" id="windNow">-- m/s</div>
             </div>
             <div>
-              <div class="quick-stat-label">Vindbyar</div>
+              <div class="quick-stat-label" id="gustLabelTop">Vindbyar</div>
               <div class="quick-stat-value" id="gustNow">-- m/s</div>
             </div>
           </div>
@@ -471,7 +471,7 @@
       <div class="metric-card">
         <div>
           <div class="metric-icon">🌬️</div>
-          <div class="metric-label">Vindbyar</div>
+          <div class="metric-label" id="gustLabelCard">Vindbyar</div>
         </div>
         <div>
           <div class="metric-value" id="gustCard">--</div>
@@ -510,7 +510,7 @@
 
           <div class="list-row">
             <div class="list-row-left">
-              <div class="list-title">Vindbyar</div>
+              <div class="list-title" id="gustLabelList">Vindbyar</div>
               <div class="list-subtitle">Max byvind</div>
             </div>
             <div class="list-value" id="gustList">-- m/s</div>
@@ -606,11 +606,38 @@
     function findBestTimeseries(timeseries) {
       if (!Array.isArray(timeseries) || timeseries.length === 0) return null;
 
-      const withGust = timeseries.find(
+      const withRealGust = timeseries.find(
         (item) => item?.data?.instant?.details?.wind_speed_of_gust !== undefined
       );
 
-      return withGust || timeseries[0];
+      return withRealGust || timeseries[0];
+    }
+
+    function getGustInfo(details) {
+      if (details?.wind_speed_of_gust !== undefined) {
+        return {
+          value: details.wind_speed_of_gust,
+          label: "Vindbyar"
+        };
+      }
+
+      if (details?.wind_speed_percentile_90 !== undefined) {
+        return {
+          value: details.wind_speed_percentile_90,
+          label: "Vindbyar (est.)"
+        };
+      }
+
+      return {
+        value: null,
+        label: "Vindbyar"
+      };
+    }
+
+    function setGustLabels(label) {
+      setText("gustLabelTop", label);
+      setText("gustLabelCard", label);
+      setText("gustLabelList", label);
     }
 
     async function loadDashboard() {
@@ -643,10 +670,14 @@
         const temp = instant.air_temperature;
         const precip = next1h.precipitation_amount ?? 0;
         const wind = instant.wind_speed;
-        const gust = instant.wind_speed_of_gust;
         const windDir = instant.wind_from_direction;
         const pressure = instant.air_pressure_at_sea_level;
         const clouds = instant.cloud_area_fraction;
+
+        const gustInfo = getGustInfo(instant);
+        const gust = gustInfo.value;
+
+        setGustLabels(gustInfo.label);
 
         setText("statusText", "Live");
         setText("updatedAt", formatUpdatedTime());
@@ -654,7 +685,7 @@
         setText("tempNow", formatNumber(temp, 1));
         setText("rainNow", `${formatNumber(precip, 1)} mm`);
         setText("windNow", `${formatNumber(wind, 1)} m/s`);
-        setText("gustNow", `${formatNumber(gust, 1)} m/s`);
+        setText("gustNow", gust === null ? "-- m/s" : `${formatNumber(gust, 1)} m/s`);
 
         setText("pressureTop", `${formatNumber(pressure, 1)} hPa`);
         setText("cloudsTop", `${formatNumber(clouds, 0)} %`);
@@ -662,12 +693,12 @@
         setText("temperatureCard", formatNumber(temp, 1));
         setText("precipCard", formatNumber(precip, 1));
         setText("windCard", formatNumber(wind, 1));
-        setText("gustCard", formatNumber(gust, 1));
+        setText("gustCard", gust === null ? "--" : formatNumber(gust, 1));
 
         setText("temperatureList", `${formatNumber(temp, 1)} °C`);
         setText("precipList", `${formatNumber(precip, 1)} mm`);
         setText("windList", `${formatNumber(wind, 1)} m/s`);
-        setText("gustList", `${formatNumber(gust, 1)} m/s`);
+        setText("gustList", gust === null ? "-- m/s" : `${formatNumber(gust, 1)} m/s`);
         setText("windDirList", `${formatNumber(windDir, 0)} °`);
         setText("pressureList", `${formatNumber(pressure, 1)} hPa`);
         setText("cloudsList", `${formatNumber(clouds, 0)} %`);
