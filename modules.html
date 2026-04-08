@@ -1,137 +1,2983 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Kustväder</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kustväder – väder, vågor och stationer i realtid</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 
-<style>
-body { margin:0; background:#0b1220; color:white; font-family:Arial;}
-#map { height:50vh; }
-#layerMiniMap { height:50vh; }
-canvas { position:absolute; top:0; left:0; }
-</style>
+  <style>
+    :root {
+      --bg-1: #040913;
+      --bg-2: #08101d;
+      --bg-3: #0c1727;
+      --surface: rgba(255, 255, 255, 0.055);
+      --surface-strong: rgba(255, 255, 255, 0.08);
+      --surface-soft: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.11);
+      --border-strong: rgba(255, 255, 255, 0.18);
+      --text: #f3f7ff;
+      --text-soft: #dfe8f7;
+      --muted: #95a5bf;
+      --muted-soft: #b7c5d9;
+      --accent: #7bc7ff;
+      --accent-2: #98f0db;
+      --accent-3: #b4c7ff;
+      --accent-gold: #e8d7a8;
+      --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.42);
+      --shadow-md: 0 20px 50px rgba(0, 0, 0, 0.28);
+      --shadow-sm: 0 12px 28px rgba(0, 0, 0, 0.18);
+      --radius-xl: 30px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --transition: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+      --transition-fast: 180ms ease;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(123, 199, 255, 0.16) 0%, transparent 24%),
+        radial-gradient(circle at 92% 8%, rgba(152, 240, 219, 0.10) 0%, transparent 18%),
+        radial-gradient(circle at 50% 100%, rgba(180, 199, 255, 0.10) 0%, transparent 20%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 42%, var(--bg-3) 100%);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(80px);
+      opacity: 0.75;
+    }
+
+    body::before {
+      top: -120px;
+      left: -120px;
+      width: 360px;
+      height: 360px;
+      border-radius: 999px;
+      background: rgba(123, 199, 255, 0.14);
+    }
+
+    body::after {
+      right: -110px;
+      top: 150px;
+      width: 320px;
+      height: 320px;
+      border-radius: 999px;
+      background: rgba(152, 240, 219, 0.10);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .hero,
+    .map-panel,
+    .module-card,
+    .layer-panel {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.04) 100%);
+      backdrop-filter: blur(22px) saturate(155%);
+      -webkit-backdrop-filter: blur(22px) saturate(155%);
+      box-shadow: var(--shadow-md);
+      transition:
+        transform var(--transition),
+        border-color var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
+    }
+
+    .hero::before,
+    .map-panel::before,
+    .module-card::before,
+    .layer-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.015) 46%, rgba(255,255,255,0.03) 100%);
+    }
+
+    .hero::after,
+    .map-panel::after,
+    .module-card::after,
+    .layer-panel::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,0.025);
+      pointer-events: none;
+    }
+
+    .hero {
+      border-radius: var(--radius-xl);
+      padding: 38px;
+      margin-bottom: 24px;
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-lg);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.095) 0%, rgba(255,255,255,0.04) 55%, rgba(255,255,255,0.03) 100%);
+    }
+
+    .hero::before {
+      background:
+        radial-gradient(circle at top left, rgba(123, 199, 255, 0.18) 0%, transparent 32%),
+        radial-gradient(circle at top right, rgba(152, 240, 219, 0.12) 0%, transparent 25%),
+        linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+    }
+
+    .hero-top {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .title-wrap h1 {
+      margin: 0 0 14px;
+      font-size: 48px;
+      line-height: 0.96;
+      letter-spacing: -0.055em;
+      font-weight: 900;
+      color: transparent;
+      background:
+        linear-gradient(90deg, #ffffff 0%, #dcecff 28%, #9bd8ff 60%, #bde7d6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(255,255,255,0.03);
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted-soft);
+      font-size: 16px;
+      line-height: 1.7;
+      letter-spacing: 0.01em;
+    }
+
+    .status-pill {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      border-radius: 999px;
+      color: var(--text-soft);
+      font-size: 14px;
+      white-space: nowrap;
+      border: 1px solid rgba(123, 199, 255, 0.24);
+      background:
+        linear-gradient(180deg, rgba(123, 199, 255, 0.16) 0%, rgba(123, 199, 255, 0.08) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        0 10px 24px rgba(0,0,0,0.2);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      flex-shrink: 0;
+      box-shadow:
+        0 0 0 5px rgba(152, 240, 219, 0.10),
+        0 0 18px rgba(152, 240, 219, 0.58);
+    }
+
+    .hero-bottom {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    .hero-info {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .hero-info > div {
+      min-width: 190px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.065);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.03) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 10px 22px rgba(0,0,0,0.1);
+    }
+
+    .hero-block-label {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .hero-block-value {
+      font-size: 18px;
+      line-height: 1.35;
+      font-weight: 760;
+      color: var(--text);
+    }
+
+    .map-layer-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.9fr);
+      gap: 22px;
+      margin-bottom: 24px;
+      align-items: stretch;
+    }
+
+    .map-panel {
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.045) 100%);
+      min-height: 100%;
+    }
+
+    .map-toolbar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .mode-btn,
+    .forecast-toggle-btn,
+    .layer-tab,
+    .layer-control-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.095) 0%, rgba(255,255,255,0.045) 100%);
+      border-radius: 16px;
+      padding: 11px 15px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.045),
+        0 10px 20px rgba(0,0,0,0.12);
+      transition:
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background var(--transition-fast),
+        color var(--transition-fast);
+    }
+
+    .mode-btn:hover,
+    .forecast-toggle-btn:hover,
+    .layer-tab:hover,
+    .layer-control-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.2);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.055) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.055),
+        0 14px 24px rgba(0,0,0,0.16);
+    }
+
+    .mode-btn.active,
+    .layer-tab.active {
+      border-color: rgba(123, 199, 255, 0.42);
+      background:
+        linear-gradient(180deg, rgba(123, 199, 255, 0.24) 0%, rgba(123, 199, 255, 0.11) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        0 0 0 1px rgba(123, 199, 255, 0.08),
+        0 0 30px rgba(123, 199, 255, 0.12),
+        0 14px 28px rgba(0,0,0,0.18);
+    }
+
+    .forecast-toggle-wrap {
+      position: relative;
+      z-index: 1;
+      margin-top: auto;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .forecast-toggle-btn {
+      padding: 9px 13px;
+      font-size: 13px;
+    }
+
+    .map-note {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 16px;
+      color: var(--muted-soft);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    #map {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 500px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 20px 42px rgba(0,0,0,0.24);
+    }
+
+    .layer-panel {
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.045) 100%);
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .layer-panel-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .layer-panel-title-wrap h2 {
+      margin: 0 0 8px;
+      font-size: 23px;
+      font-weight: 840;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .layer-panel-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.68;
+      max-width: 46ch;
+    }
+
+    .layer-badge {
+      white-space: nowrap;
+      padding: 8px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #f7fbff;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(232, 215, 168, 0.16) 0%, rgba(123, 199, 255, 0.14) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 8px 18px rgba(0,0,0,0.12);
+    }
+
+    .layer-tabs {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .layer-view {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-height: 320px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.10);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(123, 199, 255, 0.18) 0%, transparent 20%),
+        radial-gradient(circle at 80% 25%, rgba(152, 240, 219, 0.10) 0%, transparent 18%),
+        radial-gradient(circle at 50% 70%, rgba(180, 199, 255, 0.12) 0%, transparent 28%),
+        linear-gradient(180deg, rgba(10, 18, 32, 0.96) 0%, rgba(8, 14, 26, 0.98) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.03),
+        0 20px 42px rgba(0,0,0,0.24);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .layer-view::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      opacity: 0.28;
+      pointer-events: none;
+    }
+
+    .layer-view-top {
+      position: relative;
+      z-index: 4;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 18px 18px 0;
+      flex-wrap: wrap;
+    }
+
+    .layer-view-labels {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .layer-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-soft);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .layer-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(123, 199, 255, 0.55);
+    }
+
+    .layer-timestamp {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-soft);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(9, 17, 30, 0.72);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .layer-visual-center {
+      position: relative;
+      z-index: 1;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .layer-visual-card {
+      width: 100%;
+      min-height: 150px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 18px 34px rgba(0,0,0,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #layerVisualStage {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(10,20,32,0.96) 0%, rgba(7,13,24,0.98) 100%);
+    }
+
+    #layerMiniMap {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    #precipitationImage {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 180ms ease;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    #layerGraphicCanvas {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .layer-visual-overlay {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 5;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(7, 14, 26, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+      text-align: left;
+      max-width: calc(100% - 24px);
+    }
+
+    #layerMiniMap .leaflet-control-attribution {
+      font-size: 10px;
+      background: rgba(7, 14, 26, 0.72);
+      color: #dfe8f7;
+    }
+
+    .layer-visual-text {
+      max-width: 100%;
+    }
+
+    .layer-visual-title {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+      font-weight: 760;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .layer-visual-desc {
+      margin: 0;
+      color: var(--muted-soft);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .layer-controls {
+      position: relative;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 18px 18px;
+    }
+
+    .layer-control-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .layer-control-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .layer-control-btn {
+      padding: 10px 13px;
+      font-size: 13px;
+    }
+
+    .layer-status {
+      color: var(--muted-soft);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .layer-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .layer-slider-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .layer-slider {
+      width: 100%;
+      appearance: none;
+      height: 8px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(123, 199, 255, 0.55) 0%, rgba(152, 240, 219, 0.45) 55%, rgba(255,255,255,0.12) 100%);
+      outline: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow:
+        inset 0 1px 2px rgba(0,0,0,0.2),
+        0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .layer-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffffff 0%, #cfe8ff 100%);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow:
+        0 0 0 6px rgba(123, 199, 255, 0.12),
+        0 8px 16px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    .layer-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffffff 0%, #cfe8ff 100%);
+      box-shadow:
+        0 0 0 6px rgba(123, 199, 255, 0.12),
+        0 8px 16px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    .layer-legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .layer-legend-item {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.035) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.035),
+        0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .layer-legend-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: var(--text-soft);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .legend-swatch.blue {
+      background: #7bc7ff;
+      box-shadow: 0 0 12px rgba(123, 199, 255, 0.55);
+    }
+
+    .legend-swatch.green {
+      background: #98f0db;
+      box-shadow: 0 0 12px rgba(152, 240, 219, 0.45);
+    }
+
+    .legend-swatch.white {
+      background: #dfe8f7;
+      box-shadow: 0 0 12px rgba(223, 232, 247, 0.25);
+    }
+
+    .layer-legend-text {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .modules-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .module-card {
+      padding: 24px;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.045) 100%);
+    }
+
+    .module-card:hover,
+    .layer-panel:hover,
+    .map-panel:hover {
+      transform: translateY(-4px);
+      border-color: rgba(123, 199, 255, 0.24);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.092) 0%, rgba(255,255,255,0.05) 100%);
+      box-shadow:
+        0 32px 70px rgba(0,0,0,0.34),
+        0 0 36px rgba(123, 199, 255, 0.07);
+    }
+
+    .module-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .module-title {
+      margin: 0 0 8px;
+      font-size: 23px;
+      font-weight: 840;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .module-subtitle {
+      margin: 0;
+      max-width: 38ch;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.68;
+    }
+
+    .module-badge {
+      white-space: nowrap;
+      padding: 8px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #f7fbff;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(232, 215, 168, 0.16) 0%, rgba(123, 199, 255, 0.14) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 8px 18px rgba(0,0,0,0.12);
+    }
+
+    .module-meta {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 11px;
+      margin-top: 4px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 15px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.075);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.035) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.035),
+        0 8px 20px rgba(0,0,0,0.08);
+      transition:
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        background var(--transition-fast),
+        box-shadow var(--transition-fast);
+    }
+
+    .meta-row:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 12px 24px rgba(0,0,0,0.12);
+    }
+
+    .meta-row-label {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .meta-row-value {
+      color: var(--text-soft);
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 760;
+      text-align: right;
+    }
+
+    .forecast-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 11px;
+    }
+
+    .forecast-item {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.075);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.035) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.035),
+        0 10px 22px rgba(0,0,0,0.08);
+      transition:
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        background var(--transition-fast),
+        box-shadow var(--transition-fast);
+    }
+
+    .forecast-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 14px 28px rgba(0,0,0,0.12);
+    }
+
+    .forecast-time {
+      margin-bottom: 9px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .forecast-temp {
+      margin-bottom: 7px;
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 860;
+      letter-spacing: -0.03em;
+    }
+
+    .forecast-rain {
+      color: var(--muted-soft);
+      font-size: 12px;
+      line-height: 1.56;
+    }
+
+    .module-empty {
+      position: relative;
+      z-index: 1;
+      margin-top: auto;
+      padding-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.78;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(7, 14, 26, 0.95);
+      color: var(--text);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(7, 14, 26, 0.95);
+    }
+
+    .leaflet-tooltip {
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(8, 15, 28, 0.94);
+      color: var(--text);
+      font-size: 12px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.22);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .leaflet-tooltip-top:before {
+      border-top-color: rgba(8, 15, 28, 0.94);
+    }
+
+    @media (max-width: 1200px) {
+      .map-layer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .layer-panel {
+        min-height: 520px;
+      }
+    }
+
+    @media (max-width: 1050px) {
+      .modules-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .module-card {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .container { padding: 16px; }
+      .hero { padding: 24px; }
+      .title-wrap h1 { font-size: 36px; }
+      .subtitle { font-size: 15px; }
+      .hero-info { gap: 12px; }
+      .hero-info > div { width: 100%; }
+      #map { height: 390px; border-radius: 18px; }
+      #layerVisualStage { height: 250px; }
+      .forecast-grid,
+      .layer-legend { grid-template-columns: 1fr; }
+      .map-toolbar,
+      .layer-tabs { display: grid; grid-template-columns: 1fr; }
+      .mode-btn,
+      .forecast-toggle-btn,
+      .layer-tab { width: 100%; }
+      .layer-control-row { flex-direction: column; align-items: stretch; }
+      .layer-control-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+      .layer-control-btn { width: 100%; }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="title-wrap">
+          <h1>Kustväder</h1>
+          <p class="subtitle">Väder, vågor och stationer i realtid</p>
+        </div>
 
-<div id="map"></div>
-<div id="layerMiniMap"></div>
-<canvas id="canvas"></canvas>
+        <div class="status-pill">
+          <span class="dot"></span>
+          <span id="pageStatus">Vädermodul aktiv</span>
+        </div>
+      </div>
+
+      <div class="hero-bottom">
+        <div class="hero-info">
+          <div>
+            <div class="hero-block-label">Aktivt kartläge</div>
+            <div class="hero-block-value" id="activeModeText">Väder</div>
+          </div>
+          <div>
+            <div class="hero-block-label">Senaste val</div>
+            <div class="hero-block-value" id="lastSelectionText">Inget val gjort ännu</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="map-layer-grid">
+      <section class="map-panel">
+        <div class="map-toolbar">
+          <button class="mode-btn active" data-mode="weather">Väderpunkt</button>
+          <button class="mode-btn" data-mode="wave">Boj / våg</button>
+          <button class="mode-btn" data-mode="lighthouse">Fyr / station</button>
+        </div>
+
+        <div class="map-note" id="mapNote">
+          Klicka på kartan för att välja en punkt för vädermodulen.
+        </div>
+
+        <div id="map"></div>
+      </section>
+
+      <aside class="layer-panel">
+        <div class="layer-panel-header">
+          <div class="layer-panel-title-wrap">
+            <h2>Väderlager</h2>
+            <p class="layer-panel-subtitle">
+              Fristående lagerkarta med zoom, klickpunkt och grafiska lager för nederbörd, moln och vind.
+            </p>
+          </div>
+          <div class="layer-badge">Radar & lager</div>
+        </div>
+
+        <div class="layer-tabs">
+          <button class="layer-tab active" type="button" data-layer="precipitation">Nederbörd</button>
+          <button class="layer-tab" type="button" data-layer="clouds">Moln</button>
+          <button class="layer-tab" type="button" data-layer="wind">Vind</button>
+        </div>
+
+        <div class="layer-view" id="layerView" data-layer="precipitation">
+          <div class="layer-view-top">
+            <div class="layer-view-labels">
+              <div class="layer-chip">
+                <span class="layer-chip-dot"></span>
+                <span id="layerActiveLabel">Aktivt lager: Nederbörd</span>
+              </div>
+              <div class="layer-chip">
+                <span class="layer-chip-dot"></span>
+                <span id="layerAreaLabel">Punkt: kartcentrum</span>
+              </div>
+            </div>
+            <div class="layer-timestamp" id="layerTimestamp">--</div>
+          </div>
+
+          <div class="layer-visual-center">
+            <div class="layer-visual-card">
+              <div id="layerVisualStage">
+                <div id="layerMiniMap"></div>
+                <img id="precipitationImage" alt="Radarbild" />
+                <canvas id="layerGraphicCanvas"></canvas>
+
+                <div class="layer-visual-overlay">
+                  <div class="layer-visual-text">
+                    <span class="layer-visual-title" id="layerVisualTitle">Nederbördslager</span>
+                    <p class="layer-visual-desc" id="layerVisualDesc">
+                      Zooma, panorera eller klicka direkt i lagerkartan.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="layer-controls">
+            <div class="layer-control-row">
+              <div class="layer-control-buttons">
+                <button class="layer-control-btn" id="layerStepBackBtn" type="button">◀</button>
+                <button class="layer-control-btn" id="layerStepForwardBtn" type="button">▶</button>
+                <button class="layer-control-btn" id="layerPlayBtn" type="button">Spela</button>
+              </div>
+              <div class="layer-status" id="layerStatus">
+                Laddar lagerdata...
+              </div>
+            </div>
+
+            <div class="layer-slider-wrap">
+              <div class="layer-slider-meta">
+                <span id="layerRangeStart">Tidigare</span>
+                <span id="layerSelectedTime">Vald tid: --</span>
+                <span id="layerRangeEnd">Senare</span>
+              </div>
+              <input class="layer-slider" id="layerSlider" type="range" min="0" max="24" value="12" />
+            </div>
+
+            <div class="layer-legend">
+              <div class="layer-legend-item">
+                <div class="layer-legend-label">
+                  <span class="legend-swatch blue"></span>
+                  <span>Nederbörd</span>
+                </div>
+                <div class="layer-legend-text" id="legendPrecipText">
+                  Radarbild med färgkoder.
+                </div>
+              </div>
+
+              <div class="layer-legend-item">
+                <div class="layer-legend-label">
+                  <span class="legend-swatch green"></span>
+                  <span>Moln</span>
+                </div>
+                <div class="layer-legend-text" id="legendCloudText">
+                  Grafiskt molntäcke över lagerkartan.
+                </div>
+              </div>
+
+              <div class="layer-legend-item">
+                <div class="layer-legend-label">
+                  <span class="legend-swatch white"></span>
+                  <span>Vind</span>
+                </div>
+                <div class="layer-legend-text" id="legendWindText">
+                  Fält av små vindpilar.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="modules-grid">
+      <article class="module-card">
+        <div class="module-header">
+          <div>
+            <h2 class="module-title">Väder</h2>
+            <p class="module-subtitle">
+              Välj en valfri punkt på kartan för att se aktuellt väder, vindbyar och prognos för kommande dagar.
+            </p>
+          </div>
+          <div class="module-badge">MET + Open-Meteo</div>
+        </div>
+
+        <div class="module-meta">
+          <div class="meta-row">
+            <div class="meta-row-label">Vald punkt</div>
+            <div class="meta-row-value" id="weatherPointValue">Ingen punkt vald</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Temperatur</div>
+            <div class="meta-row-value" id="weatherTempValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Luftfuktighet</div>
+            <div class="meta-row-value" id="weatherHumidityValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Nederbörd</div>
+            <div class="meta-row-value" id="weatherRainValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Väderläge</div>
+            <div class="meta-row-value" id="weatherTypeValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vind</div>
+            <div class="meta-row-value" id="weatherWindValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vindriktning</div>
+            <div class="meta-row-value" id="weatherDirectionValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vindbyar</div>
+            <div class="meta-row-value" id="weatherGustValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Källa för vindbyar</div>
+            <div class="meta-row-value" id="weatherGustSourceValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Lufttryck</div>
+            <div class="meta-row-value" id="weatherPressureValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Status</div>
+            <div class="meta-row-value" id="weatherStatusValue">Redo för val på kartan</div>
+          </div>
+        </div>
+
+        <div class="forecast-toggle-wrap">
+          <button class="forecast-toggle-btn" id="forecastToggleBtn" type="button">Visa 7 dagar</button>
+        </div>
+
+        <div class="forecast-grid">
+          <div class="forecast-item" id="forecastItem1">
+            <div class="forecast-time" id="forecast1Time">--</div>
+            <div class="forecast-temp" id="forecast1Temp">--</div>
+            <div class="forecast-rain" id="forecast1Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem2">
+            <div class="forecast-time" id="forecast2Time">--</div>
+            <div class="forecast-temp" id="forecast2Temp">--</div>
+            <div class="forecast-rain" id="forecast2Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem3">
+            <div class="forecast-time" id="forecast3Time">--</div>
+            <div class="forecast-temp" id="forecast3Temp">--</div>
+            <div class="forecast-rain" id="forecast3Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem4">
+            <div class="forecast-time" id="forecast4Time">--</div>
+            <div class="forecast-temp" id="forecast4Temp">--</div>
+            <div class="forecast-rain" id="forecast4Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem5">
+            <div class="forecast-time" id="forecast5Time">--</div>
+            <div class="forecast-temp" id="forecast5Temp">--</div>
+            <div class="forecast-rain" id="forecast5Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem6">
+            <div class="forecast-time" id="forecast6Time">--</div>
+            <div class="forecast-temp" id="forecast6Temp">--</div>
+            <div class="forecast-rain" id="forecast6Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem7">
+            <div class="forecast-time" id="forecast7Time">--</div>
+            <div class="forecast-temp" id="forecast7Temp">--</div>
+            <div class="forecast-rain" id="forecast7Rain">--</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="module-card">
+        <div class="module-header">
+          <div>
+            <h2 class="module-title">Boj / hav</h2>
+            <p class="module-subtitle">
+              Havsdata hämtas i första hand från VIVA och kompletteras med SMHI vid behov.
+            </p>
+          </div>
+          <div class="module-badge">VIVA + SMHI</div>
+        </div>
+
+        <div class="module-meta">
+          <div class="meta-row">
+            <div class="meta-row-label">Vald vågstation</div>
+            <div class="meta-row-value" id="waveStationValue">Ingen station vald</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Våghöjd</div>
+            <div class="meta-row-value" id="waveHeightValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Senaste vågobservation</div>
+            <div class="meta-row-value" id="waveObsTimeValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vattenstånd</div>
+            <div class="meta-row-value" id="waterLevelValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Station för vattenstånd</div>
+            <div class="meta-row-value" id="waterLevelStationValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vattentemperatur</div>
+            <div class="meta-row-value" id="waterTempValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Stationsposition</div>
+            <div class="meta-row-value" id="waveCoordsValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Status</div>
+            <div class="meta-row-value" id="waveStatusValue">Välj läget Boj / våg</div>
+          </div>
+        </div>
+
+        <div class="module-empty">
+          Röd boj = tillgänglig havsdata. Blå = ännu inte kontrollerad. Grå = ingen tillgänglig data just nu.
+        </div>
+      </article>
+
+      <article class="module-card">
+        <div class="module-header">
+          <div>
+            <h2 class="module-title">Fyr / station</h2>
+            <p class="module-subtitle">
+              Välj en SMHI-station på kartan för att se aktuell temperatur, vind, vindriktning, lufttryck och vindbyar.
+            </p>
+          </div>
+          <div class="module-badge">SMHI live</div>
+        </div>
+
+        <div class="module-meta">
+          <div class="meta-row">
+            <div class="meta-row-label">Vald station</div>
+            <div class="meta-row-value" id="lighthouseStationValue">Ingen station vald</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Temperatur</div>
+            <div class="meta-row-value" id="lhTempValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vind</div>
+            <div class="meta-row-value" id="lhWindValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vindriktning</div>
+            <div class="meta-row-value" id="lhWindDirValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Vindby</div>
+            <div class="meta-row-value" id="lhGustValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Lufttryck</div>
+            <div class="meta-row-value" id="lhPressureValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Stationsposition</div>
+            <div class="meta-row-value" id="lhCoordsValue">--</div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-row-label">Status</div>
+            <div class="meta-row-value" id="lighthouseStatusValue">Välj läget Fyr / station</div>
+          </div>
+        </div>
+
+        <div class="module-empty">
+          Röd station = aktuell data tillgänglig. Blå = ännu inte kontrollerad. Grå = ingen aktuell data.
+        </div>
+      </article>
+    </section>
+  </div>
 
 <script>
-// ========================
-// MAIN MAP
-// ========================
-const map = L.map("map").setView([58.6,13],6);
+  let activeMode = "weather";
+  let forecastExpanded = false;
+  let currentForecastDays = [];
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19
-}).addTo(map);
+  const savedSelections = {
+    weather: null,
+    wave: null,
+    lighthouse: null
+  };
 
-// ========================
-// RADAR MAP
-// ========================
-const radarMap = L.map("layerMiniMap").setView([58.6,13],5);
+  const map = L.map("map").setView([58.6, 13.0], 6);
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19
-}).addTo(radarMap);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(map);
 
-// ========================
-// RADAR IMAGE
-// ========================
-let radarLayer;
+  let weatherMarker = null;
+  let waveSelectionMarker = null;
+  let lighthouseSelectionMarker = null;
 
-async function loadRadar() {
-  try {
-    const res = await fetch("/api/radar");
-    const data = await res.json();
+  let waveStationsLayer = L.layerGroup();
+  let lighthouseStationsLayer = L.layerGroup();
 
-    const frame = data.frames?.[0];
-    if (!frame) return;
+  let waveStationsLoaded = false;
+  let lighthouseStationsLoaded = false;
 
-    if (radarLayer) radarMap.removeLayer(radarLayer);
+  let waveStationsLoadingPromise = null;
+  let lighthouseStationsLoadingPromise = null;
 
-    radarLayer = L.imageOverlay(
-      frame.url,
-      [[55,10],[70,25]] // Sverige bounding box
-    );
+  let waveBackgroundCheckStarted = false;
+  let lighthouseBackgroundCheckStarted = false;
 
-    radarLayer.addTo(radarMap);
+  const waveMarkerMap = new Map();
+  const lighthouseMarkerMap = new Map();
 
-  } catch(e) {
-    console.error("Radar error", e);
+  const waveStationsCache = new Map();
+  const lighthouseStationsCache = new Map();
+
+  let waterLevelStationsPromise = null;
+  let vivaStationsPromise = null;
+
+  const vivaStationDataCache = new Map();
+  const vivaNearestCache = new Map();
+  const waveEvaluationCache = new Map();
+  const lighthouseObservationCache = new Map();
+
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
   }
-}
 
-loadRadar();
+  function formatCoord(v) {
+    return Number(v).toFixed(4);
+  }
 
-// ========================
-// WIND FIELD (SVARTA PILAR)
-// ========================
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+  function formatTemp(v) {
+    return v == null ? "--" : `${Number(v).toFixed(1)} °C`;
+  }
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight/2;
-}
-resizeCanvas();
+  function formatHumidity(v) {
+    return v == null ? "--" : `${Math.round(Number(v))} %`;
+  }
 
-function drawWind(speed=5, dir=120) {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  function formatRain(v) {
+    return v == null ? "--" : `${Number(v).toFixed(1)} mm`;
+  }
 
-  const cols = 12;
-  const rows = 6;
+  function formatWind(v) {
+    return v == null ? "--" : `${Number(v).toFixed(1)} m/s`;
+  }
 
-  const angle = (dir+180)*Math.PI/180;
+  function formatPressure(v) {
+    return v == null ? "--" : `${Number(v).toFixed(1)} hPa`;
+  }
 
-  for(let i=0;i<cols;i++){
-    for(let j=0;j<rows;j++){
+  function formatWave(v) {
+    return v == null ? "--" : `${Number(v).toFixed(1)} m`;
+  }
 
-      const x = (i+0.5)*canvas.width/cols;
-      const y = (j+0.5)*canvas.height/rows;
+  function formatWaterLevel(v) {
+    return v == null ? "--" : `${Number(v).toFixed(1)} cm`;
+  }
 
-      ctx.save();
-      ctx.translate(x,y);
-      ctx.rotate(angle);
+  function formatPercent(v) {
+    return v == null ? "--" : `${Math.round(Number(v))} %`;
+  }
 
-      ctx.strokeStyle="black";
-      ctx.fillStyle="black";
-      ctx.lineWidth=2;
+  function formatForecastRange(min, max) {
+    if (min == null && max == null) return "--";
+    if (min == null) return formatTemp(max);
+    if (max == null) return formatTemp(min);
+    return `${Math.round(min)}° / ${Math.round(max)}°`;
+  }
 
-      ctx.beginPath();
-      ctx.moveTo(0,-10);
-      ctx.lineTo(0,10);
-      ctx.stroke();
+  function formatForecastDay(dateString, index) {
+    if (!dateString) return "--";
+    if (index === 0) return "Idag";
+    if (index === 1) return "Imorgon";
+    const date = new Date(`${dateString}T12:00:00`);
+    return date.toLocaleDateString("sv-SE", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit"
+    });
+  }
 
-      ctx.beginPath();
-      ctx.moveTo(0,-14);
-      ctx.lineTo(-4,-6);
-      ctx.lineTo(4,-6);
-      ctx.fill();
+  function formatObsTime(value) {
+    if (!value) return "--";
 
-      ctx.restore();
+    const asNumber = Number(value);
+    if (!Number.isNaN(asNumber) && String(value).length >= 10) {
+      const d = new Date(asNumber);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleString("sv-SE", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+    }
+
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleString("sv-SE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    return String(value);
+  }
+
+  function formatShortLayerTime(value) {
+    if (!value) return "--";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "--";
+
+    return d.toLocaleString("sv-SE", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).replace(".", "");
+  }
+
+  function formatObservedValue(formattedValue, observation) {
+    if (!formattedValue || formattedValue === "--") return "--";
+    const rawTime = observation?.date ?? observation?.time ?? null;
+    const timeText = formatObsTime(rawTime);
+
+    if (!rawTime || timeText === "--") return formattedValue;
+    return `${formattedValue} • ${timeText}`;
+  }
+
+  function weatherLabelFromSymbol(symbolCode) {
+    if (!symbolCode) return "--";
+    const key = symbolCode.replace(/_(day|night|polartwilight)$/, "");
+    const labels = {
+      clearsky: "Klart",
+      fair: "Mestadels klart",
+      partlycloudy: "Delvis molnigt",
+      cloudy: "Molnigt",
+      lightrainshowers: "Lätta regnskurar",
+      rainshowers: "Regnskurar",
+      heavyrainshowers: "Kraftiga regnskurar",
+      lightrain: "Lätt regn",
+      rain: "Regn",
+      heavyrain: "Kraftigt regn",
+      lightsleet: "Lätt snöblandat regn",
+      sleet: "Snöblandat regn",
+      heavysleet: "Kraftigt snöblandat regn",
+      lightsnow: "Lätt snöfall",
+      snow: "Snöfall",
+      heavysnow: "Kraftigt snöfall",
+      fog: "Dimma"
+    };
+    return labels[key] || key;
+  }
+
+  function degreesToCompass(deg) {
+    if (deg === null || deg === undefined || Number.isNaN(Number(deg))) return "--";
+    const directions = ["N", "NO", "O", "SO", "S", "SV", "V", "NV"];
+    const normalized = ((Number(deg) % 360) + 360) % 360;
+    const index = Math.round(normalized / 45) % 8;
+    return directions[index];
+  }
+
+  function formatWindDirection(deg) {
+    if (deg === null || deg === undefined || Number.isNaN(Number(deg))) return "--";
+    const rounded = Math.round(Number(deg));
+    return `${rounded}° • ${degreesToCompass(rounded)}`;
+  }
+
+  function extractLatestValue(data) {
+    if (Array.isArray(data?.value) && data.value.length > 0) {
+      return data.value[data.value.length - 1];
+    }
+    if (Array.isArray(data?.values) && data.values.length > 0) {
+      return data.values[data.values.length - 1];
+    }
+    return null;
+  }
+
+  function extractNumericValue(value) {
+    if (value == null) return null;
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : null;
+    }
+
+    const normalized = String(value).replace(",", ".").trim();
+    const matches = normalized.match(/-?\d+(?:\.\d+)?/g);
+    if (!matches || !matches.length) return null;
+
+    const parsed = Number(matches[matches.length - 1]);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function extractVivaSample(stationData, sampleNames) {
+    const samples = Array.isArray(stationData?.Samples) ? stationData.Samples : [];
+
+    for (const sampleName of sampleNames) {
+      const sample = samples.find((item) => item?.Name === sampleName);
+      if (!sample) continue;
+
+      const numericValue = extractNumericValue(sample.Value);
+      if (numericValue == null) continue;
+
+      return {
+        ...sample,
+        numericValue
+      };
+    }
+
+    return null;
+  }
+
+  function formatWaveSourceLabel(result) {
+    if (!result) return "--";
+    if (result.source === "VIVA") return "VIVA";
+    return result.period || result.source || "--";
+  }
+
+  function formatWaterStationLabel(result) {
+    if (!result?.station?.name) return "Ingen station hittades";
+    if (result.source === "VIVA") return `${result.station.name} (VIVA)`;
+    return result.station.name;
+  }
+
+  function buildVivaNearestCacheKey(lat, lon, sampleNames, lightMode) {
+    const latKey = Number(lat).toFixed(3);
+    const lonKey = Number(lon).toFixed(3);
+    const samplesKey = sampleNames.join("|");
+    return `${latKey}:${lonKey}:${samplesKey}:${lightMode ? "light" : "full"}`;
+  }
+
+  function buildWaveEvaluationCacheKey(station, lightMode) {
+    return `${station.id}:${lightMode ? "light" : "full"}`;
+  }
+
+  function toRad(deg) {
+    return deg * Math.PI / 180;
+  }
+
+  function distanceKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function buildDailyForecast(timeseries) {
+    const dailyMap = new Map();
+
+    for (const item of timeseries) {
+      const time = item?.time;
+      if (!time) continue;
+
+      const dateKey = time.slice(0, 10);
+      const instant = item?.data?.instant?.details || {};
+      const airTemp = instant.air_temperature;
+      const precip = item?.data?.next_1_hours?.details?.precipitation_amount ?? 0;
+      const symbol =
+        item?.data?.next_1_hours?.summary?.symbol_code ||
+        item?.data?.next_6_hours?.summary?.symbol_code ||
+        item?.data?.next_12_hours?.summary?.symbol_code ||
+        null;
+      const wind = instant.wind_speed ?? null;
+      const hour = new Date(time).getHours();
+
+      if (!dailyMap.has(dateKey)) {
+        dailyMap.set(dateKey, {
+          date: dateKey,
+          minTemp: airTemp,
+          maxTemp: airTemp,
+          precipitation: 0,
+          symbol: symbol,
+          windSpeed: wind,
+          bestSymbolDistance: Math.abs(hour - 12)
+        });
+      }
+
+      const day = dailyMap.get(dateKey);
+
+      if (airTemp != null) {
+        day.minTemp = day.minTemp == null ? airTemp : Math.min(day.minTemp, airTemp);
+        day.maxTemp = day.maxTemp == null ? airTemp : Math.max(day.maxTemp, airTemp);
+      }
+
+      day.precipitation += Number(precip || 0);
+
+      const symbolDistance = Math.abs(hour - 12);
+      if (symbol && (day.symbol == null || symbolDistance < day.bestSymbolDistance)) {
+        day.symbol = symbol;
+        day.bestSymbolDistance = symbolDistance;
+      }
+
+      if (wind != null && symbolDistance <= day.bestSymbolDistance) {
+        day.windSpeed = wind;
+      }
+    }
+
+    return Array.from(dailyMap.values()).slice(0, 7);
+  }
+
+  function renderForecast(days) {
+    const visibleCount = forecastExpanded ? 7 : 3;
+
+    for (let i = 0; i < 7; i++) {
+      const itemEl = document.getElementById(`forecastItem${i + 1}`);
+      const day = days[i];
+
+      if (!itemEl) continue;
+
+      if (!day || i >= visibleCount) {
+        itemEl.style.display = "none";
+        continue;
+      }
+
+      itemEl.style.display = "";
+      setText(`forecast${i + 1}Time`, formatForecastDay(day.date, i));
+      setText(`forecast${i + 1}Temp`, formatForecastRange(day.minTemp, day.maxTemp));
+      setText(
+        `forecast${i + 1}Rain`,
+        `${weatherLabelFromSymbol(day.symbol)} • Nederbörd: ${formatRain(day.precipitation)}`
+      );
+    }
+
+    const toggleBtn = document.getElementById("forecastToggleBtn");
+    if (toggleBtn) {
+      toggleBtn.textContent = forecastExpanded ? "Visa 3 dagar" : "Visa 7 dagar";
+      toggleBtn.style.display = days.length > 3 ? "" : "none";
     }
   }
-}
 
-drawWind();
+  function resetForecastDisplay() {
+    currentForecastDays = [];
+    for (let i = 1; i <= 7; i++) {
+      const itemEl = document.getElementById(`forecastItem${i}`);
+      if (itemEl) itemEl.style.display = i <= 3 ? "" : "none";
+      setText(`forecast${i}Time`, "--");
+      setText(`forecast${i}Temp`, "--");
+      setText(`forecast${i}Rain`, "--");
+    }
+  }
 
-// ========================
-// CLICK POINT
-// ========================
-radarMap.on("click",(e)=>{
-  console.log("punkt:",e.latlng);
-});
+  function setWeatherMarker(lat, lon) {
+    if (weatherMarker) map.removeLayer(weatherMarker);
+    weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
+  }
 
-// ========================
-window.addEventListener("resize",resizeCanvas);
+  function setWaveSelectionMarker(lat, lon, name) {
+    if (waveSelectionMarker) map.removeLayer(waveSelectionMarker);
+    waveSelectionMarker = L.marker([lat, lon]).addTo(map).bindPopup(name || "Vald vågstation").openPopup();
+  }
+
+  function setLighthouseSelectionMarker(lat, lon, name) {
+    if (lighthouseSelectionMarker) map.removeLayer(lighthouseSelectionMarker);
+    lighthouseSelectionMarker = L.marker([lat, lon]).addTo(map).bindPopup(name || "Vald station").openPopup();
+  }
+
+  function saveSelection(mode, payload) {
+    savedSelections[mode] = payload;
+
+    if (mode === "weather") {
+      setText("weatherPointValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+      setText("weatherStatusValue", "Hämtar väderdata...");
+    }
+
+    if (mode === "wave") {
+      setText("waveStationValue", payload.name || "Okänd station");
+      setText("waveCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+      setText("waveStatusValue", "Hämtar havsdata...");
+    }
+
+    if (mode === "lighthouse") {
+      setText("lighthouseStationValue", payload.name || "Okänd station");
+      setText("lhCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+      setText("lighthouseStatusValue", "Hämtar stationsdata...");
+    }
+
+    updateLastSelectionText();
+  }
+
+  function updateLastSelectionText() {
+    const current = savedSelections[activeMode];
+    if (!current) {
+      setText("lastSelectionText", "Inget val gjort ännu");
+      return;
+    }
+
+    if (current.name) {
+      setText("lastSelectionText", current.name);
+      return;
+    }
+
+    setText("lastSelectionText", `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`);
+  }
+
+  function setWaveMarkerColorById(stationId, state, tooltipText) {
+    const marker = waveMarkerMap.get(stationId);
+    if (!marker) return;
+
+    const styles = {
+      unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
+      active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
+      inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7 }
+    };
+
+    marker.setStyle(styles[state] || styles.unknown);
+
+    if (tooltipText) marker.bindTooltip(tooltipText, { direction: "top" });
+  }
+
+  function setLighthouseMarkerColorById(stationId, state, tooltipText) {
+    const marker = lighthouseMarkerMap.get(stationId);
+    if (!marker) return;
+
+    const styles = {
+      unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
+      active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
+      inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7 }
+    };
+
+    marker.setStyle(styles[state] || styles.unknown);
+
+    if (tooltipText) marker.bindTooltip(tooltipText, { direction: "top" });
+  }
+
+  function updateModeUI() {
+    document.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.mode === activeMode);
+    });
+
+    if (activeMode === "weather") {
+      setText("activeModeText", "Väder");
+      setText("pageStatus", "Vädermodul aktiv");
+      setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+      if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
+      if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
+    } else if (activeMode === "wave") {
+      setText("activeModeText", "Boj / våg");
+      setText("pageStatus", "Bojmodul aktiv");
+      setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
+      ensureWaveStationsLoaded();
+      if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
+      if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
+    } else {
+      setText("activeModeText", "Fyr / station");
+      setText("pageStatus", "Fyrmodul aktiv");
+      setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
+      ensureLighthouseStationsLoaded();
+      if (!map.hasLayer(lighthouseStationsLayer)) map.addLayer(lighthouseStationsLayer);
+      if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
+    }
+  }
+
+  async function loadWeatherForPoint(lat, lon) {
+    try {
+      setText("weatherStatusValue", "Hämtar prognos...");
+      setText("weatherGustSourceValue", "Hämtar...");
+      resetForecastDisplay();
+
+      const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
+      const gustUrl = `/api/openmeteo-gust?lat=${lat}&lon=${lon}`;
+
+      const [weatherRes, gustRes] = await Promise.all([fetch(weatherUrl), fetch(gustUrl)]);
+      const weatherText = await weatherRes.text();
+      const gustText = await gustRes.text();
+
+      if (!weatherRes.ok) throw new Error(weatherText);
+
+      const weatherData = JSON.parse(weatherText);
+      const timeseries = weatherData.properties?.timeseries || [];
+      if (!timeseries.length) throw new Error("Ingen väderdata hittades.");
+
+      const current = timeseries[0];
+      const instant = current.data?.instant?.details || {};
+      const next1 = current.data?.next_1_hours || {};
+      const next6 = current.data?.next_6_hours || {};
+
+      const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
+      const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
+
+      setText("weatherTempValue", formatTemp(instant.air_temperature));
+      setText("weatherHumidityValue", formatHumidity(instant.relative_humidity));
+      setText("weatherRainValue", formatRain(precip));
+      setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
+      setText("weatherWindValue", formatWind(instant.wind_speed));
+      setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
+      setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
+
+      currentForecastDays = buildDailyForecast(timeseries);
+      renderForecast(currentForecastDays);
+
+      if (gustRes.ok) {
+        const gustData = JSON.parse(gustText);
+        setText("weatherGustValue", formatWind(gustData.value));
+        setText("weatherGustSourceValue", "Open-Meteo • punktdata");
+        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
+      } else {
+        setText("weatherGustValue", "--");
+        setText("weatherGustSourceValue", "Inga vindbyar tillgängliga");
+        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
+      }
+    } catch (error) {
+      console.error(error);
+      setText("weatherStatusValue", "Det gick inte att hämta väderdata");
+    }
+  }
+
+  async function ensureWaveStationsLoaded() {
+    if (waveStationsLoaded) return;
+    if (waveStationsLoadingPromise) return waveStationsLoadingPromise;
+
+    waveStationsLoadingPromise = (async () => {
+      try {
+        const res = await fetch("/api/ocean-wave-stations");
+        const data = await res.json();
+        const stations = Array.isArray(data?.stations) ? data.stations : [];
+
+        if (!stations.length) {
+          if (activeMode === "wave") setText("waveStatusValue", "Inga stationer hittades");
+          return;
+        }
+
+        stations.forEach((station) => {
+          waveStationsCache.set(station.id, station);
+
+          const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 5,
+            weight: 2,
+            color: "#69b7ff",
+            fillColor: "#69b7ff",
+            fillOpacity: 0.8
+          });
+
+          marker.bindTooltip(`${station.name} • ännu inte kontrollerad`, { direction: "top" });
+
+          marker.on("click", (event) => {
+            L.DomEvent.stopPropagation(event);
+            selectWaveStation(station);
+          });
+
+          waveMarkerMap.set(station.id, marker);
+          waveStationsLayer.addLayer(marker);
+        });
+
+        waveStationsLoaded = true;
+        if (activeMode === "wave") setText("waveStatusValue", "Bakgrundskontrollerar bojar...");
+        startWaveBackgroundCheck();
+      } catch (error) {
+        console.error(error);
+        if (activeMode === "wave") setText("waveStatusValue", "Det gick inte att hämta stationer");
+      } finally {
+        waveStationsLoadingPromise = null;
+      }
+    })();
+
+    return waveStationsLoadingPromise;
+  }
+
+  async function fetchWaveDataForStation(stationId) {
+    for (const period of ["latest-hour", "latest-day", "latest-months"]) {
+      const res = await fetch(`/api/ocean-wave-height?stationId=${stationId}&period=${period}`);
+      const data = await res.json();
+      if (!res.ok) continue;
+
+      const latest = extractLatestValue(data);
+      if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
+        return { latest, period, source: "SMHI" };
+      }
+    }
+    return null;
+  }
+
+  async function getWaterLevelStations() {
+    if (!waterLevelStationsPromise) {
+      waterLevelStationsPromise = (async () => {
+        const stationsRes = await fetch("/api/ocean-stations");
+        const stationsData = await stationsRes.json();
+
+        const stations = Array.isArray(stationsData?.station)
+          ? stationsData.station
+          : Array.isArray(stationsData?.stations)
+          ? stationsData.stations
+          : Array.isArray(stationsData?.resource)
+          ? stationsData.resource
+          : [];
+
+        return stations
+          .map((station) => {
+            const stationId = station.id || station.key || station.stationId;
+            const stationName = station.name || "Okänd station";
+            const stationLat = Number(station.latitude);
+            const stationLon = Number(station.longitude);
+
+            if (!stationId || Number.isNaN(stationLat) || Number.isNaN(stationLon)) return null;
+
+            return {
+              id: stationId,
+              name: stationName,
+              latitude: stationLat,
+              longitude: stationLon
+            };
+          })
+          .filter(Boolean);
+      })();
+    }
+
+    return waterLevelStationsPromise;
+  }
+
+  async function getVivaStations() {
+    if (!vivaStationsPromise) {
+      vivaStationsPromise = (async () => {
+        const res = await fetch("/api/viva-stations");
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data?.message || "Det gick inte att hämta VIVA-stationer");
+        return Array.isArray(data?.stations) ? data.stations : [];
+      })();
+    }
+
+    return vivaStationsPromise;
+  }
+
+  async function fetchVivaStationData(stationId) {
+    if (vivaStationDataCache.has(stationId)) return vivaStationDataCache.get(stationId);
+
+    const promise = (async () => {
+      const res = await fetch(`/api/viva-station?stationId=${stationId}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data?.message || "Det gick inte att hämta VIVA-station");
+      return data.station || null;
+    })();
+
+    vivaStationDataCache.set(stationId, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      vivaStationDataCache.delete(stationId);
+      throw error;
+    }
+  }
+
+  async function findNearestVivaObservationForPoint(lat, lon, sampleNames, lightMode = false) {
+    const cacheKey = buildVivaNearestCacheKey(lat, lon, sampleNames, lightMode);
+    if (vivaNearestCache.has(cacheKey)) return vivaNearestCache.get(cacheKey);
+
+    const promise = (async () => {
+      const stations = await getVivaStations();
+
+      const ranked = stations
+        .map((station) => ({
+          ...station,
+          distanceKm: distanceKm(lat, lon, station.latitude, station.longitude)
+        }))
+        .sort((a, b) => a.distanceKm - b.distanceKm)
+        .slice(0, lightMode ? 4 : 10);
+
+      for (const station of ranked) {
+        if (station.distanceKm > 80) continue;
+
+        try {
+          const stationData = await fetchVivaStationData(station.id);
+          const sample = extractVivaSample(stationData, sampleNames);
+
+          if (sample) {
+            return {
+              station,
+              latest: {
+                value: sample.numericValue,
+                time: sample.Updated || null
+              },
+              source: "VIVA",
+              sampleName: sample.Name
+            };
+          }
+        } catch (error) {
+          console.warn("VIVA-reservkälla misslyckades för station", station.id, error);
+        }
+      }
+
+      return null;
+    })();
+
+    vivaNearestCache.set(cacheKey, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      vivaNearestCache.delete(cacheKey);
+      throw error;
+    }
+  }
+
+  async function findNearestWaterLevelForPoint(lat, lon, lightMode = false) {
+    const stations = await getWaterLevelStations();
+
+    const ranked = stations
+      .map((station) => ({
+        ...station,
+        distanceKm: distanceKm(lat, lon, station.latitude, station.longitude)
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, lightMode ? 5 : 15);
+
+    const periods = lightMode
+      ? ["latest-hour", "latest-day"]
+      : ["latest-hour", "latest-day", "latest-months"];
+
+    for (const station of ranked) {
+      for (const period of periods) {
+        const res = await fetch(`/api/ocean-water-level?stationId=${station.id}&period=${period}`);
+        const data = await res.json();
+        if (!res.ok) continue;
+
+        const latest = extractLatestValue(data);
+        if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
+          return { station, latest, period, source: "SMHI" };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async function evaluateWaveStation(station, lightMode = false) {
+    const cacheKey = buildWaveEvaluationCacheKey(station, lightMode);
+    if (waveEvaluationCache.has(cacheKey)) return waveEvaluationCache.get(cacheKey);
+
+    const promise = (async () => {
+      const [vivaWaveResult, vivaWaterResult, vivaWaterTempResult] = await Promise.all([
+        findNearestVivaObservationForPoint(station.latitude, station.longitude, ["Våghöjd"], lightMode),
+        findNearestVivaObservationForPoint(station.latitude, station.longitude, ["Vattenstånd"], lightMode),
+        findNearestVivaObservationForPoint(
+          station.latitude,
+          station.longitude,
+          ["Vattentemperatur", "Vatten Temperatur", "Ytvattentemperatur"],
+          lightMode
+        )
+      ]);
+
+      const [smhiWaveResult, smhiWaterResult] = await Promise.all([
+        vivaWaveResult ? Promise.resolve(null) : fetchWaveDataForStation(station.id),
+        vivaWaterResult ? Promise.resolve(null) : findNearestWaterLevelForPoint(station.latitude, station.longitude, lightMode)
+      ]);
+
+      const waveResult = vivaWaveResult || smhiWaveResult;
+      const waterResult = vivaWaterResult || smhiWaterResult;
+      const waterTempResult = vivaWaterTempResult || null;
+
+      return {
+        waveResult,
+        waterResult,
+        waterTempResult,
+        hasAnySeaData: Boolean(waveResult || waterResult)
+      };
+    })();
+
+    waveEvaluationCache.set(cacheKey, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      waveEvaluationCache.delete(cacheKey);
+      throw error;
+    }
+  }
+
+  async function selectWaveStation(station) {
+    saveSelection("wave", {
+      id: station.id,
+      name: station.name,
+      lat: station.latitude,
+      lon: station.longitude
+    });
+
+    setWaveSelectionMarker(station.latitude, station.longitude, station.name);
+
+    try {
+      const { waveResult, waterResult, waterTempResult, hasAnySeaData } = await evaluateWaveStation(station, false);
+
+      if (waveResult) {
+        setText("waveHeightValue", formatObservedValue(formatWave(waveResult.latest.value), waveResult.latest));
+        setText("waveObsTimeValue", `${formatObsTime(waveResult.latest.date || waveResult.latest.time)} (${formatWaveSourceLabel(waveResult)})`);
+      } else {
+        setText("waveHeightValue", "--");
+        setText("waveObsTimeValue", "--");
+      }
+
+      if (waterResult) {
+        setText("waterLevelValue", formatObservedValue(formatWaterLevel(waterResult.latest.value), waterResult.latest));
+        setText("waterLevelStationValue", formatWaterStationLabel(waterResult));
+      } else {
+        setText("waterLevelValue", "--");
+        setText("waterLevelStationValue", "Ingen station hittades");
+      }
+
+      if (waterTempResult) {
+        setText("waterTempValue", formatObservedValue(formatTemp(waterTempResult.latest.value), waterTempResult.latest));
+      } else {
+        setText("waterTempValue", "--");
+      }
+
+      const usesViva =
+        waveResult?.source === "VIVA" ||
+        waterResult?.source === "VIVA" ||
+        waterTempResult?.source === "VIVA";
+
+      const usesSmhi =
+        Boolean(waveResult?.source !== "VIVA" && waveResult) ||
+        Boolean(waterResult?.source !== "VIVA" && waterResult);
+
+      let statusText = "Ingen havsdata tillgänglig";
+      if (hasAnySeaData) {
+        if (usesViva && usesSmhi) statusText = "Havsdata hämtad • VIVA + SMHI";
+        else if (usesViva) statusText = "Havsdata hämtad • VIVA";
+        else statusText = "Havsdata hämtad • SMHI";
+      }
+
+      setText("waveStatusValue", statusText);
+
+      setWaveMarkerColorById(
+        station.id,
+        hasAnySeaData ? "active" : "inactive",
+        `${station.name} • ${hasAnySeaData ? "data tillgänglig" : "ingen data tillgänglig"}`
+      );
+    } catch (error) {
+      console.error(error);
+      setText("waveStatusValue", "Det gick inte att hämta havsdata");
+      setWaveMarkerColorById(station.id, "inactive", `${station.name} • kunde inte hämtas`);
+    }
+  }
+
+  async function startWaveBackgroundCheck() {
+    if (waveBackgroundCheckStarted) return;
+    waveBackgroundCheckStarted = true;
+
+    const stations = Array.from(waveStationsCache.values());
+    let checked = 0;
+    const concurrency = 3;
+    let index = 0;
+
+    async function worker() {
+      while (index < stations.length) {
+        const currentIndex = index++;
+        const station = stations[currentIndex];
+
+        try {
+          const result = await evaluateWaveStation(station, true);
+          setWaveMarkerColorById(
+            station.id,
+            result.hasAnySeaData ? "active" : "inactive",
+            `${station.name} • ${result.hasAnySeaData ? "data tillgänglig" : "ingen data tillgänglig"}`
+          );
+        } catch {
+          setWaveMarkerColorById(station.id, "inactive", `${station.name} • kunde inte hämtas`);
+        }
+
+        checked += 1;
+        if (activeMode === "wave") setText("waveStatusValue", `Bakgrundskontroll bojar: ${checked}/${stations.length}`);
+      }
+    }
+
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+    if (activeMode === "wave") setText("waveStatusValue", "Bakgrundskontroll av bojar slutförd");
+  }
+
+  async function ensureLighthouseStationsLoaded() {
+    if (lighthouseStationsLoaded) return;
+    if (lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
+
+    lighthouseStationsLoadingPromise = (async () => {
+      try {
+        const res = await fetch("/api/lighthouse-stations");
+        const data = await res.json();
+        const stations = Array.isArray(data?.stations) ? data.stations : [];
+
+        if (!stations.length) {
+          if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Inga stationer hittades");
+          return;
+        }
+
+        stations.forEach((station) => {
+          lighthouseStationsCache.set(station.id, station);
+
+          const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 5,
+            weight: 2,
+            color: "#69b7ff",
+            fillColor: "#69b7ff",
+            fillOpacity: 0.8
+          });
+
+          marker.bindTooltip(`${station.name} • ännu inte kontrollerad`, { direction: "top" });
+
+          marker.on("click", (event) => {
+            L.DomEvent.stopPropagation(event);
+            selectLighthouseStation(station);
+          });
+
+          lighthouseMarkerMap.set(station.id, marker);
+          lighthouseStationsLayer.addLayer(marker);
+        });
+
+        lighthouseStationsLoaded = true;
+        if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Bakgrundskontrollerar stationer...");
+        startLighthouseBackgroundCheck();
+      } catch (error) {
+        console.error(error);
+        if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Det gick inte att hämta stationer");
+      } finally {
+        lighthouseStationsLoadingPromise = null;
+      }
+    })();
+
+    return lighthouseStationsLoadingPromise;
+  }
+
+  async function fetchLighthouseObservations(stationId) {
+    if (lighthouseObservationCache.has(stationId)) return lighthouseObservationCache.get(stationId);
+
+    const promise = (async () => {
+      const res = await fetch(`/api/lighthouse-observations?stationId=${stationId}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data?.message || "Det gick inte att hämta stationsdata");
+
+      const obs = data.observations || {};
+      const hasAnyData = Boolean(
+        obs.temp?.value != null ||
+        obs.windSpeed?.value != null ||
+        obs.windDir?.value != null ||
+        obs.pressure?.value != null ||
+        obs.gust?.value != null
+      );
+
+      return { obs, hasAnyData };
+    })();
+
+    lighthouseObservationCache.set(stationId, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      lighthouseObservationCache.delete(stationId);
+      throw error;
+    }
+  }
+
+  async function selectLighthouseStation(station) {
+    saveSelection("lighthouse", {
+      id: station.id,
+      name: station.name,
+      lat: station.latitude,
+      lon: station.longitude
+    });
+
+    setLighthouseSelectionMarker(station.latitude, station.longitude, station.name);
+
+    try {
+      const { obs, hasAnyData } = await fetchLighthouseObservations(station.id);
+
+      setText("lhTempValue", formatObservedValue(formatTemp(obs.temp?.value), obs.temp));
+      setText("lhWindValue", formatObservedValue(formatWind(obs.windSpeed?.value), obs.windSpeed));
+      setText("lhWindDirValue", formatObservedValue(formatWindDirection(obs.windDir?.value), obs.windDir));
+      setText("lhGustValue", formatObservedValue(formatWind(obs.gust?.value), obs.gust));
+      setText("lhPressureValue", formatObservedValue(formatPressure(obs.pressure?.value), obs.pressure));
+      setText("lighthouseStatusValue", hasAnyData ? "Stationsdata hämtad" : "Ingen aktuell data tillgänglig");
+
+      setLighthouseMarkerColorById(
+        station.id,
+        hasAnyData ? "active" : "inactive",
+        `${station.name} • ${hasAnyData ? "data tillgänglig" : "ingen data tillgänglig"}`
+      );
+    } catch (error) {
+      console.error(error);
+      setText("lighthouseStatusValue", "Det gick inte att hämta stationsdata");
+      setLighthouseMarkerColorById(station.id, "inactive", `${station.name} • kunde inte hämtas`);
+    }
+  }
+
+  async function startLighthouseBackgroundCheck() {
+    if (lighthouseBackgroundCheckStarted) return;
+    lighthouseBackgroundCheckStarted = true;
+
+    const stations = Array.from(lighthouseStationsCache.values());
+    let checked = 0;
+    const concurrency = 5;
+    let index = 0;
+
+    async function worker() {
+      while (index < stations.length) {
+        const currentIndex = index++;
+        const station = stations[currentIndex];
+
+        try {
+          const { hasAnyData } = await fetchLighthouseObservations(station.id);
+          setLighthouseMarkerColorById(
+            station.id,
+            hasAnyData ? "active" : "inactive",
+            `${station.name} • ${hasAnyData ? "data tillgänglig" : "ingen data tillgänglig"}`
+          );
+        } catch {
+          setLighthouseMarkerColorById(station.id, "inactive", `${station.name} • kunde inte hämtas`);
+        }
+
+        checked += 1;
+        if (activeMode === "lighthouse") setText("lighthouseStatusValue", `Bakgrundskontroll stationer: ${checked}/${stations.length}`);
+      }
+    }
+
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+    if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Bakgrundskontroll av stationer slutförd");
+  }
+
+  function startBackgroundPreload() {
+    ensureWaveStationsLoaded().catch((error) => {
+      console.error("Det gick inte att starta preload för bojar", error);
+    });
+
+    ensureLighthouseStationsLoaded().catch((error) => {
+      console.error("Det gick inte att starta preload för fyrar", error);
+    });
+  }
+
+  document.querySelectorAll(".mode-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeMode = btn.dataset.mode;
+      updateModeUI();
+      updateLastSelectionText();
+    });
+  });
+
+  const forecastToggleBtn = document.getElementById("forecastToggleBtn");
+  if (forecastToggleBtn) {
+    forecastToggleBtn.addEventListener("click", () => {
+      if (!currentForecastDays.length) return;
+      forecastExpanded = !forecastExpanded;
+      renderForecast(currentForecastDays);
+    });
+  }
+
+  map.on("click", (event) => {
+    const lat = event.latlng.lat;
+    const lon = event.latlng.lng;
+
+    if (activeMode === "weather") {
+      saveSelection("weather", { lat, lon });
+      setWeatherMarker(lat, lon);
+      loadWeatherForPoint(lat, lon);
+    }
+  });
+
+  const layerTabs = Array.from(document.querySelectorAll(".layer-tab"));
+  const layerView = document.getElementById("layerView");
+  const layerActiveLabel = document.getElementById("layerActiveLabel");
+  const layerVisualTitle = document.getElementById("layerVisualTitle");
+  const layerVisualDesc = document.getElementById("layerVisualDesc");
+  const layerTimestamp = document.getElementById("layerTimestamp");
+  const layerSelectedTime = document.getElementById("layerSelectedTime");
+  const layerStatus = document.getElementById("layerStatus");
+  const layerSlider = document.getElementById("layerSlider");
+  const layerPlayBtn = document.getElementById("layerPlayBtn");
+  const layerStepBackBtn = document.getElementById("layerStepBackBtn");
+  const layerStepForwardBtn = document.getElementById("layerStepForwardBtn");
+  const layerRangeStart = document.getElementById("layerRangeStart");
+  const layerRangeEnd = document.getElementById("layerRangeEnd");
+  const layerAreaLabel = document.getElementById("layerAreaLabel");
+  const layerGraphicCanvas = document.getElementById("layerGraphicCanvas");
+  const layerVisualStage = document.getElementById("layerVisualStage");
+  const precipitationImage = document.getElementById("precipitationImage");
+
+  const layerMiniMap = L.map("layerMiniMap", {
+    zoomControl: true,
+    attributionControl: true
+  }).setView([58.6, 13.0], 5);
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(layerMiniMap);
+
+  let activeLayer = "precipitation";
+  let layerPlaybackTimer = null;
+  let radarFrameData = [];
+  let radarFrameIndex = 0;
+  let layerPointTimeSeries = [];
+  let layerPointIndex = 0;
+  let radarSelectionMarker = null;
+  let radarSelectionPoint = null;
+
+  function setRadarSelectionMarker(lat, lon) {
+    radarSelectionPoint = { lat, lon };
+    layerAreaLabel.textContent = `Punkt: ${formatCoord(lat)}, ${formatCoord(lon)}`;
+
+    if (radarSelectionMarker) {
+      radarSelectionMarker.setLatLng([lat, lon]);
+      return;
+    }
+
+    radarSelectionMarker = L.marker([lat, lon]).addTo(layerMiniMap);
+  }
+
+  layerMiniMap.on("click", (event) => {
+    const lat = event.latlng.lat;
+    const lon = event.latlng.lng;
+    setRadarSelectionMarker(lat, lon);
+
+    if (activeLayer === "clouds" || activeLayer === "wind") {
+      loadPointLayerDataForActiveLayer().catch(console.error);
+    }
+  });
+
+  function getLayerPoint() {
+    if (radarSelectionPoint) {
+      return {
+        lat: radarSelectionPoint.lat,
+        lon: radarSelectionPoint.lon,
+        label: `${formatCoord(radarSelectionPoint.lat)}, ${formatCoord(radarSelectionPoint.lon)}`
+      };
+    }
+
+    const center = layerMiniMap.getCenter();
+    return {
+      lat: center.lat,
+      lon: center.lng,
+      label: `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`
+    };
+  }
+
+  function resizeGraphicCanvas() {
+    const rect = layerVisualStage.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    layerGraphicCanvas.width = Math.round(rect.width * dpr);
+    layerGraphicCanvas.height = Math.round(rect.height * dpr);
+    layerGraphicCanvas.style.width = `${rect.width}px`;
+    layerGraphicCanvas.style.height = `${rect.height}px`;
+    const ctx = layerGraphicCanvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function clearGraphicCanvas() {
+    resizeGraphicCanvas();
+    const ctx = layerGraphicCanvas.getContext("2d");
+    ctx.clearRect(0, 0, layerVisualStage.clientWidth, layerVisualStage.clientHeight);
+  }
+
+  function hidePrecipitationImage() {
+    precipitationImage.style.opacity = "0";
+    precipitationImage.removeAttribute("src");
+  }
+
+  function showPrecipitationImage(url) {
+    precipitationImage.src = url;
+    precipitationImage.style.opacity = "0.95";
+  }
+
+  function configureSliderForPointData() {
+    const max = Math.max(0, layerPointTimeSeries.length - 1);
+    layerSlider.min = "0";
+    layerSlider.max = String(max);
+    layerSlider.value = String(Math.min(layerPointIndex, max));
+    layerRangeStart.textContent = "Start";
+    layerRangeEnd.textContent = "Senare";
+  }
+
+  function extractCloudValue(details) {
+    return (
+      details.cloud_area_fraction ??
+      details.total_cloud_cover ??
+      details.medium_cloud_area_fraction ??
+      details.low_cloud_area_fraction ??
+      null
+    );
+  }
+
+  function buildPointLayerData(timeseries) {
+    return timeseries.slice(0, 24).map((item) => {
+      const details = item?.data?.instant?.details || {};
+      const next1 = item?.data?.next_1_hours?.details || {};
+      const summary =
+        item?.data?.next_1_hours?.summary?.symbol_code ||
+        item?.data?.next_6_hours?.summary?.symbol_code ||
+        null;
+
+      return {
+        time: item?.time || null,
+        cloud: extractCloudValue(details),
+        windSpeed: details.wind_speed ?? null,
+        windDir: details.wind_from_direction ?? null,
+        precipitation:
+          next1.precipitation_amount ??
+          item?.data?.next_6_hours?.details?.precipitation_amount ??
+          null,
+        symbol: summary,
+        airTemp: details.air_temperature ?? null
+      };
+    }).filter(Boolean);
+  }
+
+  function drawCloudField(cloudPercent) {
+    clearGraphicCanvas();
+    const ctx = layerGraphicCanvas.getContext("2d");
+    const w = layerVisualStage.clientWidth;
+    const h = layerVisualStage.clientHeight;
+    const n = Math.max(0, Math.min(1, (Number(cloudPercent) || 0) / 100));
+    const puffs = Math.round(10 + n * 30);
+
+    for (let i = 0; i < puffs; i++) {
+      const x = (i % 7) * (w / 7) + ((i * 23) % 38);
+      const y = (Math.floor(i / 7) * (h / 4)) + 18 + ((i * 17) % 30);
+      const r = 22 + n * 34 + ((i * 13) % 18);
+
+      const g = ctx.createRadialGradient(x, y, r * 0.2, x, y, r);
+      g.addColorStop(0, `rgba(240,246,255,${0.15 + n * 0.35})`);
+      g.addColorStop(0.55, `rgba(220,232,247,${0.10 + n * 0.20})`);
+      g.addColorStop(1, "rgba(220,232,247,0)");
+
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (n > 0.7) {
+      ctx.fillStyle = `rgba(220,232,247,${0.06 + n * 0.10})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+
+  function drawWindField(windSpeed, windDir) {
+    clearGraphicCanvas();
+    const ctx = layerGraphicCanvas.getContext("2d");
+    const w = layerVisualStage.clientWidth;
+    const h = layerVisualStage.clientHeight;
+
+    const cols = 10;
+    const rows = 5;
+    const speed = Number(windSpeed) || 0;
+    const rotation = ((Number(windDir) || 0) + 180) * Math.PI / 180;
+    const arrowLen = Math.max(8, Math.min(20, 8 + speed * 1.2));
+
+    ctx.lineWidth = 1.8;
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.92)";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.96)";
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const x = ((col + 0.5) * w) / cols;
+        const y = ((row + 0.5) * h) / rows;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+
+        ctx.beginPath();
+        ctx.moveTo(0, arrowLen * -0.7);
+        ctx.lineTo(0, arrowLen * 0.55);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, arrowLen * -0.95);
+        ctx.lineTo(-4, arrowLen * -0.5);
+        ctx.lineTo(4, arrowLen * -0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+  }
+
+  function updateRadarFrameFromIndex() {
+    if (!radarFrameData.length) return;
+    const frame = radarFrameData[0];
+    if (!frame) return;
+
+    clearGraphicCanvas();
+    showPrecipitationImage(frame.imageUrl);
+
+    layerSlider.value = "0";
+    setText("layerTimestamp", frame.label || "--");
+    setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
+    setText("layerStatus", "Senaste radarbild");
+    setText("legendPrecipText", "Senaste radarbild med färgkoder från SMHI.");
+  }
+
+  async function loadSmhiRadarFrames() {
+    setText("layerStatus", "Hämtar radarbild...");
+    clearGraphicCanvas();
+    hidePrecipitationImage();
+
+    try {
+      const res = await fetch("/api/radar/frames");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Kunde inte hämta radarbild");
+      }
+
+      radarFrameData = Array.isArray(data?.frames) ? data.frames : [];
+
+      if (!radarFrameData.length) {
+        setText("layerStatus", "Ingen radarbild tillgänglig");
+        setText("layerTimestamp", "--");
+        setText("layerSelectedTime", "Vald tid: --");
+        return;
+      }
+
+      layerSlider.min = "0";
+      layerSlider.max = "0";
+      layerSlider.value = "0";
+      layerRangeStart.textContent = "Nu";
+      layerRangeEnd.textContent = "Nu";
+
+      updateRadarFrameFromIndex();
+    } catch (error) {
+      console.error(error);
+      setText("layerStatus", "Det gick inte att hämta radarbild");
+      setText("layerTimestamp", "--");
+      setText("layerSelectedTime", "Vald tid: --");
+      hidePrecipitationImage();
+    }
+  }
+
+  async function loadPointLayerDataForActiveLayer() {
+    const point = getLayerPoint();
+    layerAreaLabel.textContent = `Punkt: ${point.label}`;
+    setText("layerStatus", activeLayer === "clouds" ? "Hämtar molnprognos..." : "Hämtar vindprognos...");
+    hidePrecipitationImage();
+
+    try {
+      const res = await fetch(`/api/weather?lat=${point.lat}&lon=${point.lon}`);
+      const data = await res.json();
+
+      const timeseries = data?.properties?.timeseries || [];
+      if (!timeseries.length) throw new Error("Ingen prognosdata hittades");
+
+      layerPointTimeSeries = buildPointLayerData(timeseries);
+      layerPointIndex = 0;
+
+      configureSliderForPointData();
+      updatePointLayerViewFromIndex();
+    } catch (error) {
+      console.error(error);
+      layerPointTimeSeries = [];
+      setText("layerStatus", "Det gick inte att hämta lagerdata");
+      setText("layerTimestamp", "--");
+      setText("layerSelectedTime", "Vald tid: --");
+      clearGraphicCanvas();
+    }
+  }
+
+  function updatePointLayerViewFromIndex() {
+    if (!layerPointTimeSeries.length) return;
+
+    const item = layerPointTimeSeries[layerPointIndex];
+    if (!item) return;
+
+    layerSlider.value = String(layerPointIndex);
+    const timeLabel = formatShortLayerTime(item.time);
+    setText("layerTimestamp", timeLabel);
+    setText("layerSelectedTime", `Vald tid: ${timeLabel}`);
+
+    if (activeLayer === "clouds") {
+      drawCloudField(item.cloud);
+      layerVisualTitle.textContent = "Molntäcke";
+      layerVisualDesc.textContent =
+        `Molnandel ${formatPercent(item.cloud)} • ${weatherLabelFromSymbol(item.symbol)} • Nederbörd ${formatRain(item.precipitation)}.`;
+
+      const value = Number(item.cloud);
+      if (!Number.isNaN(value)) {
+        if (value < 20) setText("layerStatus", `Molntäcke: ${formatPercent(item.cloud)} • Lätt molnighet`);
+        else if (value < 60) setText("layerStatus", `Molntäcke: ${formatPercent(item.cloud)} • Delvis molnigt`);
+        else setText("layerStatus", `Molntäcke: ${formatPercent(item.cloud)} • Tätt molntäcke`);
+      } else {
+        setText("layerStatus", `Molntäcke: ${formatPercent(item.cloud)}`);
+      }
+
+      setText("legendCloudText", "Grafiskt molntäcke utifrån molnandel för vald punkt.");
+      return;
+    }
+
+    if (activeLayer === "wind") {
+      drawWindField(item.windSpeed, item.windDir);
+      layerVisualTitle.textContent = "Vindfält";
+      layerVisualDesc.textContent =
+        `Vind ${formatWind(item.windSpeed)} • Riktning ${formatWindDirection(item.windDir)}.`;
+
+      setText("layerStatus", `Vind: ${formatWind(item.windSpeed)} • ${formatWindDirection(item.windDir)}`);
+      setText("legendWindText", "Små pilar visar vindriktning över hela lagerkartan.");
+    }
+  }
+
+  async function applyLayerCopy(layerKey) {
+    stopLayerPlayback();
+
+    const copy = {
+      precipitation: {
+        label: "Nederbörd",
+        title: "Radarbild",
+        desc: "Zooma och klicka direkt i lagerkartan. Nederbörden visas som radarbild ovanpå.",
+        status: "Hämtar radarbilder..."
+      },
+      clouds: {
+        label: "Moln",
+        title: "Molntäcke",
+        desc: "Molntäcket ritas grafiskt ovanpå lagerkartan för vald punkt.",
+        status: "Hämtar molnprognos..."
+      },
+      wind: {
+        label: "Vind",
+        title: "Vindfält",
+        desc: "Fält av små pilar visar vindriktning och styrka.",
+        status: "Hämtar vindprognos..."
+      }
+    }[layerKey];
+
+    if (!copy) return;
+
+    activeLayer = layerKey;
+    layerView.dataset.layer = layerKey;
+    layerActiveLabel.textContent = `Aktivt lager: ${copy.label}`;
+    layerVisualTitle.textContent = copy.title;
+    layerVisualDesc.textContent = copy.desc;
+    layerStatus.textContent = copy.status;
+
+    layerTabs.forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.layer === layerKey);
+    });
+
+    if (layerKey === "precipitation") {
+      await loadSmhiRadarFrames();
+      return;
+    }
+
+    await loadPointLayerDataForActiveLayer();
+  }
+
+  function stopLayerPlayback() {
+    if (layerPlaybackTimer) {
+      clearInterval(layerPlaybackTimer);
+      layerPlaybackTimer = null;
+    }
+    if (layerPlayBtn) {
+      layerPlayBtn.textContent = "Spela";
+    }
+  }
+
+  function startLayerPlayback() {
+    stopLayerPlayback();
+
+    if (activeLayer === "precipitation") {
+      setText("layerStatus", "Uppspelning för nederbörd aktiveras när radarhistorik läggs tillbaka");
+      return;
+    }
+
+    if (layerPlayBtn) {
+      layerPlayBtn.textContent = "Pausa";
+    }
+
+    layerPlaybackTimer = setInterval(() => {
+      if (!layerPointTimeSeries.length) return;
+
+      layerPointIndex += 1;
+      if (layerPointIndex >= layerPointTimeSeries.length) {
+        layerPointIndex = 0;
+      }
+
+      updatePointLayerViewFromIndex();
+    }, 900);
+  }
+
+  layerTabs.forEach((tab) => {
+    tab.addEventListener("click", async () => {
+      await applyLayerCopy(tab.dataset.layer);
+    });
+  });
+
+  if (layerSlider) {
+    layerSlider.addEventListener("input", () => {
+      if (activeLayer === "precipitation") {
+        updateRadarFrameFromIndex();
+        return;
+      }
+
+      layerPointIndex = Number(layerSlider.value);
+      updatePointLayerViewFromIndex();
+    });
+  }
+
+  if (layerStepBackBtn) {
+    layerStepBackBtn.addEventListener("click", () => {
+      if (activeLayer === "precipitation") {
+        return;
+      }
+
+      layerPointIndex = Math.max(0, layerPointIndex - 1);
+      updatePointLayerViewFromIndex();
+    });
+  }
+
+  if (layerStepForwardBtn) {
+    layerStepForwardBtn.addEventListener("click", () => {
+      if (activeLayer === "precipitation") {
+        return;
+      }
+
+      layerPointIndex = Math.min(
+        Math.max(0, layerPointTimeSeries.length - 1),
+        layerPointIndex + 1
+      );
+      updatePointLayerViewFromIndex();
+    });
+  }
+
+  if (layerPlayBtn) {
+    layerPlayBtn.addEventListener("click", () => {
+      if (layerPlaybackTimer) {
+        stopLayerPlayback();
+      } else {
+        startLayerPlayback();
+      }
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    if (activeLayer === "clouds" || activeLayer === "wind") {
+      updatePointLayerViewFromIndex();
+    } else {
+      clearGraphicCanvas();
+    }
+  });
+
+  resizeGraphicCanvas();
+  resetForecastDisplay();
+  updateModeUI();
+  updateLastSelectionText();
+  startBackgroundPreload();
+  applyLayerCopy(activeLayer);
 </script>
-
 </body>
 </html>
