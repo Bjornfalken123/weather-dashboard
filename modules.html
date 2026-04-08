@@ -333,11 +333,11 @@
       <div class="hero-bottom">
         <div class="hero-info">
           <div>
-            <div class="hero-block-label">Aktivt kartläge</div>
+            <div class="hero-block-label">Aktivt läge</div>
             <div class="hero-block-value" id="activeModeText">Väder</div>
           </div>
           <div>
-            <div class="hero-block-label">Senaste kartval</div>
+            <div class="hero-block-label">Senaste val</div>
             <div class="hero-block-value" id="lastSelectionText">Inget valt ännu</div>
           </div>
         </div>
@@ -516,7 +516,7 @@
           <div>
             <h2 class="module-title">Fyr / station</h2>
             <p class="module-subtitle">
-              Välj en SMHI-station på kartan för live temperatur, vind, riktning, tryck och byvind.
+              Välj en SMHI-station på kartan för aktuell temperatur, vind, riktning, tryck och byvind.
             </p>
           </div>
           <div class="module-badge">SMHI live</div>
@@ -567,7 +567,6 @@
 <script>
   let activeMode = "weather";
   let forecastExpanded = false;
-  let currentForecastDays = [];
 
   const savedSelections = {
     weather: null,
@@ -920,7 +919,6 @@
   }
 
   function resetForecastDisplay() {
-    currentForecastDays = [];
     for (let i = 1; i <= 7; i++) {
       const itemEl = document.getElementById(`forecastItem${i}`);
       if (itemEl) itemEl.style.display = i <= 3 ? "" : "none";
@@ -1080,18 +1078,18 @@
       setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
       setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
 
-      currentForecastDays = buildDailyForecast(timeseries);
-      renderForecast(currentForecastDays);
+      const dailyForecast = buildDailyForecast(timeseries);
+      renderForecast(dailyForecast);
 
       if (gustRes.ok) {
         const gustData = JSON.parse(gustText);
         setText("weatherGustValue", formatWind(gustData.value));
         setText("weatherGustSourceValue", "Open-Meteo • punktdata");
-        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
+        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
       } else {
         setText("weatherGustValue", "--");
         setText("weatherGustSourceValue", "Ingen byvind tillgänglig");
-        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
+        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
       }
     } catch (error) {
       console.error(error);
@@ -1681,9 +1679,37 @@
   const forecastToggleBtn = document.getElementById("forecastToggleBtn");
   if (forecastToggleBtn) {
     forecastToggleBtn.addEventListener("click", () => {
-      if (!currentForecastDays.length) return;
       forecastExpanded = !forecastExpanded;
-      renderForecast(currentForecastDays);
+
+      const hasForecast =
+        document.getElementById("forecast1Time")?.textContent !== "--" ||
+        document.getElementById("forecast2Time")?.textContent !== "--";
+
+      if (!hasForecast) return;
+
+      const days = [];
+      for (let i = 1; i <= 7; i++) {
+        const time = document.getElementById(`forecast${i}Time`)?.textContent;
+        const temp = document.getElementById(`forecast${i}Temp`)?.textContent;
+        const rain = document.getElementById(`forecast${i}Rain`)?.textContent;
+        const item = document.getElementById(`forecastItem${i}`);
+
+        if (!item || time === "--") continue;
+        days.push({ rendered: true });
+      }
+
+      for (let i = 1; i <= 7; i++) {
+        const itemEl = document.getElementById(`forecastItem${i}`);
+        if (!itemEl) continue;
+
+        if (i <= (forecastExpanded ? 7 : 3) && itemEl.querySelector(".forecast-time")?.textContent !== "--") {
+          itemEl.style.display = "";
+        } else if (itemEl.querySelector(".forecast-time")?.textContent !== "--") {
+          itemEl.style.display = "none";
+        }
+      }
+
+      forecastToggleBtn.textContent = forecastExpanded ? "Visa 3 dagar" : "Visa 7 dagar";
     });
   }
 
