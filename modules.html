@@ -145,7 +145,8 @@
       margin-bottom: 14px;
     }
 
-    .mode-btn {
+    .mode-btn,
+    .forecast-toggle-btn {
       border: 1px solid rgba(255,255,255,0.14);
       background: rgba(255,255,255,0.08);
       color: var(--text);
@@ -158,6 +159,17 @@
     .mode-btn.active {
       background: rgba(105, 183, 255, 0.18);
       border-color: rgba(105, 183, 255, 0.35);
+    }
+
+    .forecast-toggle-wrap {
+      margin-top: auto;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .forecast-toggle-btn {
+      padding: 8px 12px;
+      font-size: 13px;
     }
 
     .map-note {
@@ -248,7 +260,6 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
-      margin-top: auto;
     }
 
     .forecast-item {
@@ -273,6 +284,7 @@
     .forecast-rain {
       font-size: 12px;
       color: var(--muted);
+      line-height: 1.45;
     }
 
     .module-empty {
@@ -352,7 +364,7 @@
           <div>
             <h2 class="module-title">Väder</h2>
             <p class="module-subtitle">
-              Fri punkt på kartan. Visar nu-data och kort prognos framåt.
+              Fri punkt på kartan. Visar aktuellt väder, byvind och prognos flera dagar framåt.
             </p>
           </div>
           <div class="module-badge">MET + Open-Meteo</div>
@@ -405,21 +417,45 @@
           </div>
         </div>
 
+        <div class="forecast-toggle-wrap">
+          <button class="forecast-toggle-btn" id="forecastToggleBtn" type="button">Visa 7 dagar</button>
+        </div>
+
         <div class="forecast-grid">
-          <div class="forecast-item">
+          <div class="forecast-item" id="forecastItem1">
             <div class="forecast-time" id="forecast1Time">--</div>
             <div class="forecast-temp" id="forecast1Temp">--</div>
             <div class="forecast-rain" id="forecast1Rain">--</div>
           </div>
-          <div class="forecast-item">
+          <div class="forecast-item" id="forecastItem2">
             <div class="forecast-time" id="forecast2Time">--</div>
             <div class="forecast-temp" id="forecast2Temp">--</div>
             <div class="forecast-rain" id="forecast2Rain">--</div>
           </div>
-          <div class="forecast-item">
+          <div class="forecast-item" id="forecastItem3">
             <div class="forecast-time" id="forecast3Time">--</div>
             <div class="forecast-temp" id="forecast3Temp">--</div>
             <div class="forecast-rain" id="forecast3Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem4">
+            <div class="forecast-time" id="forecast4Time">--</div>
+            <div class="forecast-temp" id="forecast4Temp">--</div>
+            <div class="forecast-rain" id="forecast4Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem5">
+            <div class="forecast-time" id="forecast5Time">--</div>
+            <div class="forecast-temp" id="forecast5Temp">--</div>
+            <div class="forecast-rain" id="forecast5Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem6">
+            <div class="forecast-time" id="forecast6Time">--</div>
+            <div class="forecast-temp" id="forecast6Temp">--</div>
+            <div class="forecast-rain" id="forecast6Rain">--</div>
+          </div>
+          <div class="forecast-item" id="forecastItem7">
+            <div class="forecast-time" id="forecast7Time">--</div>
+            <div class="forecast-temp" id="forecast7Temp">--</div>
+            <div class="forecast-rain" id="forecast7Rain">--</div>
           </div>
         </div>
       </article>
@@ -429,10 +465,10 @@
           <div>
             <h2 class="module-title">Boj / hav</h2>
             <p class="module-subtitle">
-              Båda havsparametrarna kan komma från olika stationer.
+              Havsdata hämtas med VIVA som huvudkälla och SMHI som fallback där det behövs.
             </p>
           </div>
-          <div class="module-badge">SMHI</div>
+          <div class="module-badge">VIVA + SMHI</div>
         </div>
 
         <div class="module-meta">
@@ -457,6 +493,10 @@
             <div class="meta-row-value" id="waterLevelStationValue">--</div>
           </div>
           <div class="meta-row">
+            <div class="meta-row-label">Vattentemperatur</div>
+            <div class="meta-row-value" id="waterTempValue">--</div>
+          </div>
+          <div class="meta-row">
             <div class="meta-row-label">Stationsposition</div>
             <div class="meta-row-value" id="waveCoordsValue">--</div>
           </div>
@@ -467,7 +507,7 @@
         </div>
 
         <div class="module-empty">
-          Nästa steg här kan vara vattentemperatur.
+          Röd boj = har havsdata. Blå = ej kontrollerad ännu. Grå = ingen träff på data just nu.
         </div>
       </article>
 
@@ -518,7 +558,7 @@
         </div>
 
         <div class="module-empty">
-          Röd station = har aktuell vinddata. Blå = station finns men saknar aktuell vind just nu.
+          Röd station = har aktuell data. Blå = ej kontrollerad ännu. Grå = ingen aktuell data.
         </div>
       </article>
     </section>
@@ -526,6 +566,7 @@
 
 <script>
   let activeMode = "weather";
+  let forecastExpanded = false;
 
   const savedSelections = {
     weather: null,
@@ -549,6 +590,9 @@
 
   let waveStationsLoaded = false;
   let lighthouseStationsLoaded = false;
+
+  let waveStationsLoadingPromise = null;
+  let lighthouseStationsLoadingPromise = null;
 
   let waveBackgroundCheckStarted = false;
   let lighthouseBackgroundCheckStarted = false;
@@ -604,14 +648,24 @@
     return v == null ? "--" : `${Number(v).toFixed(1)} cm`;
   }
 
-  function formatForecastTime(isoTime) {
-    if (!isoTime) return "--";
-    const d = new Date(isoTime);
-    return d.toLocaleString("sv-SE", {
-      month: "2-digit",
+  function formatForecastRange(min, max) {
+    if (min == null && max == null) return "--";
+    if (min == null) return formatTemp(max);
+    if (max == null) return formatTemp(min);
+    return `${Math.round(min)}° / ${Math.round(max)}°`;
+  }
+
+  function formatForecastDay(dateString, index) {
+    if (!dateString) return "--";
+
+    if (index === 0) return "Idag";
+    if (index === 1) return "Imorgon";
+
+    const date = new Date(`${dateString}T12:00:00`);
+    return date.toLocaleDateString("sv-SE", {
+      weekday: "short",
       day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
+      month: "2-digit"
     });
   }
 
@@ -777,6 +831,103 @@
     return R * c;
   }
 
+  function buildDailyForecast(timeseries) {
+    const dailyMap = new Map();
+
+    for (const item of timeseries) {
+      const time = item?.time;
+      if (!time) continue;
+
+      const dateKey = time.slice(0, 10);
+      const instant = item?.data?.instant?.details || {};
+      const airTemp = instant.air_temperature;
+      const precip =
+        item?.data?.next_1_hours?.details?.precipitation_amount ??
+        0;
+      const symbol =
+        item?.data?.next_1_hours?.summary?.symbol_code ||
+        item?.data?.next_6_hours?.summary?.symbol_code ||
+        item?.data?.next_12_hours?.summary?.symbol_code ||
+        null;
+      const wind = instant.wind_speed ?? null;
+      const hour = new Date(time).getHours();
+
+      if (!dailyMap.has(dateKey)) {
+        dailyMap.set(dateKey, {
+          date: dateKey,
+          minTemp: airTemp,
+          maxTemp: airTemp,
+          precipitation: 0,
+          symbol: symbol,
+          windSpeed: wind,
+          bestSymbolDistance: Math.abs(hour - 12)
+        });
+      }
+
+      const day = dailyMap.get(dateKey);
+
+      if (airTemp != null) {
+        day.minTemp = day.minTemp == null ? airTemp : Math.min(day.minTemp, airTemp);
+        day.maxTemp = day.maxTemp == null ? airTemp : Math.max(day.maxTemp, airTemp);
+      }
+
+      day.precipitation += Number(precip || 0);
+
+      const symbolDistance = Math.abs(hour - 12);
+      if (symbol && (day.symbol == null || symbolDistance < day.bestSymbolDistance)) {
+        day.symbol = symbol;
+        day.bestSymbolDistance = symbolDistance;
+      }
+
+      if (wind != null && symbolDistance <= day.bestSymbolDistance) {
+        day.windSpeed = wind;
+      }
+    }
+
+    return Array.from(dailyMap.values()).slice(0, 7);
+  }
+
+  function renderForecast(days) {
+    const visibleCount = forecastExpanded ? 7 : 3;
+
+    for (let i = 0; i < 7; i++) {
+      const itemEl = document.getElementById(`forecastItem${i + 1}`);
+      const day = days[i];
+
+      if (!itemEl) continue;
+
+      if (!day || i >= visibleCount) {
+        itemEl.style.display = "none";
+        continue;
+      }
+
+      itemEl.style.display = "";
+
+      setText(`forecast${i + 1}Time`, formatForecastDay(day.date, i));
+      setText(`forecast${i + 1}Temp`, formatForecastRange(day.minTemp, day.maxTemp));
+      setText(
+        `forecast${i + 1}Rain`,
+        `${weatherLabelFromSymbol(day.symbol)} • Nederbörd: ${formatRain(day.precipitation)}`
+      );
+    }
+
+    const toggleBtn = document.getElementById("forecastToggleBtn");
+    if (toggleBtn) {
+      toggleBtn.textContent = forecastExpanded ? "Visa 3 dagar" : "Visa 7 dagar";
+      toggleBtn.style.display = days.length > 3 ? "" : "none";
+    }
+  }
+
+  function resetForecastDisplay() {
+    for (let i = 1; i <= 7; i++) {
+      const itemEl = document.getElementById(`forecastItem${i}`);
+      if (itemEl) itemEl.style.display = i <= 3 ? "" : "none";
+      setText(`forecast${i}Time`, "--");
+      setText(`forecast${i}Temp`, "--");
+      setText(`forecast${i}Rain`, "--");
+    }
+  }
+
   function setWeatherMarker(lat, lon) {
     if (weatherMarker) map.removeLayer(weatherMarker);
     weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
@@ -797,19 +948,19 @@
 
     if (mode === "weather") {
       setText("weatherPointValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
-      setText("weatherStatusValue", "Hämtar väder...");
+      setText("weatherStatusValue", "Laddar väderdata...");
     }
 
     if (mode === "wave") {
       setText("waveStationValue", payload.name || "Okänd station");
       setText("waveCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
-      setText("waveStatusValue", "Hämtar havsdata...");
+      setText("waveStatusValue", "Laddar havsdata...");
     }
 
     if (mode === "lighthouse") {
       setText("lighthouseStationValue", payload.name || "Okänd station");
       setText("lhCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
-      setText("lighthouseStatusValue", "Hämtar stationsdata...");
+      setText("lighthouseStatusValue", "Laddar stationsdata...");
     }
 
     updateLastSelectionText();
@@ -896,6 +1047,7 @@
     try {
       setText("weatherStatusValue", "Laddar prognos...");
       setText("weatherGustSourceValue", "Laddar...");
+      resetForecastDisplay();
 
       const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
       const gustUrl = `/api/openmeteo-gust?lat=${lat}&lon=${lon}`;
@@ -926,77 +1078,78 @@
       setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
       setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
 
-      const forecastItems = timeseries.slice(0, 3);
-      forecastItems.forEach((item, index) => {
-        const i = item.data?.instant?.details || {};
-        const n1 = item.data?.next_1_hours || {};
-        const n6 = item.data?.next_6_hours || {};
-        const fPrecip = n1.details?.precipitation_amount ?? n6.details?.precipitation_amount ?? null;
-
-        setText(`forecast${index + 1}Time`, formatForecastTime(item.time));
-        setText(`forecast${index + 1}Temp`, formatTemp(i.air_temperature));
-        setText(`forecast${index + 1}Rain`, `Nederbörd: ${formatRain(fPrecip)}`);
-      });
+      const dailyForecast = buildDailyForecast(timeseries);
+      renderForecast(dailyForecast);
 
       if (gustRes.ok) {
         const gustData = JSON.parse(gustText);
         setText("weatherGustValue", formatWind(gustData.value));
         setText("weatherGustSourceValue", "Open-Meteo • punktdata");
-        setText("weatherStatusValue", "Prognos + byvind laddad");
+        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
       } else {
         setText("weatherGustValue", "--");
         setText("weatherGustSourceValue", "Ingen byvind tillgänglig");
-        setText("weatherStatusValue", "Prognos laddad");
+        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
       }
     } catch (error) {
       console.error(error);
-      setText("weatherStatusValue", "Kunde inte ladda väder");
+      setText("weatherStatusValue", "Kunde inte ladda väderdata");
     }
   }
 
   async function ensureWaveStationsLoaded() {
     if (waveStationsLoaded) return;
+    if (waveStationsLoadingPromise) return waveStationsLoadingPromise;
 
-    try {
-      setText("waveStatusValue", "Laddar stationer...");
-      const res = await fetch("/api/ocean-wave-stations");
-      const data = await res.json();
-      const stations = Array.isArray(data?.stations) ? data.stations : [];
+    waveStationsLoadingPromise = (async () => {
+      try {
+        const res = await fetch("/api/ocean-wave-stations");
+        const data = await res.json();
+        const stations = Array.isArray(data?.stations) ? data.stations : [];
 
-      if (!stations.length) {
-        setText("waveStatusValue", "Inga stationer hittades");
-        return;
+        if (!stations.length) {
+          if (activeMode === "wave") setText("waveStatusValue", "Inga stationer hittades");
+          return;
+        }
+
+        stations.forEach((station) => {
+          waveStationsCache.set(station.id, station);
+
+          const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 5,
+            weight: 2,
+            color: "#69b7ff",
+            fillColor: "#69b7ff",
+            fillOpacity: 0.8
+          });
+
+          marker.bindTooltip(`${station.name} • ej kontrollerad ännu`, { direction: "top" });
+
+          marker.on("click", (event) => {
+            L.DomEvent.stopPropagation(event);
+            selectWaveStation(station);
+          });
+
+          waveMarkerMap.set(station.id, marker);
+          waveStationsLayer.addLayer(marker);
+        });
+
+        waveStationsLoaded = true;
+        if (activeMode === "wave") {
+          setText("waveStatusValue", "Bakgrundskollar bojar...");
+        }
+        startWaveBackgroundCheck();
+      } catch (error) {
+        console.error(error);
+        if (activeMode === "wave") {
+          setText("waveStatusValue", "Kunde inte ladda stationer");
+        }
+      } finally {
+        waveStationsLoadingPromise = null;
       }
+    })();
 
-      stations.forEach((station) => {
-        waveStationsCache.set(station.id, station);
-
-        const marker = L.circleMarker([station.latitude, station.longitude], {
-          radius: 5,
-          weight: 2,
-          color: "#69b7ff",
-          fillColor: "#69b7ff",
-          fillOpacity: 0.8
-        });
-
-        marker.bindTooltip(`${station.name} • ej kontrollerad ännu`, { direction: "top" });
-
-        marker.on("click", (event) => {
-          L.DomEvent.stopPropagation(event);
-          selectWaveStation(station);
-        });
-
-        waveMarkerMap.set(station.id, marker);
-        waveStationsLayer.addLayer(marker);
-      });
-
-      waveStationsLoaded = true;
-      setText("waveStatusValue", "Bakgrundskollar bojar...");
-      startWaveBackgroundCheck();
-    } catch (error) {
-      console.error(error);
-      setText("waveStatusValue", "Kunde inte ladda stationer");
-    }
+    return waveStationsLoadingPromise;
   }
 
   async function fetchWaveDataForStation(stationId) {
@@ -1186,7 +1339,7 @@
     }
 
     const promise = (async () => {
-      const [vivaWaveResult, vivaWaterResult] = await Promise.all([
+      const [vivaWaveResult, vivaWaterResult, vivaWaterTempResult] = await Promise.all([
         findNearestVivaObservationForPoint(
           station.latitude,
           station.longitude,
@@ -1198,6 +1351,12 @@
           station.longitude,
           ["Vattenstånd"],
           lightMode
+        ),
+        findNearestVivaObservationForPoint(
+          station.latitude,
+          station.longitude,
+          ["Vattentemperatur", "Vatten Temperatur", "Ytvattentemperatur"],
+          lightMode
         )
       ]);
 
@@ -1208,10 +1367,12 @@
 
       const waveResult = vivaWaveResult || smhiWaveResult;
       const waterResult = vivaWaterResult || smhiWaterResult;
+      const waterTempResult = vivaWaterTempResult || null;
 
       return {
         waveResult,
         waterResult,
+        waterTempResult,
         hasAnySeaData: Boolean(waveResult || waterResult)
       };
     })();
@@ -1237,7 +1398,7 @@
     setWaveSelectionMarker(station.latitude, station.longitude, station.name);
 
     try {
-      const { waveResult, waterResult, hasAnySeaData } = await evaluateWaveStation(station, false);
+      const { waveResult, waterResult, waterTempResult, hasAnySeaData } = await evaluateWaveStation(station, false);
 
       if (waveResult) {
         setText("waveHeightValue", formatObservedValue(formatWave(waveResult.latest.value), waveResult.latest));
@@ -1255,8 +1416,20 @@
         setText("waterLevelStationValue", "Ingen hittad");
       }
 
-      const usesViva = waveResult?.source === "VIVA" || waterResult?.source === "VIVA";
-      const usesSmhi = Boolean(waveResult?.source !== "VIVA" && waveResult) || Boolean(waterResult?.source !== "VIVA" && waterResult);
+      if (waterTempResult) {
+        setText("waterTempValue", formatObservedValue(formatTemp(waterTempResult.latest.value), waterTempResult.latest));
+      } else {
+        setText("waterTempValue", "--");
+      }
+
+      const usesViva =
+        waveResult?.source === "VIVA" ||
+        waterResult?.source === "VIVA" ||
+        waterTempResult?.source === "VIVA";
+
+      const usesSmhi =
+        Boolean(waveResult?.source !== "VIVA" && waveResult) ||
+        Boolean(waterResult?.source !== "VIVA" && waterResult);
 
       let statusText = "Ingen havsdata";
       if (hasAnySeaData) {
@@ -1325,47 +1498,57 @@
 
   async function ensureLighthouseStationsLoaded() {
     if (lighthouseStationsLoaded) return;
+    if (lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
 
-    try {
-      setText("lighthouseStatusValue", "Laddar stationer...");
-      const res = await fetch("/api/lighthouse-stations");
-      const data = await res.json();
-      const stations = Array.isArray(data?.stations) ? data.stations : [];
+    lighthouseStationsLoadingPromise = (async () => {
+      try {
+        const res = await fetch("/api/lighthouse-stations");
+        const data = await res.json();
+        const stations = Array.isArray(data?.stations) ? data.stations : [];
 
-      if (!stations.length) {
-        setText("lighthouseStatusValue", "Inga stationer hittades");
-        return;
+        if (!stations.length) {
+          if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Inga stationer hittades");
+          return;
+        }
+
+        stations.forEach((station) => {
+          lighthouseStationsCache.set(station.id, station);
+
+          const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 5,
+            weight: 2,
+            color: "#69b7ff",
+            fillColor: "#69b7ff",
+            fillOpacity: 0.8
+          });
+
+          marker.bindTooltip(`${station.name} • ej kontrollerad ännu`, { direction: "top" });
+
+          marker.on("click", (event) => {
+            L.DomEvent.stopPropagation(event);
+            selectLighthouseStation(station);
+          });
+
+          lighthouseMarkerMap.set(station.id, marker);
+          lighthouseStationsLayer.addLayer(marker);
+        });
+
+        lighthouseStationsLoaded = true;
+        if (activeMode === "lighthouse") {
+          setText("lighthouseStatusValue", "Bakgrundskollar stationer...");
+        }
+        startLighthouseBackgroundCheck();
+      } catch (error) {
+        console.error(error);
+        if (activeMode === "lighthouse") {
+          setText("lighthouseStatusValue", "Kunde inte ladda stationer");
+        }
+      } finally {
+        lighthouseStationsLoadingPromise = null;
       }
+    })();
 
-      stations.forEach((station) => {
-        lighthouseStationsCache.set(station.id, station);
-
-        const marker = L.circleMarker([station.latitude, station.longitude], {
-          radius: 5,
-          weight: 2,
-          color: "#69b7ff",
-          fillColor: "#69b7ff",
-          fillOpacity: 0.8
-        });
-
-        marker.bindTooltip(`${station.name} • ej kontrollerad ännu`, { direction: "top" });
-
-        marker.on("click", (event) => {
-          L.DomEvent.stopPropagation(event);
-          selectLighthouseStation(station);
-        });
-
-        lighthouseMarkerMap.set(station.id, marker);
-        lighthouseStationsLayer.addLayer(marker);
-      });
-
-      lighthouseStationsLoaded = true;
-      setText("lighthouseStatusValue", "Bakgrundskollar stationer...");
-      startLighthouseBackgroundCheck();
-    } catch (error) {
-      console.error(error);
-      setText("lighthouseStatusValue", "Kunde inte ladda stationer");
-    }
+    return lighthouseStationsLoadingPromise;
   }
 
   async function fetchLighthouseObservations(stationId) {
@@ -1493,6 +1676,43 @@
     });
   });
 
+  const forecastToggleBtn = document.getElementById("forecastToggleBtn");
+  if (forecastToggleBtn) {
+    forecastToggleBtn.addEventListener("click", () => {
+      forecastExpanded = !forecastExpanded;
+
+      const hasForecast =
+        document.getElementById("forecast1Time")?.textContent !== "--" ||
+        document.getElementById("forecast2Time")?.textContent !== "--";
+
+      if (!hasForecast) return;
+
+      const days = [];
+      for (let i = 1; i <= 7; i++) {
+        const time = document.getElementById(`forecast${i}Time`)?.textContent;
+        const temp = document.getElementById(`forecast${i}Temp`)?.textContent;
+        const rain = document.getElementById(`forecast${i}Rain`)?.textContent;
+        const item = document.getElementById(`forecastItem${i}`);
+
+        if (!item || time === "--") continue;
+        days.push({ rendered: true });
+      }
+
+      for (let i = 1; i <= 7; i++) {
+        const itemEl = document.getElementById(`forecastItem${i}`);
+        if (!itemEl) continue;
+
+        if (i <= (forecastExpanded ? 7 : 3) && itemEl.querySelector(".forecast-time")?.textContent !== "--") {
+          itemEl.style.display = "";
+        } else if (itemEl.querySelector(".forecast-time")?.textContent !== "--") {
+          itemEl.style.display = "none";
+        }
+      }
+
+      forecastToggleBtn.textContent = forecastExpanded ? "Visa 3 dagar" : "Visa 7 dagar";
+    });
+  }
+
   map.on("click", (event) => {
     const lat = event.latlng.lat;
     const lon = event.latlng.lng;
@@ -1504,6 +1724,7 @@
     }
   });
 
+  resetForecastDisplay();
   updateModeUI();
   updateLastSelectionText();
   startBackgroundPreload();
