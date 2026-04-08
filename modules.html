@@ -2611,10 +2611,10 @@
     precipitationImage.removeAttribute("src");
   }
 
-  function showPrecipitationImage(url) {
-    precipitationImage.src = url;
-    precipitationImage.style.opacity = "0.95";
-  }
+ function showPrecipitationImage(url) {
+  precipitationImage.src = url;
+  precipitationImage.style.opacity = "0.95";
+}
 
   function configureSliderForRadar() {
     const max = Math.max(0, radarFrameData.length - 1);
@@ -2754,7 +2754,6 @@ function updateRadarFrameFromIndex() {
   setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
   setText("legendPrecipText", "Radarbild med färgkoder från SMHI.");
 }
-
   async function loadSmhiRadarFrames() {
     setText("layerStatus", "Hämtar radarbilder...");
     clearGraphicCanvas();
