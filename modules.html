@@ -2698,47 +2698,47 @@
     }
   }
 
-  function drawWindField(windSpeed, windDir) {
-    clearGraphicCanvas();
-    const ctx = layerGraphicCanvas.getContext("2d");
-    const w = layerVisualStage.clientWidth;
-    const h = layerVisualStage.clientHeight;
+ function drawWindField(windSpeed, windDir) {
+  clearGraphicCanvas();
+  const ctx = layerGraphicCanvas.getContext("2d");
+  const w = layerVisualStage.clientWidth;
+  const h = layerVisualStage.clientHeight;
 
-    const cols = 10;
-    const rows = 5;
-    const speed = Number(windSpeed) || 0;
-    const rotation = ((Number(windDir) || 0) + 180) * Math.PI / 180;
-    const arrowLen = Math.max(8, Math.min(20, 8 + speed * 1.2));
+  const cols = 10;
+  const rows = 5;
+  const speed = Number(windSpeed) || 0;
+  const rotation = ((Number(windDir) || 0) + 180) * Math.PI / 180;
+  const arrowLen = Math.max(8, Math.min(20, 8 + speed * 1.2));
 
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = "rgba(223, 232, 247, 0.86)";
-    ctx.fillStyle = "rgba(152, 240, 219, 0.92)";
+  ctx.lineWidth = 1.8;
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.88)";
+  ctx.fillStyle = "rgba(0, 0, 0, 0.92)";
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const x = ((col + 0.5) * w) / cols;
-        const y = ((row + 0.5) * h) / rows;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x = ((col + 0.5) * w) / cols;
+      const y = ((row + 0.5) * h) / rows;
 
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(rotation);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
 
-        ctx.beginPath();
-        ctx.moveTo(0, arrowLen * -0.7);
-        ctx.lineTo(0, arrowLen * 0.55);
-        ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, arrowLen * -0.7);
+      ctx.lineTo(0, arrowLen * 0.55);
+      ctx.stroke();
 
-        ctx.beginPath();
-        ctx.moveTo(0, arrowLen * -0.95);
-        ctx.lineTo(-4, arrowLen * -0.5);
-        ctx.lineTo(4, arrowLen * -0.5);
-        ctx.closePath();
-        ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(0, arrowLen * -0.95);
+      ctx.lineTo(-4, arrowLen * -0.5);
+      ctx.lineTo(4, arrowLen * -0.5);
+      ctx.closePath();
+      ctx.fill();
 
-        ctx.restore();
-      }
+      ctx.restore();
     }
   }
+}
 
   function updateRadarFrameFromIndex() {
     if (!radarFrameData.length) return;
