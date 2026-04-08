@@ -595,6 +595,45 @@
       text-align: center;
     }
 
+    .layer-map-card {
+      position: relative;
+      overflow: hidden;
+      padding: 0;
+      min-height: 220px;
+    }
+
+    #layerMiniMap {
+      width: 100%;
+      height: 260px;
+      border-radius: 22px;
+    }
+
+    .layer-visual-overlay {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 500;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(7, 14, 26, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+      text-align: left;
+    }
+
+    #layerMiniMap .leaflet-control-zoom {
+      display: none;
+    }
+
+    #layerMiniMap .leaflet-control-attribution {
+      font-size: 10px;
+      background: rgba(7, 14, 26, 0.72);
+      color: #dfe8f7;
+    }
+
     .layer-visual-text {
       max-width: 34ch;
     }
@@ -1027,6 +1066,10 @@
         border-radius: 18px;
       }
 
+      #layerMiniMap {
+        height: 220px;
+      }
+
       .forecast-grid,
       .layer-legend {
         grid-template-columns: 1fr;
@@ -1137,12 +1180,16 @@
           </div>
 
           <div class="layer-visual-center">
-            <div class="layer-visual-card">
-              <div class="layer-visual-text">
-                <span class="layer-visual-title" id="layerVisualTitle">Nederbördslager</span>
-                <p class="layer-visual-desc" id="layerVisualDesc">
-                  Förhandsvy för radarbaserad nederbörd med tidsstyrning. Redo för animering och uppspelning över flera tidssteg.
-                </p>
+            <div class="layer-visual-card layer-map-card">
+              <div id="layerMiniMap"></div>
+
+              <div class="layer-visual-overlay">
+                <div class="layer-visual-text">
+                  <span class="layer-visual-title" id="layerVisualTitle">Nederbördslager</span>
+                  <p class="layer-visual-desc" id="layerVisualDesc">
+                    Förhandsvy för radarbaserad nederbörd med tidsstyrning. Redo för animering och uppspelning över flera tidssteg.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -2556,30 +2603,67 @@
   const layerPlayBtn = document.getElementById("layerPlayBtn");
   const layerStepBackBtn = document.getElementById("layerStepBackBtn");
   const layerStepForwardBtn = document.getElementById("layerStepForwardBtn");
+  const layerRangeStart = document.getElementById("layerRangeStart");
+  const layerRangeEnd = document.getElementById("layerRangeEnd");
+  const layerAreaLabel = document.getElementById("layerAreaLabel");
 
   let activeLayer = "precipitation";
   let layerPlaybackTimer = null;
+
+  const OPENWEATHER_TILE_KEY = "DIN_OPENWEATHER_API_KEY";
+
+  const layerMiniMap = L.map("layerMiniMap", {
+    zoomControl: false,
+    attributionControl: true,
+    dragging: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    tap: false,
+    touchZoom: false
+  }).setView(map.getCenter(), map.getZoom());
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(layerMiniMap);
+
+  const weatherTileLayers = {
+    clouds: null,
+    wind: null
+  };
+
+  let smhiRadarOverlay = null;
+  let radarFrameData = [];
+  let radarFrameIndex = 0;
 
   const layerCopy = {
     precipitation: {
       label: "Nederbörd",
       title: "Nederbördslager",
-      desc: "Förhandsvy för radarbaserad nederbörd med tidsstyrning. Redo för animering och uppspelning över flera tidssteg.",
-      status: "Tidssteg: 1 timme · Vy: senaste 24 timmar / prognos"
+      desc: "Radarbaserad nederbörd med tidsstyrning. Byggd för att visa historiska radarframes från backend.",
+      status: "Laddar radarhistorik..."
     },
     clouds: {
       label: "Moln",
       title: "Molnlagring över tid",
-      desc: "Förhandsvy för molntäcke och utveckling över tid. Anpassad för satellit- eller modellbaserade lager.",
-      status: "Tidssteg: 1 timme · Vy: molntäcke och utveckling"
+      desc: "Molntäcke via kartlager. Visar moln som transparent tile-overlay ovanpå baskartan.",
+      status: "Tile-lager aktivt · OpenWeather moln"
     },
     wind: {
       label: "Vind",
       title: "Vindlager",
-      desc: "Förhandsvy för vindfält, riktning och utveckling över tid. Anpassad för prognosstyrda lager och strömlinjer.",
-      status: "Tidssteg: 1 timme · Vy: riktning, styrka och förändring"
+      desc: "Vindfält via kartlager. Visar vind som overlay ovanpå baskartan.",
+      status: "Tile-lager aktivt · OpenWeather vind"
     }
   };
+
+  function syncLayerMiniMapToMainMap() {
+    layerMiniMap.setView(map.getCenter(), map.getZoom(), { animate: false });
+  }
+
+  map.on("move zoom", syncLayerMiniMapToMainMap);
 
   function getLayerDisplayTime(step) {
     const base = new Date("2026-04-08T02:00:00");
@@ -2600,9 +2684,117 @@
     layerSelectedTime.textContent = `Vald tid: ${timeLabel}`;
   }
 
-  function applyLayerCopy(layerKey) {
+  function getOpenWeatherTileUrl(layerName) {
+    return `https://tile.openweathermap.org/map/${layerName}/{z}/{x}/{y}.png?appid=${OPENWEATHER_TILE_KEY}`;
+  }
+
+  function ensureWeatherTileLayer(layerKey) {
+    if (layerKey === "clouds" && !weatherTileLayers.clouds) {
+      weatherTileLayers.clouds = L.tileLayer(getOpenWeatherTileUrl("clouds_new"), {
+        opacity: 0.72,
+        maxZoom: 18
+      });
+    }
+
+    if (layerKey === "wind" && !weatherTileLayers.wind) {
+      weatherTileLayers.wind = L.tileLayer(getOpenWeatherTileUrl("wind_new"), {
+        opacity: 0.72,
+        maxZoom: 18
+      });
+    }
+  }
+
+  function clearLayerMiniMapOverlays() {
+    Object.values(weatherTileLayers).forEach((layer) => {
+      if (layer && layerMiniMap.hasLayer(layer)) {
+        layerMiniMap.removeLayer(layer);
+      }
+    });
+
+    if (smhiRadarOverlay && layerMiniMap.hasLayer(smhiRadarOverlay)) {
+      layerMiniMap.removeLayer(smhiRadarOverlay);
+    }
+  }
+
+  function configureLayerSliderForCurrentLayer() {
+    if (activeLayer === "precipitation" && radarFrameData.length) {
+      layerSlider.min = "0";
+      layerSlider.max = String(Math.max(0, radarFrameData.length - 1));
+      if (Number(layerSlider.value) > Number(layerSlider.max)) {
+        layerSlider.value = layerSlider.max;
+      }
+      layerRangeStart.textContent = "Äldre";
+      layerRangeEnd.textContent = "Nyare";
+      return;
+    }
+
+    layerSlider.min = "0";
+    layerSlider.max = "24";
+    if (Number(layerSlider.value) > 24) {
+      layerSlider.value = "12";
+    }
+    layerRangeStart.textContent = "Tidigare";
+    layerRangeEnd.textContent = "Senare";
+  }
+
+  function updateRadarFrameFromIndex() {
+    if (!radarFrameData.length) return;
+
+    const frame = radarFrameData[radarFrameIndex];
+    if (!frame) return;
+
+    if (smhiRadarOverlay && layerMiniMap.hasLayer(smhiRadarOverlay)) {
+      layerMiniMap.removeLayer(smhiRadarOverlay);
+    }
+
+    smhiRadarOverlay = L.imageOverlay(frame.imageUrl, frame.bounds, {
+      opacity: 0.72,
+      interactive: false
+    }).addTo(layerMiniMap);
+
+    layerSlider.value = String(radarFrameIndex);
+    setText("layerTimestamp", frame.label || "--");
+    setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
+    setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
+  }
+
+  async function loadLatestSmhiRadarFrame() {
+    try {
+      setText("layerStatus", "Hämtar senaste radarbilder...");
+      const res = await fetch("/api/radar/frames");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Kunde inte hämta radarframes");
+      }
+
+      radarFrameData = Array.isArray(data?.frames) ? data.frames : [];
+
+      if (!radarFrameData.length) {
+        throw new Error("Inga radarframes tillgängliga");
+      }
+
+      configureLayerSliderForCurrentLayer();
+
+      radarFrameIndex = Math.min(
+        Number(layerSlider.value),
+        Math.max(0, radarFrameData.length - 1)
+      );
+
+      updateRadarFrameFromIndex();
+    } catch (error) {
+      console.error(error);
+      radarFrameData = [];
+      configureLayerSliderForCurrentLayer();
+      setText("layerStatus", "Det gick inte att hämta radarbild");
+    }
+  }
+
+  async function applyLayerCopy(layerKey) {
     const copy = layerCopy[layerKey];
     if (!copy) return;
+
+    stopLayerPlayback();
 
     activeLayer = layerKey;
     layerView.dataset.layer = layerKey;
@@ -2610,10 +2802,33 @@
     layerVisualTitle.textContent = copy.title;
     layerVisualDesc.textContent = copy.desc;
     layerStatus.textContent = copy.status;
+    layerAreaLabel.textContent = "Område: Sverige / kustzon";
 
     layerTabs.forEach((tab) => {
       tab.classList.toggle("active", tab.dataset.layer === layerKey);
     });
+
+    clearLayerMiniMapOverlays();
+
+    if (layerKey === "clouds") {
+      configureLayerSliderForCurrentLayer();
+      updateLayerTimeUI();
+      ensureWeatherTileLayer("clouds");
+      weatherTileLayers.clouds.addTo(layerMiniMap);
+      setText("layerStatus", "Tile-lager aktivt · OpenWeather moln");
+    }
+
+    if (layerKey === "wind") {
+      configureLayerSliderForCurrentLayer();
+      updateLayerTimeUI();
+      ensureWeatherTileLayer("wind");
+      weatherTileLayers.wind.addTo(layerMiniMap);
+      setText("layerStatus", "Tile-lager aktivt · OpenWeather vind");
+    }
+
+    if (layerKey === "precipitation") {
+      await loadLatestSmhiRadarFrame();
+    }
   }
 
   function stopLayerPlayback() {
@@ -2628,11 +2843,21 @@
 
   function startLayerPlayback() {
     stopLayerPlayback();
+
     if (layerPlayBtn) {
       layerPlayBtn.textContent = "Pausa";
     }
 
     layerPlaybackTimer = setInterval(() => {
+      if (activeLayer === "precipitation" && radarFrameData.length) {
+        radarFrameIndex += 1;
+        if (radarFrameIndex >= radarFrameData.length) {
+          radarFrameIndex = 0;
+        }
+        updateRadarFrameFromIndex();
+        return;
+      }
+
       const max = Number(layerSlider.max);
       let nextValue = Number(layerSlider.value) + 1;
       if (nextValue > max) nextValue = Number(layerSlider.min);
@@ -2642,17 +2867,31 @@
   }
 
   layerTabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      applyLayerCopy(tab.dataset.layer);
+    tab.addEventListener("click", async () => {
+      await applyLayerCopy(tab.dataset.layer);
     });
   });
 
   if (layerSlider) {
-    layerSlider.addEventListener("input", updateLayerTimeUI);
+    layerSlider.addEventListener("input", () => {
+      if (activeLayer === "precipitation" && radarFrameData.length) {
+        radarFrameIndex = Math.min(Number(layerSlider.value), radarFrameData.length - 1);
+        updateRadarFrameFromIndex();
+        return;
+      }
+
+      updateLayerTimeUI();
+    });
   }
 
   if (layerStepBackBtn) {
     layerStepBackBtn.addEventListener("click", () => {
+      if (activeLayer === "precipitation" && radarFrameData.length) {
+        radarFrameIndex = Math.max(0, radarFrameIndex - 1);
+        updateRadarFrameFromIndex();
+        return;
+      }
+
       const min = Number(layerSlider.min);
       const current = Number(layerSlider.value);
       layerSlider.value = String(Math.max(min, current - 1));
@@ -2662,6 +2901,12 @@
 
   if (layerStepForwardBtn) {
     layerStepForwardBtn.addEventListener("click", () => {
+      if (activeLayer === "precipitation" && radarFrameData.length) {
+        radarFrameIndex = Math.min(radarFrameData.length - 1, radarFrameIndex + 1);
+        updateRadarFrameFromIndex();
+        return;
+      }
+
       const max = Number(layerSlider.max);
       const current = Number(layerSlider.value);
       layerSlider.value = String(Math.min(max, current + 1));
