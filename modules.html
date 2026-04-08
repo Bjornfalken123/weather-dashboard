@@ -2711,8 +2711,8 @@ function drawWindField(windSpeed, windDir) {
   const arrowLen = Math.max(8, Math.min(20, 8 + speed * 1.2));
 
   ctx.lineWidth = 1.8;
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.9)";
-  ctx.fillStyle = "rgba(0, 0, 0, 0.95)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.92)";
+  ctx.fillStyle = "rgba(0, 0, 0, 0.96)";
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -2742,49 +2742,57 @@ function drawWindField(windSpeed, windDir) {
 
 function updateRadarFrameFromIndex() {
   if (!radarFrameData.length) return;
-  const frame = radarFrameData[radarFrameIndex];
+
+  const frame = radarFrameData[0];
   if (!frame) return;
 
   clearGraphicCanvas();
   showPrecipitationImage(frame.imageUrl);
 
-  layerSlider.value = String(radarFrameIndex);
+  layerSlider.value = "0";
   setText("layerTimestamp", frame.label || "--");
   setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
-  setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
-  setText("legendPrecipText", "Radarbild med färgkoder från SMHI.");
+  setText("layerStatus", "Senaste radarbild");
+  setText("legendPrecipText", "Senaste radarbild med färgkoder från SMHI.");
 }
-  async function loadSmhiRadarFrames() {
-    setText("layerStatus", "Hämtar radarbilder...");
-    clearGraphicCanvas();
-    hidePrecipitationImage();
+ async function loadSmhiRadarFrames() {
+  setText("layerStatus", "Hämtar radarbild...");
+  clearGraphicCanvas();
+  hidePrecipitationImage();
 
-    try {
-      const res = await fetch("/api/radar/frames");
-      const data = await res.json();
+  try {
+    const res = await fetch("/api/radar/frames");
+    const data = await res.json();
 
-      if (!res.ok) throw new Error(data?.message || "Kunde inte hämta radarframes");
+    if (!res.ok) {
+      throw new Error(data?.message || "Kunde inte hämta radarbild");
+    }
 
-      radarFrameData = Array.isArray(data?.frames) ? data.frames : [];
-      radarFrameIndex = Math.max(0, radarFrameData.length - 1);
+    radarFrameData = Array.isArray(data?.frames) ? data.frames : [];
+    radarFrameIndex = 0;
 
-      if (!radarFrameData.length) {
-        setText("layerStatus", "Inga radarbilder tillgängliga");
-        setText("layerTimestamp", "--");
-        setText("layerSelectedTime", "Vald tid: --");
-        return;
-      }
-
-      configureSliderForRadar();
-      updateRadarFrameFromIndex();
-    } catch (error) {
-      console.error(error);
-      setText("layerStatus", "Det gick inte att hämta radarbilder");
+    if (!radarFrameData.length) {
+      setText("layerStatus", "Ingen radarbild tillgänglig");
       setText("layerTimestamp", "--");
       setText("layerSelectedTime", "Vald tid: --");
-      hidePrecipitationImage();
+      return;
     }
+
+    layerSlider.min = "0";
+    layerSlider.max = "0";
+    layerSlider.value = "0";
+    layerRangeStart.textContent = "Nu";
+    layerRangeEnd.textContent = "Nu";
+
+    updateRadarFrameFromIndex();
+  } catch (error) {
+    console.error(error);
+    setText("layerStatus", "Det gick inte att hämta radarbild");
+    setText("layerTimestamp", "--");
+    setText("layerSelectedTime", "Vald tid: --");
+    hidePrecipitationImage();
   }
+}
 
   async function loadPointLayerDataForActiveLayer() {
     const point = getLayerPoint();
@@ -2909,17 +2917,22 @@ function updateRadarFrameFromIndex() {
   }
 
   function startLayerPlayback() {
-    stopLayerPlayback();
-    if (layerPlayBtn) layerPlayBtn.textContent = "Pausa";
+  stopLayerPlayback();
 
-    layerPlaybackTimer = setInterval(() => {
-      if (activeLayer === "precipitation") {
-        if (!radarFrameData.length) return;
-        radarFrameIndex += 1;
-        if (radarFrameIndex >= radarFrameData.length) radarFrameIndex = 0;
-        updateRadarFrameFromIndex();
-        return;
-      }
+  if (activeLayer === "precipitation") {
+    setText("layerStatus", "Uppspelning för nederbörd aktiveras när radarhistorik läggs tillbaka");
+    return;
+  }
+
+  if (layerPlayBtn) layerPlayBtn.textContent = "Pausa";
+
+  layerPlaybackTimer = setInterval(() => {
+    if (!layerPointTimeSeries.length) return;
+    layerPointIndex += 1;
+    if (layerPointIndex >= layerPointTimeSeries.length) layerPointIndex = 0;
+    updatePointLayerViewFromIndex();
+  }, 900);
+}
 
       if (!layerPointTimeSeries.length) return;
       layerPointIndex += 1;
@@ -2947,18 +2960,30 @@ function updateRadarFrameFromIndex() {
     });
   }
 
-  if (layerStepBackBtn) {
-    layerStepBackBtn.addEventListener("click", () => {
-      if (activeLayer === "precipitation") {
-        radarFrameIndex = Math.max(0, radarFrameIndex - 1);
-        updateRadarFrameFromIndex();
-        return;
-      }
+ if (layerStepBackBtn) {
+  layerStepBackBtn.addEventListener("click", () => {
+    if (activeLayer === "precipitation") {
+      return;
+    }
 
-      layerPointIndex = Math.max(0, layerPointIndex - 1);
-      updatePointLayerViewFromIndex();
-    });
-  }
+    layerPointIndex = Math.max(0, layerPointIndex - 1);
+    updatePointLayerViewFromIndex();
+  });
+}
+
+if (layerStepForwardBtn) {
+  layerStepForwardBtn.addEventListener("click", () => {
+    if (activeLayer === "precipitation") {
+      return;
+    }
+
+    layerPointIndex = Math.min(
+      Math.max(0, layerPointTimeSeries.length - 1),
+      layerPointIndex + 1
+    );
+    updatePointLayerViewFromIndex();
+  });
+}
 
   if (layerStepForwardBtn) {
     layerStepForwardBtn.addEventListener("click", () => {
