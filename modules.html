@@ -98,14 +98,15 @@
     .container {
       position: relative;
       z-index: 1;
-      max-width: 1340px;
+      max-width: 1440px;
       margin: 0 auto;
       padding: 30px;
     }
 
     .hero,
     .map-panel,
-    .module-card {
+    .module-card,
+    .layer-panel {
       position: relative;
       overflow: hidden;
       border-radius: var(--radius-lg);
@@ -124,7 +125,8 @@
 
     .hero::before,
     .map-panel::before,
-    .module-card::before {
+    .module-card::before,
+    .layer-panel::before {
       content: "";
       position: absolute;
       inset: 0;
@@ -136,7 +138,8 @@
 
     .hero::after,
     .map-panel::after,
-    .module-card::after {
+    .module-card::after,
+    .layer-panel::after {
       content: "";
       position: absolute;
       inset: 1px;
@@ -269,12 +272,22 @@
       color: var(--text);
     }
 
+    .map-layer-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.9fr);
+      gap: 22px;
+      margin-bottom: 24px;
+      align-items: stretch;
+    }
+
     .map-panel {
       padding: 22px;
-      margin-bottom: 24px;
       border-radius: var(--radius-xl);
       background:
         linear-gradient(180deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.045) 100%);
+      min-height: 100%;
     }
 
     .map-toolbar {
@@ -287,7 +300,9 @@
     }
 
     .mode-btn,
-    .forecast-toggle-btn {
+    .forecast-toggle-btn,
+    .layer-tab,
+    .layer-control-btn {
       appearance: none;
       border: 1px solid rgba(255,255,255,0.12);
       color: var(--text);
@@ -310,7 +325,9 @@
     }
 
     .mode-btn:hover,
-    .forecast-toggle-btn:hover {
+    .forecast-toggle-btn:hover,
+    .layer-tab:hover,
+    .layer-control-btn:hover {
       transform: translateY(-1px);
       border-color: rgba(255,255,255,0.2);
       background:
@@ -320,7 +337,8 @@
         0 14px 24px rgba(0,0,0,0.16);
     }
 
-    .mode-btn.active {
+    .mode-btn.active,
+    .layer-tab.active {
       border-color: rgba(123, 199, 255, 0.42);
       background:
         linear-gradient(180deg, rgba(123, 199, 255, 0.24) 0%, rgba(123, 199, 255, 0.11) 100%);
@@ -366,6 +384,356 @@
         0 20px 42px rgba(0,0,0,0.24);
     }
 
+    .layer-panel {
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.045) 100%);
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .layer-panel-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .layer-panel-title-wrap h2 {
+      margin: 0 0 8px;
+      font-size: 23px;
+      font-weight: 840;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .layer-panel-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.68;
+      max-width: 46ch;
+    }
+
+    .layer-badge {
+      white-space: nowrap;
+      padding: 8px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #f7fbff;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(232, 215, 168, 0.16) 0%, rgba(123, 199, 255, 0.14) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 8px 18px rgba(0,0,0,0.12);
+    }
+
+    .layer-tabs {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .layer-view {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-height: 320px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.10);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(123, 199, 255, 0.18) 0%, transparent 20%),
+        radial-gradient(circle at 80% 25%, rgba(152, 240, 219, 0.10) 0%, transparent 18%),
+        radial-gradient(circle at 50% 70%, rgba(180, 199, 255, 0.12) 0%, transparent 28%),
+        linear-gradient(180deg, rgba(10, 18, 32, 0.96) 0%, rgba(8, 14, 26, 0.98) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.03),
+        0 20px 42px rgba(0,0,0,0.24);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .layer-view::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      opacity: 0.28;
+      pointer-events: none;
+    }
+
+    .layer-view::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 30% 35%, rgba(123, 199, 255, 0.11), transparent 18%),
+        radial-gradient(circle at 64% 46%, rgba(152, 240, 219, 0.09), transparent 14%),
+        radial-gradient(circle at 76% 64%, rgba(255,255,255,0.04), transparent 10%);
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    .layer-view-top {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 18px 18px 0;
+      flex-wrap: wrap;
+    }
+
+    .layer-view-labels {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .layer-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-soft);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .layer-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(123, 199, 255, 0.55);
+    }
+
+    .layer-timestamp {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-soft);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(9, 17, 30, 0.72);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .layer-visual-center {
+      position: relative;
+      z-index: 1;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .layer-visual-card {
+      width: 100%;
+      min-height: 150px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 18px 34px rgba(0,0,0,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      text-align: center;
+    }
+
+    .layer-visual-text {
+      max-width: 34ch;
+    }
+
+    .layer-visual-title {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: 760;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .layer-visual-desc {
+      margin: 0;
+      color: var(--muted-soft);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .layer-controls {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 18px 18px;
+    }
+
+    .layer-control-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .layer-control-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .layer-control-btn {
+      padding: 10px 13px;
+      font-size: 13px;
+    }
+
+    .layer-status {
+      color: var(--muted-soft);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .layer-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .layer-slider-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .layer-slider {
+      width: 100%;
+      appearance: none;
+      height: 8px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(123, 199, 255, 0.55) 0%, rgba(152, 240, 219, 0.45) 55%, rgba(255,255,255,0.12) 100%);
+      outline: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow:
+        inset 0 1px 2px rgba(0,0,0,0.2),
+        0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .layer-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffffff 0%, #cfe8ff 100%);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow:
+        0 0 0 6px rgba(123, 199, 255, 0.12),
+        0 8px 16px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    .layer-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffffff 0%, #cfe8ff 100%);
+      box-shadow:
+        0 0 0 6px rgba(123, 199, 255, 0.12),
+        0 8px 16px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    .layer-legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .layer-legend-item {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.035) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.035),
+        0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .layer-legend-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: var(--text-soft);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .legend-swatch.blue {
+      background: #7bc7ff;
+      box-shadow: 0 0 12px rgba(123, 199, 255, 0.55);
+    }
+
+    .legend-swatch.green {
+      background: #98f0db;
+      box-shadow: 0 0 12px rgba(152, 240, 219, 0.45);
+    }
+
+    .legend-swatch.white {
+      background: #dfe8f7;
+      box-shadow: 0 0 12px rgba(223, 232, 247, 0.25);
+    }
+
+    .layer-legend-text {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
     .modules-grid {
       position: relative;
       z-index: 1;
@@ -384,8 +752,10 @@
         linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.045) 100%);
     }
 
-    .module-card:hover {
-      transform: translateY(-8px);
+    .module-card:hover,
+    .layer-panel:hover,
+    .map-panel:hover {
+      transform: translateY(-4px);
       border-color: rgba(123, 199, 255, 0.24);
       background:
         linear-gradient(180deg, rgba(255,255,255,0.092) 0%, rgba(255,255,255,0.05) 100%);
@@ -583,6 +953,16 @@
       border-top-color: rgba(8, 15, 28, 0.94);
     }
 
+    @media (max-width: 1200px) {
+      .map-layer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .layer-panel {
+        min-height: 520px;
+      }
+    }
+
     @media (max-width: 1050px) {
       .modules-grid {
         grid-template-columns: 1fr;
@@ -623,17 +1003,34 @@
         border-radius: 18px;
       }
 
-      .forecast-grid {
+      .forecast-grid,
+      .layer-legend {
         grid-template-columns: 1fr;
       }
 
-      .map-toolbar {
+      .map-toolbar,
+      .layer-tabs {
         display: grid;
         grid-template-columns: 1fr;
       }
 
       .mode-btn,
-      .forecast-toggle-btn {
+      .forecast-toggle-btn,
+      .layer-tab {
+        width: 100%;
+      }
+
+      .layer-control-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .layer-control-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .layer-control-btn {
         width: 100%;
       }
     }
@@ -668,18 +1065,117 @@
       </div>
     </section>
 
-    <section class="map-panel">
-      <div class="map-toolbar">
-        <button class="mode-btn active" data-mode="weather">Väderpunkt</button>
-        <button class="mode-btn" data-mode="wave">Boj / våg</button>
-        <button class="mode-btn" data-mode="lighthouse">Fyr / station</button>
-      </div>
+    <section class="map-layer-grid">
+      <section class="map-panel">
+        <div class="map-toolbar">
+          <button class="mode-btn active" data-mode="weather">Väderpunkt</button>
+          <button class="mode-btn" data-mode="wave">Boj / våg</button>
+          <button class="mode-btn" data-mode="lighthouse">Fyr / station</button>
+        </div>
 
-      <div class="map-note" id="mapNote">
-        Klicka på kartan för att välja en punkt för vädermodulen.
-      </div>
+        <div class="map-note" id="mapNote">
+          Klicka på kartan för att välja en punkt för vädermodulen.
+        </div>
 
-      <div id="map"></div>
+        <div id="map"></div>
+      </section>
+
+      <aside class="layer-panel">
+        <div class="layer-panel-header">
+          <div class="layer-panel-title-wrap">
+            <h2>Väderlager</h2>
+            <p class="layer-panel-subtitle">
+              Visuell tidsvy för nederbörd, moln och vind. Anpassad för att senare kunna kopplas till radar- och modellager.
+            </p>
+          </div>
+          <div class="layer-badge">Radar & lager</div>
+        </div>
+
+        <div class="layer-tabs">
+          <button class="layer-tab active" type="button">Nederbörd</button>
+          <button class="layer-tab" type="button">Moln</button>
+          <button class="layer-tab" type="button">Vind</button>
+        </div>
+
+        <div class="layer-view">
+          <div class="layer-view-top">
+            <div class="layer-view-labels">
+              <div class="layer-chip">
+                <span class="layer-chip-dot"></span>
+                <span>Aktivt lager: Nederbörd</span>
+              </div>
+              <div class="layer-chip">
+                <span class="layer-chip-dot"></span>
+                <span>Område: Sverige / kustzon</span>
+              </div>
+            </div>
+            <div class="layer-timestamp">Ons 08 apr · 14:00</div>
+          </div>
+
+          <div class="layer-visual-center">
+            <div class="layer-visual-card">
+              <div class="layer-visual-text">
+                <span class="layer-visual-title">Förhandsvy för väderlager</span>
+                <p class="layer-visual-desc">
+                  Den här panelen är redo för att visa radarbilder eller modellager med tidsstyrning. Just nu är den designmässigt förberedd för nederbörd, moln och vind.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="layer-controls">
+            <div class="layer-control-row">
+              <div class="layer-control-buttons">
+                <button class="layer-control-btn" type="button">◀</button>
+                <button class="layer-control-btn" type="button">▶</button>
+                <button class="layer-control-btn" type="button">Spela</button>
+              </div>
+              <div class="layer-status">Tidssteg: 1 timme · Vy: senaste 24 timmar / prognos</div>
+            </div>
+
+            <div class="layer-slider-wrap">
+              <div class="layer-slider-meta">
+                <span>Tidigare</span>
+                <span>Vald tid: Ons 08 apr · 14:00</span>
+                <span>Senare</span>
+              </div>
+              <input class="layer-slider" type="range" min="0" max="100" value="62" />
+            </div>
+
+            <div class="layer-legend">
+              <div class="layer-legend-item">
+                <div class="layer-legend-label">
+                  <span class="legend-swatch blue"></span>
+                  <span>Nederbörd</span>
+                </div>
+                <div class="layer-legend-text">
+                  Förberedd för radarvy med tidslinje och animering.
+                </div>
+              </div>
+
+              <div class="layer-legend-item">
+                <div class="layer-legend-label">
+                  <span class="legend-swatch green"></span>
+                  <span>Moln</span>
+                </div>
+                <div class="layer-legend-text">
+                  Förberedd för satellit- eller modellbaserade molnlager.
+                </div>
+              </div>
+
+              <div class="layer-legend-item">
+                <div class="layer-legend-label">
+                  <span class="legend-swatch white"></span>
+                  <span>Vind</span>
+                </div>
+                <div class="layer-legend-text">
+                  Förberedd för vindfält, riktning och prognostidssteg.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
     </section>
 
     <section class="modules-grid">
