@@ -321,7 +321,8 @@
         transform var(--transition-fast),
         border-color var(--transition-fast),
         box-shadow var(--transition-fast),
-        background var(--transition-fast);
+        background var(--transition-fast),
+        color var(--transition-fast);
     }
 
     .mode-btn:hover,
@@ -483,12 +484,35 @@
       content: "";
       position: absolute;
       inset: 0;
+      pointer-events: none;
+      opacity: 0.9;
+      transition: background var(--transition-fast), opacity var(--transition-fast);
       background:
         radial-gradient(circle at 30% 35%, rgba(123, 199, 255, 0.11), transparent 18%),
         radial-gradient(circle at 64% 46%, rgba(152, 240, 219, 0.09), transparent 14%),
         radial-gradient(circle at 76% 64%, rgba(255,255,255,0.04), transparent 10%);
-      pointer-events: none;
-      opacity: 0.9;
+    }
+
+    .layer-view[data-layer="precipitation"]::after {
+      background:
+        radial-gradient(circle at 22% 34%, rgba(123, 199, 255, 0.22), transparent 16%),
+        radial-gradient(circle at 38% 56%, rgba(123, 199, 255, 0.18), transparent 14%),
+        radial-gradient(circle at 72% 44%, rgba(152, 240, 219, 0.12), transparent 14%),
+        radial-gradient(circle at 82% 70%, rgba(123, 199, 255, 0.14), transparent 11%);
+    }
+
+    .layer-view[data-layer="clouds"]::after {
+      background:
+        radial-gradient(circle at 28% 34%, rgba(223, 232, 247, 0.16), transparent 20%),
+        radial-gradient(circle at 58% 42%, rgba(223, 232, 247, 0.12), transparent 18%),
+        radial-gradient(circle at 74% 58%, rgba(180, 199, 255, 0.10), transparent 15%);
+    }
+
+    .layer-view[data-layer="wind"]::after {
+      background:
+        linear-gradient(120deg, transparent 0%, rgba(123, 199, 255, 0.08) 18%, transparent 36%),
+        linear-gradient(145deg, transparent 0%, rgba(152, 240, 219, 0.08) 22%, transparent 42%),
+        linear-gradient(170deg, transparent 0%, rgba(223, 232, 247, 0.06) 26%, transparent 48%);
     }
 
     .layer-view-top {
@@ -1092,32 +1116,32 @@
         </div>
 
         <div class="layer-tabs">
-          <button class="layer-tab active" type="button">Nederbörd</button>
-          <button class="layer-tab" type="button">Moln</button>
-          <button class="layer-tab" type="button">Vind</button>
+          <button class="layer-tab active" type="button" data-layer="precipitation">Nederbörd</button>
+          <button class="layer-tab" type="button" data-layer="clouds">Moln</button>
+          <button class="layer-tab" type="button" data-layer="wind">Vind</button>
         </div>
 
-        <div class="layer-view">
+        <div class="layer-view" id="layerView" data-layer="precipitation">
           <div class="layer-view-top">
             <div class="layer-view-labels">
               <div class="layer-chip">
                 <span class="layer-chip-dot"></span>
-                <span>Aktivt lager: Nederbörd</span>
+                <span id="layerActiveLabel">Aktivt lager: Nederbörd</span>
               </div>
               <div class="layer-chip">
                 <span class="layer-chip-dot"></span>
-                <span>Område: Sverige / kustzon</span>
+                <span id="layerAreaLabel">Område: Sverige / kustzon</span>
               </div>
             </div>
-            <div class="layer-timestamp">Ons 08 apr · 14:00</div>
+            <div class="layer-timestamp" id="layerTimestamp">Ons 08 apr · 14:00</div>
           </div>
 
           <div class="layer-visual-center">
             <div class="layer-visual-card">
               <div class="layer-visual-text">
-                <span class="layer-visual-title">Förhandsvy för väderlager</span>
-                <p class="layer-visual-desc">
-                  Den här panelen är redo för att visa radarbilder eller modellager med tidsstyrning. Just nu är den designmässigt förberedd för nederbörd, moln och vind.
+                <span class="layer-visual-title" id="layerVisualTitle">Nederbördslager</span>
+                <p class="layer-visual-desc" id="layerVisualDesc">
+                  Förhandsvy för radarbaserad nederbörd med tidsstyrning. Redo för animering och uppspelning över flera tidssteg.
                 </p>
               </div>
             </div>
@@ -1126,20 +1150,22 @@
           <div class="layer-controls">
             <div class="layer-control-row">
               <div class="layer-control-buttons">
-                <button class="layer-control-btn" type="button">◀</button>
-                <button class="layer-control-btn" type="button">▶</button>
-                <button class="layer-control-btn" type="button">Spela</button>
+                <button class="layer-control-btn" id="layerStepBackBtn" type="button">◀</button>
+                <button class="layer-control-btn" id="layerStepForwardBtn" type="button">▶</button>
+                <button class="layer-control-btn" id="layerPlayBtn" type="button">Spela</button>
               </div>
-              <div class="layer-status">Tidssteg: 1 timme · Vy: senaste 24 timmar / prognos</div>
+              <div class="layer-status" id="layerStatus">
+                Tidssteg: 1 timme · Vy: senaste 24 timmar / prognos
+              </div>
             </div>
 
             <div class="layer-slider-wrap">
               <div class="layer-slider-meta">
-                <span>Tidigare</span>
-                <span>Vald tid: Ons 08 apr · 14:00</span>
-                <span>Senare</span>
+                <span id="layerRangeStart">Tidigare</span>
+                <span id="layerSelectedTime">Vald tid: Ons 08 apr · 14:00</span>
+                <span id="layerRangeEnd">Senare</span>
               </div>
-              <input class="layer-slider" type="range" min="0" max="100" value="62" />
+              <input class="layer-slider" id="layerSlider" type="range" min="0" max="24" value="12" />
             </div>
 
             <div class="layer-legend">
@@ -1149,7 +1175,7 @@
                   <span>Nederbörd</span>
                 </div>
                 <div class="layer-legend-text">
-                  Förberedd för radarvy med tidslinje och animering.
+                  Radarvy med historik, aktuellt läge och närliggande tidssteg.
                 </div>
               </div>
 
@@ -1159,7 +1185,7 @@
                   <span>Moln</span>
                 </div>
                 <div class="layer-legend-text">
-                  Förberedd för satellit- eller modellbaserade molnlager.
+                  Visuell översikt för molntäcke och utveckling över tid.
                 </div>
               </div>
 
@@ -1169,7 +1195,7 @@
                   <span>Vind</span>
                 </div>
                 <div class="layer-legend-text">
-                  Förberedd för vindfält, riktning och prognostidssteg.
+                  Förberedd för vindriktning, flöden och prognosbaserade lager.
                 </div>
               </div>
             </div>
@@ -2517,6 +2543,144 @@
       loadWeatherForPoint(lat, lon);
     }
   });
+
+  const layerTabs = Array.from(document.querySelectorAll(".layer-tab"));
+  const layerView = document.getElementById("layerView");
+  const layerActiveLabel = document.getElementById("layerActiveLabel");
+  const layerVisualTitle = document.getElementById("layerVisualTitle");
+  const layerVisualDesc = document.getElementById("layerVisualDesc");
+  const layerTimestamp = document.getElementById("layerTimestamp");
+  const layerSelectedTime = document.getElementById("layerSelectedTime");
+  const layerStatus = document.getElementById("layerStatus");
+  const layerSlider = document.getElementById("layerSlider");
+  const layerPlayBtn = document.getElementById("layerPlayBtn");
+  const layerStepBackBtn = document.getElementById("layerStepBackBtn");
+  const layerStepForwardBtn = document.getElementById("layerStepForwardBtn");
+
+  let activeLayer = "precipitation";
+  let layerPlaybackTimer = null;
+
+  const layerCopy = {
+    precipitation: {
+      label: "Nederbörd",
+      title: "Nederbördslager",
+      desc: "Förhandsvy för radarbaserad nederbörd med tidsstyrning. Redo för animering och uppspelning över flera tidssteg.",
+      status: "Tidssteg: 1 timme · Vy: senaste 24 timmar / prognos"
+    },
+    clouds: {
+      label: "Moln",
+      title: "Molnlagring över tid",
+      desc: "Förhandsvy för molntäcke och utveckling över tid. Anpassad för satellit- eller modellbaserade lager.",
+      status: "Tidssteg: 1 timme · Vy: molntäcke och utveckling"
+    },
+    wind: {
+      label: "Vind",
+      title: "Vindlager",
+      desc: "Förhandsvy för vindfält, riktning och utveckling över tid. Anpassad för prognosstyrda lager och strömlinjer.",
+      status: "Tidssteg: 1 timme · Vy: riktning, styrka och förändring"
+    }
+  };
+
+  function getLayerDisplayTime(step) {
+    const base = new Date("2026-04-08T02:00:00");
+    base.setHours(base.getHours() + Number(step));
+    return base.toLocaleString("sv-SE", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).replace(".", "");
+  }
+
+  function updateLayerTimeUI() {
+    const value = Number(layerSlider.value);
+    const timeLabel = getLayerDisplayTime(value);
+    layerTimestamp.textContent = timeLabel;
+    layerSelectedTime.textContent = `Vald tid: ${timeLabel}`;
+  }
+
+  function applyLayerCopy(layerKey) {
+    const copy = layerCopy[layerKey];
+    if (!copy) return;
+
+    activeLayer = layerKey;
+    layerView.dataset.layer = layerKey;
+    layerActiveLabel.textContent = `Aktivt lager: ${copy.label}`;
+    layerVisualTitle.textContent = copy.title;
+    layerVisualDesc.textContent = copy.desc;
+    layerStatus.textContent = copy.status;
+
+    layerTabs.forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.layer === layerKey);
+    });
+  }
+
+  function stopLayerPlayback() {
+    if (layerPlaybackTimer) {
+      clearInterval(layerPlaybackTimer);
+      layerPlaybackTimer = null;
+    }
+    if (layerPlayBtn) {
+      layerPlayBtn.textContent = "Spela";
+    }
+  }
+
+  function startLayerPlayback() {
+    stopLayerPlayback();
+    if (layerPlayBtn) {
+      layerPlayBtn.textContent = "Pausa";
+    }
+
+    layerPlaybackTimer = setInterval(() => {
+      const max = Number(layerSlider.max);
+      let nextValue = Number(layerSlider.value) + 1;
+      if (nextValue > max) nextValue = Number(layerSlider.min);
+      layerSlider.value = String(nextValue);
+      updateLayerTimeUI();
+    }, 900);
+  }
+
+  layerTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      applyLayerCopy(tab.dataset.layer);
+    });
+  });
+
+  if (layerSlider) {
+    layerSlider.addEventListener("input", updateLayerTimeUI);
+  }
+
+  if (layerStepBackBtn) {
+    layerStepBackBtn.addEventListener("click", () => {
+      const min = Number(layerSlider.min);
+      const current = Number(layerSlider.value);
+      layerSlider.value = String(Math.max(min, current - 1));
+      updateLayerTimeUI();
+    });
+  }
+
+  if (layerStepForwardBtn) {
+    layerStepForwardBtn.addEventListener("click", () => {
+      const max = Number(layerSlider.max);
+      const current = Number(layerSlider.value);
+      layerSlider.value = String(Math.min(max, current + 1));
+      updateLayerTimeUI();
+    });
+  }
+
+  if (layerPlayBtn) {
+    layerPlayBtn.addEventListener("click", () => {
+      if (layerPlaybackTimer) {
+        stopLayerPlayback();
+      } else {
+        startLayerPlayback();
+      }
+    });
+  }
+
+  applyLayerCopy(activeLayer);
+  updateLayerTimeUI();
 
   resetForecastDisplay();
   updateModeUI();
