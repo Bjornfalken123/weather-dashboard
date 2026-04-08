@@ -591,21 +591,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 22px;
+      padding: 0;
       text-align: center;
-    }
-
-    .layer-map-card {
       position: relative;
       overflow: hidden;
-      padding: 0;
-      min-height: 220px;
     }
 
     #layerMiniMap {
       width: 100%;
-      height: 260px;
+      height: 240px;
       border-radius: 22px;
+      overflow: hidden;
     }
 
     .layer-visual-overlay {
@@ -617,7 +613,7 @@
       padding: 14px 16px;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(7, 14, 26, 0.72);
+      background: rgba(7, 14, 26, 0.74);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 12px 28px rgba(0,0,0,0.22);
@@ -1067,7 +1063,7 @@
       }
 
       #layerMiniMap {
-        height: 220px;
+        height: 210px;
       }
 
       .forecast-grid,
@@ -1152,7 +1148,7 @@
           <div class="layer-panel-title-wrap">
             <h2>Väderlager</h2>
             <p class="layer-panel-subtitle">
-              Visuell tidsvy för nederbörd, moln och vind. Anpassad för att senare kunna kopplas till radar- och modellager.
+              Visuell tidsvy för nederbörd, moln och vind. Anpassad för att kopplas till radar och prognosdata utan att ändra resten av sidan.
             </p>
           </div>
           <div class="layer-badge">Radar & lager</div>
@@ -1176,18 +1172,18 @@
                 <span id="layerAreaLabel">Område: Sverige / kustzon</span>
               </div>
             </div>
-            <div class="layer-timestamp" id="layerTimestamp">Ons 08 apr · 14:00</div>
+            <div class="layer-timestamp" id="layerTimestamp">--</div>
           </div>
 
           <div class="layer-visual-center">
-            <div class="layer-visual-card layer-map-card">
+            <div class="layer-visual-card">
               <div id="layerMiniMap"></div>
 
               <div class="layer-visual-overlay">
                 <div class="layer-visual-text">
                   <span class="layer-visual-title" id="layerVisualTitle">Nederbördslager</span>
                   <p class="layer-visual-desc" id="layerVisualDesc">
-                    Förhandsvy för radarbaserad nederbörd med tidsstyrning. Redo för animering och uppspelning över flera tidssteg.
+                    SMHI-radar med tidsstyrning och uppspelning.
                   </p>
                 </div>
               </div>
@@ -1202,14 +1198,14 @@
                 <button class="layer-control-btn" id="layerPlayBtn" type="button">Spela</button>
               </div>
               <div class="layer-status" id="layerStatus">
-                Tidssteg: 1 timme · Vy: senaste 24 timmar / prognos
+                Laddar lagerdata...
               </div>
             </div>
 
             <div class="layer-slider-wrap">
               <div class="layer-slider-meta">
                 <span id="layerRangeStart">Tidigare</span>
-                <span id="layerSelectedTime">Vald tid: Ons 08 apr · 14:00</span>
+                <span id="layerSelectedTime">Vald tid: --</span>
                 <span id="layerRangeEnd">Senare</span>
               </div>
               <input class="layer-slider" id="layerSlider" type="range" min="0" max="24" value="12" />
@@ -1221,8 +1217,8 @@
                   <span class="legend-swatch blue"></span>
                   <span>Nederbörd</span>
                 </div>
-                <div class="layer-legend-text">
-                  Radarvy med historik, aktuellt läge och närliggande tidssteg.
+                <div class="layer-legend-text" id="legendPrecipText">
+                  Radarvy med historik och uppspelning.
                 </div>
               </div>
 
@@ -1231,8 +1227,8 @@
                   <span class="legend-swatch green"></span>
                   <span>Moln</span>
                 </div>
-                <div class="layer-legend-text">
-                  Visuell översikt för molntäcke och utveckling över tid.
+                <div class="layer-legend-text" id="legendCloudText">
+                  Molnandel från prognosdata för vald punkt eller kartcentrum.
                 </div>
               </div>
 
@@ -1241,8 +1237,8 @@
                   <span class="legend-swatch white"></span>
                   <span>Vind</span>
                 </div>
-                <div class="layer-legend-text">
-                  Förberedd för vindriktning, flöden och prognosbaserade lager.
+                <div class="layer-legend-text" id="legendWindText">
+                  Vindhastighet och riktning över tid för vald punkt eller kartcentrum.
                 </div>
               </div>
             </div>
@@ -1542,6 +1538,10 @@
     return v == null ? "--" : `${Number(v).toFixed(1)} cm`;
   }
 
+  function formatPercent(v) {
+    return v == null ? "--" : `${Math.round(Number(v))} %`;
+  }
+
   function formatForecastRange(min, max) {
     if (min == null && max == null) return "--";
     if (min == null) return formatTemp(max);
@@ -1592,6 +1592,20 @@
     }
 
     return String(value);
+  }
+
+  function formatShortLayerTime(value) {
+    if (!value) return "--";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "--";
+
+    return d.toLocaleString("sv-SE", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).replace(".", "");
   }
 
   function formatObservedValue(formattedValue, observation) {
@@ -1985,6 +1999,10 @@
         setText("weatherGustValue", "--");
         setText("weatherGustSourceValue", "Inga vindbyar tillgängliga");
         setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
+      }
+
+      if (activeLayer === "clouds" || activeLayer === "wind") {
+        loadPointLayerDataForActiveLayer().catch(console.error);
       }
     } catch (error) {
       console.error(error);
@@ -2607,11 +2625,6 @@
   const layerRangeEnd = document.getElementById("layerRangeEnd");
   const layerAreaLabel = document.getElementById("layerAreaLabel");
 
-  let activeLayer = "precipitation";
-  let layerPlaybackTimer = null;
-
-  const OPENWEATHER_TILE_KEY = "DIN_OPENWEATHER_API_KEY";
-
   const layerMiniMap = L.map("layerMiniMap", {
     zoomControl: false,
     attributionControl: true,
@@ -2629,33 +2642,32 @@
     attribution: "&copy; OpenStreetMap"
   }).addTo(layerMiniMap);
 
-  const weatherTileLayers = {
-    clouds: null,
-    wind: null
-  };
-
-  let smhiRadarOverlay = null;
+  let activeLayer = "precipitation";
+  let layerPlaybackTimer = null;
   let radarFrameData = [];
   let radarFrameIndex = 0;
+  let smhiRadarOverlay = null;
+  let layerPointTimeSeries = [];
+  let layerPointIndex = 0;
 
   const layerCopy = {
     precipitation: {
       label: "Nederbörd",
       title: "Nederbördslager",
-      desc: "Radarbaserad nederbörd med tidsstyrning. Byggd för att visa historiska radarframes från backend.",
-      status: "Laddar radarhistorik..."
+      desc: "SMHI-radar med tidsstyrning och uppspelning över tillgängliga bilder.",
+      status: "Hämtar radarbilder..."
     },
     clouds: {
       label: "Moln",
-      title: "Molnlagring över tid",
-      desc: "Molntäcke via kartlager. Visar moln som transparent tile-overlay ovanpå baskartan.",
-      status: "Tile-lager aktivt · OpenWeather moln"
+      title: "Molntäcke över tid",
+      desc: "Molnandel från prognosdata för vald väderpunkt eller kartans centrum.",
+      status: "Hämtar molnprognos..."
     },
     wind: {
       label: "Vind",
-      title: "Vindlager",
-      desc: "Vindfält via kartlager. Visar vind som overlay ovanpå baskartan.",
-      status: "Tile-lager aktivt · OpenWeather vind"
+      title: "Vind över tid",
+      desc: "Vindhastighet och vindriktning från prognosdata för vald väderpunkt eller kartans centrum.",
+      status: "Hämtar vindprognos..."
     }
   };
 
@@ -2665,75 +2677,44 @@
 
   map.on("move zoom", syncLayerMiniMapToMainMap);
 
-  function getLayerDisplayTime(step) {
-    const base = new Date("2026-04-08T02:00:00");
-    base.setHours(base.getHours() + Number(step));
-    return base.toLocaleString("sv-SE", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).replace(".", "");
-  }
-
-  function updateLayerTimeUI() {
-    const value = Number(layerSlider.value);
-    const timeLabel = getLayerDisplayTime(value);
-    layerTimestamp.textContent = timeLabel;
-    layerSelectedTime.textContent = `Vald tid: ${timeLabel}`;
-  }
-
-  function getOpenWeatherTileUrl(layerName) {
-    return `https://tile.openweathermap.org/map/${layerName}/{z}/{x}/{y}.png?appid=${OPENWEATHER_TILE_KEY}`;
-  }
-
-  function ensureWeatherTileLayer(layerKey) {
-    if (layerKey === "clouds" && !weatherTileLayers.clouds) {
-      weatherTileLayers.clouds = L.tileLayer(getOpenWeatherTileUrl("clouds_new"), {
-        opacity: 0.72,
-        maxZoom: 18
-      });
+  function getLayerPoint() {
+    if (savedSelections.weather?.lat != null && savedSelections.weather?.lon != null) {
+      return {
+        lat: savedSelections.weather.lat,
+        lon: savedSelections.weather.lon,
+        label: `${formatCoord(savedSelections.weather.lat)}, ${formatCoord(savedSelections.weather.lon)}`
+      };
     }
 
-    if (layerKey === "wind" && !weatherTileLayers.wind) {
-      weatherTileLayers.wind = L.tileLayer(getOpenWeatherTileUrl("wind_new"), {
-        opacity: 0.72,
-        maxZoom: 18
-      });
-    }
+    const center = map.getCenter();
+    return {
+      lat: center.lat,
+      lon: center.lng,
+      label: `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`
+    };
   }
 
   function clearLayerMiniMapOverlays() {
-    Object.values(weatherTileLayers).forEach((layer) => {
-      if (layer && layerMiniMap.hasLayer(layer)) {
-        layerMiniMap.removeLayer(layer);
-      }
-    });
-
     if (smhiRadarOverlay && layerMiniMap.hasLayer(smhiRadarOverlay)) {
       layerMiniMap.removeLayer(smhiRadarOverlay);
     }
   }
 
-  function configureLayerSliderForCurrentLayer() {
-    if (activeLayer === "precipitation" && radarFrameData.length) {
-      layerSlider.min = "0";
-      layerSlider.max = String(Math.max(0, radarFrameData.length - 1));
-      if (Number(layerSlider.value) > Number(layerSlider.max)) {
-        layerSlider.value = layerSlider.max;
-      }
-      layerRangeStart.textContent = "Äldre";
-      layerRangeEnd.textContent = "Nyare";
-      return;
-    }
-
+  function configureSliderForRadar() {
+    const max = Math.max(0, radarFrameData.length - 1);
     layerSlider.min = "0";
-    layerSlider.max = "24";
-    if (Number(layerSlider.value) > 24) {
-      layerSlider.value = "12";
-    }
-    layerRangeStart.textContent = "Tidigare";
+    layerSlider.max = String(max);
+    layerSlider.value = String(Math.min(radarFrameIndex, max));
+    layerRangeStart.textContent = "Äldre";
+    layerRangeEnd.textContent = "Nyare";
+  }
+
+  function configureSliderForPointData() {
+    const max = Math.max(0, layerPointTimeSeries.length - 1);
+    layerSlider.min = "0";
+    layerSlider.max = String(max);
+    layerSlider.value = String(Math.min(layerPointIndex, max));
+    layerRangeStart.textContent = "Start";
     layerRangeEnd.textContent = "Senare";
   }
 
@@ -2743,9 +2724,7 @@
     const frame = radarFrameData[radarFrameIndex];
     if (!frame) return;
 
-    if (smhiRadarOverlay && layerMiniMap.hasLayer(smhiRadarOverlay)) {
-      layerMiniMap.removeLayer(smhiRadarOverlay);
-    }
+    clearLayerMiniMapOverlays();
 
     smhiRadarOverlay = L.imageOverlay(frame.imageUrl, frame.bounds, {
       opacity: 0.72,
@@ -2756,11 +2735,14 @@
     setText("layerTimestamp", frame.label || "--");
     setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
     setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
+    setText("legendPrecipText", "SMHI-radar med historik och uppspelning.");
   }
 
-  async function loadLatestSmhiRadarFrame() {
+  async function loadSmhiRadarFrames() {
+    setText("layerStatus", "Hämtar radarbilder...");
+    clearLayerMiniMapOverlays();
+
     try {
-      setText("layerStatus", "Hämtar senaste radarbilder...");
       const res = await fetch("/api/radar/frames");
       const data = await res.json();
 
@@ -2769,32 +2751,125 @@
       }
 
       radarFrameData = Array.isArray(data?.frames) ? data.frames : [];
+      radarFrameIndex = Math.max(0, radarFrameData.length - 1);
 
       if (!radarFrameData.length) {
-        throw new Error("Inga radarframes tillgängliga");
+        setText("layerStatus", "Inga radarbilder tillgängliga");
+        setText("layerTimestamp", "--");
+        setText("layerSelectedTime", "Vald tid: --");
+        return;
       }
 
-      configureLayerSliderForCurrentLayer();
-
-      radarFrameIndex = Math.min(
-        Number(layerSlider.value),
-        Math.max(0, radarFrameData.length - 1)
-      );
-
+      configureSliderForRadar();
       updateRadarFrameFromIndex();
     } catch (error) {
       console.error(error);
-      radarFrameData = [];
-      configureLayerSliderForCurrentLayer();
-      setText("layerStatus", "Det gick inte att hämta radarbild");
+      setText("layerStatus", "Det gick inte att hämta radarbilder");
+      setText("layerTimestamp", "--");
+      setText("layerSelectedTime", "Vald tid: --");
+    }
+  }
+
+  function extractCloudValue(details) {
+    return (
+      details.cloud_area_fraction ??
+      details.total_cloud_cover ??
+      details.medium_cloud_cover ??
+      details.low_cloud_cover ??
+      null
+    );
+  }
+
+  function buildPointLayerData(timeseries, layerKey) {
+    return timeseries.slice(0, 24).map((item) => {
+      const details = item?.data?.instant?.details || {};
+      const next1 = item?.data?.next_1_hours?.details || {};
+      const summary =
+        item?.data?.next_1_hours?.summary?.symbol_code ||
+        item?.data?.next_6_hours?.summary?.symbol_code ||
+        null;
+
+      return {
+        time: item?.time || null,
+        cloud: extractCloudValue(details),
+        windSpeed: details.wind_speed ?? null,
+        windDir: details.wind_from_direction ?? null,
+        precipitation:
+          next1.precipitation_amount ??
+          item?.data?.next_6_hours?.details?.precipitation_amount ??
+          null,
+        symbol: summary,
+        airTemp: details.air_temperature ?? null,
+        layer: layerKey
+      };
+    }).filter(Boolean);
+  }
+
+  async function loadPointLayerDataForActiveLayer() {
+    const point = getLayerPoint();
+    layerAreaLabel.textContent = `Område: ${point.label}`;
+    setText("layerStatus", activeLayer === "clouds" ? "Hämtar molnprognos..." : "Hämtar vindprognos...");
+
+    try {
+      const res = await fetch(`/api/weather?lat=${point.lat}&lon=${point.lon}`);
+      const data = await res.json();
+
+      const timeseries = data?.properties?.timeseries || [];
+      if (!timeseries.length) {
+        throw new Error("Ingen prognosdata hittades");
+      }
+
+      layerPointTimeSeries = buildPointLayerData(timeseries, activeLayer);
+      layerPointIndex = 0;
+
+      configureSliderForPointData();
+      updatePointLayerViewFromIndex();
+    } catch (error) {
+      console.error(error);
+      layerPointTimeSeries = [];
+      setText("layerStatus", "Det gick inte att hämta lagerdata");
+      setText("layerTimestamp", "--");
+      setText("layerSelectedTime", "Vald tid: --");
+    }
+  }
+
+  function updatePointLayerViewFromIndex() {
+    if (!layerPointTimeSeries.length) return;
+
+    const item = layerPointTimeSeries[layerPointIndex];
+    if (!item) return;
+
+    layerSlider.value = String(layerPointIndex);
+    const timeLabel = formatShortLayerTime(item.time);
+    setText("layerTimestamp", timeLabel);
+    setText("layerSelectedTime", `Vald tid: ${timeLabel}`);
+
+    if (activeLayer === "clouds") {
+      const value = formatPercent(item.cloud);
+      layerVisualTitle.textContent = "Molntäcke över tid";
+      layerVisualDesc.textContent =
+        `Molnandel: ${value}. Väderläge: ${weatherLabelFromSymbol(item.symbol)}. Nederbörd: ${formatRain(item.precipitation)}.`;
+      setText("layerStatus", `Moln: ${value} • ${weatherLabelFromSymbol(item.symbol)}`);
+      setText("legendCloudText", "Visar molnandel och väderläge för vald punkt över tid.");
+      return;
+    }
+
+    if (activeLayer === "wind") {
+      const speed = formatWind(item.windSpeed);
+      const dir = formatWindDirection(item.windDir);
+      layerVisualTitle.textContent = "Vind över tid";
+      layerVisualDesc.textContent =
+        `Vind: ${speed}. Riktning: ${dir}. Temperatur: ${formatTemp(item.airTemp)}.`;
+      setText("layerStatus", `Vind: ${speed} • ${dir}`);
+      setText("legendWindText", "Visar vindhastighet och riktning för vald punkt över tid.");
     }
   }
 
   async function applyLayerCopy(layerKey) {
+    stopLayerPlayback();
+
     const copy = layerCopy[layerKey];
     if (!copy) return;
-
-    stopLayerPlayback();
 
     activeLayer = layerKey;
     layerView.dataset.layer = layerKey;
@@ -2802,33 +2877,18 @@
     layerVisualTitle.textContent = copy.title;
     layerVisualDesc.textContent = copy.desc;
     layerStatus.textContent = copy.status;
-    layerAreaLabel.textContent = "Område: Sverige / kustzon";
 
     layerTabs.forEach((tab) => {
       tab.classList.toggle("active", tab.dataset.layer === layerKey);
     });
 
-    clearLayerMiniMapOverlays();
-
-    if (layerKey === "clouds") {
-      configureLayerSliderForCurrentLayer();
-      updateLayerTimeUI();
-      ensureWeatherTileLayer("clouds");
-      weatherTileLayers.clouds.addTo(layerMiniMap);
-      setText("layerStatus", "Tile-lager aktivt · OpenWeather moln");
-    }
-
-    if (layerKey === "wind") {
-      configureLayerSliderForCurrentLayer();
-      updateLayerTimeUI();
-      ensureWeatherTileLayer("wind");
-      weatherTileLayers.wind.addTo(layerMiniMap);
-      setText("layerStatus", "Tile-lager aktivt · OpenWeather vind");
-    }
-
     if (layerKey === "precipitation") {
-      await loadLatestSmhiRadarFrame();
+      await loadSmhiRadarFrames();
+      return;
     }
+
+    clearLayerMiniMapOverlays();
+    await loadPointLayerDataForActiveLayer();
   }
 
   function stopLayerPlayback() {
@@ -2849,20 +2909,18 @@
     }
 
     layerPlaybackTimer = setInterval(() => {
-      if (activeLayer === "precipitation" && radarFrameData.length) {
+      if (activeLayer === "precipitation") {
+        if (!radarFrameData.length) return;
         radarFrameIndex += 1;
-        if (radarFrameIndex >= radarFrameData.length) {
-          radarFrameIndex = 0;
-        }
+        if (radarFrameIndex >= radarFrameData.length) radarFrameIndex = 0;
         updateRadarFrameFromIndex();
         return;
       }
 
-      const max = Number(layerSlider.max);
-      let nextValue = Number(layerSlider.value) + 1;
-      if (nextValue > max) nextValue = Number(layerSlider.min);
-      layerSlider.value = String(nextValue);
-      updateLayerTimeUI();
+      if (!layerPointTimeSeries.length) return;
+      layerPointIndex += 1;
+      if (layerPointIndex >= layerPointTimeSeries.length) layerPointIndex = 0;
+      updatePointLayerViewFromIndex();
     }, 900);
   }
 
@@ -2874,43 +2932,40 @@
 
   if (layerSlider) {
     layerSlider.addEventListener("input", () => {
-      if (activeLayer === "precipitation" && radarFrameData.length) {
-        radarFrameIndex = Math.min(Number(layerSlider.value), radarFrameData.length - 1);
+      if (activeLayer === "precipitation") {
+        radarFrameIndex = Number(layerSlider.value);
         updateRadarFrameFromIndex();
         return;
       }
 
-      updateLayerTimeUI();
+      layerPointIndex = Number(layerSlider.value);
+      updatePointLayerViewFromIndex();
     });
   }
 
   if (layerStepBackBtn) {
     layerStepBackBtn.addEventListener("click", () => {
-      if (activeLayer === "precipitation" && radarFrameData.length) {
+      if (activeLayer === "precipitation") {
         radarFrameIndex = Math.max(0, radarFrameIndex - 1);
         updateRadarFrameFromIndex();
         return;
       }
 
-      const min = Number(layerSlider.min);
-      const current = Number(layerSlider.value);
-      layerSlider.value = String(Math.max(min, current - 1));
-      updateLayerTimeUI();
+      layerPointIndex = Math.max(0, layerPointIndex - 1);
+      updatePointLayerViewFromIndex();
     });
   }
 
   if (layerStepForwardBtn) {
     layerStepForwardBtn.addEventListener("click", () => {
-      if (activeLayer === "precipitation" && radarFrameData.length) {
-        radarFrameIndex = Math.min(radarFrameData.length - 1, radarFrameIndex + 1);
+      if (activeLayer === "precipitation") {
+        radarFrameIndex = Math.min(Math.max(0, radarFrameData.length - 1), radarFrameIndex + 1);
         updateRadarFrameFromIndex();
         return;
       }
 
-      const max = Number(layerSlider.max);
-      const current = Number(layerSlider.value);
-      layerSlider.value = String(Math.min(max, current + 1));
-      updateLayerTimeUI();
+      layerPointIndex = Math.min(Math.max(0, layerPointTimeSeries.length - 1), layerPointIndex + 1);
+      updatePointLayerViewFromIndex();
     });
   }
 
@@ -2925,8 +2980,6 @@
   }
 
   applyLayerCopy(activeLayer);
-  updateLayerTimeUI();
-
   resetForecastDisplay();
   updateModeUI();
   updateLastSelectionText();
