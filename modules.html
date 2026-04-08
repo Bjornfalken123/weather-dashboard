@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kustväder</title>
+  <title>Moduler – väder, boj och fyr</title>
 
   <link
     rel="stylesheet"
@@ -320,8 +320,8 @@
     <section class="hero">
       <div class="hero-top">
         <div class="title-wrap">
-          <h1>Kustväder</h1>
-          <p class="subtitle">Väder, havsdata och stationsobservationer i realtid – byggt för kust, sjö och inland.</p>
+          <h1>Modulöversikt</h1>
+          <p class="subtitle">En sida med separata moduler för väder, bojar och fyrar/stationer.</p>
         </div>
 
         <div class="status-pill">
@@ -364,7 +364,7 @@
           <div>
             <h2 class="module-title">Väder</h2>
             <p class="module-subtitle">
-              Fri punkt på kartan. Visar aktuellt väder, byvind och dagsprognos flera dagar framåt.
+              Fri punkt på kartan. Visar aktuellt väder, byvind och prognos flera dagar framåt.
             </p>
           </div>
           <div class="module-badge">MET + Open-Meteo</div>
@@ -516,7 +516,7 @@
           <div>
             <h2 class="module-title">Fyr / station</h2>
             <p class="module-subtitle">
-              Välj en SMHI-station på kartan för temperatur, vind, vindriktning, lufttryck och byvind.
+              Välj en SMHI-station på kartan för live temperatur, vind, riktning, tryck och byvind.
             </p>
           </div>
           <div class="module-badge">SMHI live</div>
@@ -567,7 +567,6 @@
 <script>
   let activeMode = "weather";
   let forecastExpanded = false;
-  let currentForecastDays = [];
 
   const savedSelections = {
     weather: null,
@@ -839,4 +838,896 @@
       const time = item?.time;
       if (!time) continue;
 
-      const dateKey =
+      const dateKey = time.slice(0, 10);
+      const instant = item?.data?.instant?.details || {};
+      const airTemp = instant.air_temperature;
+      const precip =
+        item?.data?.next_1_hours?.details?.precipitation_amount ??
+        0;
+      const symbol =
+        item?.data?.next_1_hours?.summary?.symbol_code ||
+        item?.data?.next_6_hours?.summary?.symbol_code ||
+        item?.data?.next_12_hours?.summary?.symbol_code ||
+        null;
+      const wind = instant.wind_speed ?? null;
+      const hour = new Date(time).getHours();
+
+      if (!dailyMap.has(dateKey)) {
+        dailyMap.set(dateKey, {
+          date: dateKey,
+          minTemp: airTemp,
+          maxTemp: airTemp,
+          precipitation: 0,
+          symbol: symbol,
+          windSpeed: wind,
+          bestSymbolDistance: Math.abs(hour - 12)
+        });
+      }
+
+      const day = dailyMap.get(dateKey);
+
+      if (airTemp != null) {
+        day.minTemp = day.minTemp == null ? airTemp : Math.min(day.minTemp, airTemp);
+        day.maxTemp = day.maxTemp == null ? airTemp : Math.max(day.maxTemp, airTemp);
+      }
+
+      day.precipitation += Number(precip || 0);
+
+      const symbolDistance = Math.abs(hour - 12);
+      if (symbol && (day.symbol == null || symbolDistance < day.bestSymbolDistance)) {
+        day.symbol = symbol;
+        day.bestSymbolDistance = symbolDistance;
+      }
+
+      if (wind != null && symbolDistance <= day.bestSymbolDistance) {
+        day.windSpeed = wind;
+      }
+    }
+
+    return Array.from(dailyMap.values()).slice(0, 7);
+  }
+
+  function renderForecast(days) {
+    const visibleCount = forecastExpanded ? 7 : 3;
+
+    for (let i = 0; i < 7; i++) {
+      const itemEl = document.getElementById(`forecastItem${i + 1}`);
+      const day = days[i];
+
+      if (!itemEl) continue;
+
+      if (!day || i >= visibleCount) {
+        itemEl.style.display = "none";
+        continue;
+      }
+
+      itemEl.style.display = "";
+
+      setText(`forecast${i + 1}Time`, formatForecastDay(day.date, i));
+      setText(`forecast${i + 1}Temp`, formatForecastRange(day.minTemp, day.maxTemp));
+      setText(
+        `forecast${i + 1}Rain`,
+        `${weatherLabelFromSymbol(day.symbol)} • Nederbörd: ${formatRain(day.precipitation)}`
+      );
+    }
+
+    const toggleBtn = document.getElementById("forecastToggleBtn");
+    if (toggleBtn) {
+      toggleBtn.textContent = forecastExpanded ? "Visa 3 dagar" : "Visa 7 dagar";
+      toggleBtn.style.display = days.length > 3 ? "" : "none";
+    }
+  }
+
+  function resetForecastDisplay() {
+    for (let i = 1; i <= 7; i++) {
+      const itemEl = document.getElementById(`forecastItem${i}`);
+      if (itemEl) itemEl.style.display = i <= 3 ? "" : "none";
+      setText(`forecast${i}Time`, "--");
+      setText(`forecast${i}Temp`, "--");
+      setText(`forecast${i}Rain`, "--");
+    }
+  }
+
+  function setWeatherMarker(lat, lon) {
+    if (weatherMarker) map.removeLayer(weatherMarker);
+    weatherMarker = L.marker([lat, lon]).addTo(map).bindPopup("Väderpunkt").openPopup();
+  }
+
+  function setWaveSelectionMarker(lat, lon, name) {
+    if (waveSelectionMarker) map.removeLayer(waveSelectionMarker);
+    waveSelectionMarker = L.marker([lat, lon]).addTo(map).bindPopup(name || "Vald vågstation").openPopup();
+  }
+
+  function setLighthouseSelectionMarker(lat, lon, name) {
+    if (lighthouseSelectionMarker) map.removeLayer(lighthouseSelectionMarker);
+    lighthouseSelectionMarker = L.marker([lat, lon]).addTo(map).bindPopup(name || "Vald station").openPopup();
+  }
+
+  function saveSelection(mode, payload) {
+    savedSelections[mode] = payload;
+
+    if (mode === "weather") {
+      setText("weatherPointValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+      setText("weatherStatusValue", "Laddar väderdata...");
+    }
+
+    if (mode === "wave") {
+      setText("waveStationValue", payload.name || "Okänd station");
+      setText("waveCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+      setText("waveStatusValue", "Laddar havsdata...");
+    }
+
+    if (mode === "lighthouse") {
+      setText("lighthouseStationValue", payload.name || "Okänd station");
+      setText("lhCoordsValue", `${formatCoord(payload.lat)}, ${formatCoord(payload.lon)}`);
+      setText("lighthouseStatusValue", "Laddar stationsdata...");
+    }
+
+    updateLastSelectionText();
+  }
+
+  function updateLastSelectionText() {
+    const current = savedSelections[activeMode];
+    if (!current) {
+      setText("lastSelectionText", "Inget valt ännu");
+      return;
+    }
+
+    if (current.name) {
+      setText("lastSelectionText", current.name);
+      return;
+    }
+
+    setText("lastSelectionText", `${formatCoord(current.lat)}, ${formatCoord(current.lon)}`);
+  }
+
+  function setWaveMarkerColorById(stationId, state, tooltipText) {
+    const marker = waveMarkerMap.get(stationId);
+    if (!marker) return;
+
+    const styles = {
+      unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
+      active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
+      inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7 }
+    };
+
+    marker.setStyle(styles[state] || styles.unknown);
+
+    if (tooltipText) {
+      marker.bindTooltip(tooltipText, { direction: "top" });
+    }
+  }
+
+  function setLighthouseMarkerColorById(stationId, state, tooltipText) {
+    const marker = lighthouseMarkerMap.get(stationId);
+    if (!marker) return;
+
+    const styles = {
+      unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
+      active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
+      inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7 }
+    };
+
+    marker.setStyle(styles[state] || styles.unknown);
+
+    if (tooltipText) {
+      marker.bindTooltip(tooltipText, { direction: "top" });
+    }
+  }
+
+  function updateModeUI() {
+    document.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.mode === activeMode);
+    });
+
+    if (activeMode === "weather") {
+      setText("activeModeText", "Väder");
+      setText("pageStatus", "Vädermodul aktiv");
+      setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+      if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
+      if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
+    } else if (activeMode === "wave") {
+      setText("activeModeText", "Boj / våg");
+      setText("pageStatus", "Bojmodul aktiv");
+      setText("mapNote", "Bakgrundskoll pågår. Blå = ej kollad än, röd = har havsdata, grå = ingen data.");
+      ensureWaveStationsLoaded();
+      if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
+      if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
+    } else {
+      setText("activeModeText", "Fyr / station");
+      setText("pageStatus", "Fyrmodul aktiv");
+      setText("mapNote", "Bakgrundskoll pågår. Blå = ej kollad än, röd = har data, grå = ingen data.");
+      ensureLighthouseStationsLoaded();
+      if (!map.hasLayer(lighthouseStationsLayer)) map.addLayer(lighthouseStationsLayer);
+      if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
+    }
+  }
+
+  async function loadWeatherForPoint(lat, lon) {
+    try {
+      setText("weatherStatusValue", "Laddar prognos...");
+      setText("weatherGustSourceValue", "Laddar...");
+      resetForecastDisplay();
+
+      const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
+      const gustUrl = `/api/openmeteo-gust?lat=${lat}&lon=${lon}`;
+
+      const [weatherRes, gustRes] = await Promise.all([fetch(weatherUrl), fetch(gustUrl)]);
+      const weatherText = await weatherRes.text();
+      const gustText = await gustRes.text();
+
+      if (!weatherRes.ok) throw new Error(weatherText);
+
+      const weatherData = JSON.parse(weatherText);
+      const timeseries = weatherData.properties?.timeseries || [];
+      if (!timeseries.length) throw new Error("Ingen väderdata hittades.");
+
+      const current = timeseries[0];
+      const instant = current.data?.instant?.details || {};
+      const next1 = current.data?.next_1_hours || {};
+      const next6 = current.data?.next_6_hours || {};
+
+      const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
+      const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
+
+      setText("weatherTempValue", formatTemp(instant.air_temperature));
+      setText("weatherHumidityValue", formatHumidity(instant.relative_humidity));
+      setText("weatherRainValue", formatRain(precip));
+      setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
+      setText("weatherWindValue", formatWind(instant.wind_speed));
+      setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
+      setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
+
+      const dailyForecast = buildDailyForecast(timeseries);
+      renderForecast(dailyForecast);
+
+      if (gustRes.ok) {
+        const gustData = JSON.parse(gustText);
+        setText("weatherGustValue", formatWind(gustData.value));
+        setText("weatherGustSourceValue", "Open-Meteo • punktdata");
+        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
+      } else {
+        setText("weatherGustValue", "--");
+        setText("weatherGustSourceValue", "Ingen byvind tillgänglig");
+        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
+      }
+    } catch (error) {
+      console.error(error);
+      setText("weatherStatusValue", "Kunde inte ladda väderdata");
+    }
+  }
+
+  async function ensureWaveStationsLoaded() {
+    if (waveStationsLoaded) return;
+    if (waveStationsLoadingPromise) return waveStationsLoadingPromise;
+
+    waveStationsLoadingPromise = (async () => {
+      try {
+        const res = await fetch("/api/ocean-wave-stations");
+        const data = await res.json();
+        const stations = Array.isArray(data?.stations) ? data.stations : [];
+
+        if (!stations.length) {
+          if (activeMode === "wave") setText("waveStatusValue", "Inga stationer hittades");
+          return;
+        }
+
+        stations.forEach((station) => {
+          waveStationsCache.set(station.id, station);
+
+          const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 5,
+            weight: 2,
+            color: "#69b7ff",
+            fillColor: "#69b7ff",
+            fillOpacity: 0.8
+          });
+
+          marker.bindTooltip(`${station.name} • ej kontrollerad ännu`, { direction: "top" });
+
+          marker.on("click", (event) => {
+            L.DomEvent.stopPropagation(event);
+            selectWaveStation(station);
+          });
+
+          waveMarkerMap.set(station.id, marker);
+          waveStationsLayer.addLayer(marker);
+        });
+
+        waveStationsLoaded = true;
+        if (activeMode === "wave") {
+          setText("waveStatusValue", "Bakgrundskollar bojar...");
+        }
+        startWaveBackgroundCheck();
+      } catch (error) {
+        console.error(error);
+        if (activeMode === "wave") {
+          setText("waveStatusValue", "Kunde inte ladda stationer");
+        }
+      } finally {
+        waveStationsLoadingPromise = null;
+      }
+    })();
+
+    return waveStationsLoadingPromise;
+  }
+
+  async function fetchWaveDataForStation(stationId) {
+    for (const period of ["latest-hour", "latest-day", "latest-months"]) {
+      const res = await fetch(`/api/ocean-wave-height?stationId=${stationId}&period=${period}`);
+      const data = await res.json();
+      if (!res.ok) continue;
+
+      const latest = extractLatestValue(data);
+      if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
+        return { latest, period, source: "SMHI" };
+      }
+    }
+    return null;
+  }
+
+  async function getWaterLevelStations() {
+    if (!waterLevelStationsPromise) {
+      waterLevelStationsPromise = (async () => {
+        const stationsRes = await fetch("/api/ocean-stations");
+        const stationsData = await stationsRes.json();
+
+        const stations = Array.isArray(stationsData?.station)
+          ? stationsData.station
+          : Array.isArray(stationsData?.stations)
+          ? stationsData.stations
+          : Array.isArray(stationsData?.resource)
+          ? stationsData.resource
+          : [];
+
+        return stations
+          .map((station) => {
+            const stationId = station.id || station.key || station.stationId;
+            const stationName = station.name || "Okänd station";
+            const stationLat = Number(station.latitude);
+            const stationLon = Number(station.longitude);
+
+            if (!stationId || Number.isNaN(stationLat) || Number.isNaN(stationLon)) return null;
+
+            return {
+              id: stationId,
+              name: stationName,
+              latitude: stationLat,
+              longitude: stationLon
+            };
+          })
+          .filter(Boolean);
+      })();
+    }
+
+    return waterLevelStationsPromise;
+  }
+
+  async function getVivaStations() {
+    if (!vivaStationsPromise) {
+      vivaStationsPromise = (async () => {
+        const res = await fetch("/api/viva-stations");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.message || "Kunde inte ladda VIVA-stationer");
+        }
+
+        return Array.isArray(data?.stations) ? data.stations : [];
+      })();
+    }
+
+    return vivaStationsPromise;
+  }
+
+  async function fetchVivaStationData(stationId) {
+    if (vivaStationDataCache.has(stationId)) {
+      return vivaStationDataCache.get(stationId);
+    }
+
+    const promise = (async () => {
+      const res = await fetch(`/api/viva-station?stationId=${stationId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Kunde inte ladda VIVA-station");
+      }
+
+      return data.station || null;
+    })();
+
+    vivaStationDataCache.set(stationId, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      vivaStationDataCache.delete(stationId);
+      throw error;
+    }
+  }
+
+  async function findNearestVivaObservationForPoint(lat, lon, sampleNames, lightMode = false) {
+    const cacheKey = buildVivaNearestCacheKey(lat, lon, sampleNames, lightMode);
+
+    if (vivaNearestCache.has(cacheKey)) {
+      return vivaNearestCache.get(cacheKey);
+    }
+
+    const promise = (async () => {
+      const stations = await getVivaStations();
+
+      const ranked = stations
+        .map((station) => ({
+          ...station,
+          distanceKm: distanceKm(lat, lon, station.latitude, station.longitude)
+        }))
+        .sort((a, b) => a.distanceKm - b.distanceKm)
+        .slice(0, lightMode ? 4 : 10);
+
+      for (const station of ranked) {
+        if (station.distanceKm > 80) continue;
+
+        try {
+          const stationData = await fetchVivaStationData(station.id);
+          const sample = extractVivaSample(stationData, sampleNames);
+
+          if (sample) {
+            return {
+              station,
+              latest: {
+                value: sample.numericValue,
+                time: sample.Updated || null
+              },
+              source: "VIVA",
+              sampleName: sample.Name
+            };
+          }
+        } catch (error) {
+          console.warn("VIVA fallback misslyckades för station", station.id, error);
+        }
+      }
+
+      return null;
+    })();
+
+    vivaNearestCache.set(cacheKey, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      vivaNearestCache.delete(cacheKey);
+      throw error;
+    }
+  }
+
+  async function findNearestWaterLevelForPoint(lat, lon, lightMode = false) {
+    const stations = await getWaterLevelStations();
+
+    const ranked = stations
+      .map((station) => ({
+        ...station,
+        distanceKm: distanceKm(lat, lon, station.latitude, station.longitude)
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, lightMode ? 5 : 15);
+
+    const periods = lightMode
+      ? ["latest-hour", "latest-day"]
+      : ["latest-hour", "latest-day", "latest-months"];
+
+    for (const station of ranked) {
+      for (const period of periods) {
+        const res = await fetch(`/api/ocean-water-level?stationId=${station.id}&period=${period}`);
+        const data = await res.json();
+        if (!res.ok) continue;
+
+        const latest = extractLatestValue(data);
+        if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
+          return { station, latest, period, source: "SMHI" };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async function evaluateWaveStation(station, lightMode = false) {
+    const cacheKey = buildWaveEvaluationCacheKey(station, lightMode);
+
+    if (waveEvaluationCache.has(cacheKey)) {
+      return waveEvaluationCache.get(cacheKey);
+    }
+
+    const promise = (async () => {
+      const [vivaWaveResult, vivaWaterResult, vivaWaterTempResult] = await Promise.all([
+        findNearestVivaObservationForPoint(
+          station.latitude,
+          station.longitude,
+          ["Våghöjd"],
+          lightMode
+        ),
+        findNearestVivaObservationForPoint(
+          station.latitude,
+          station.longitude,
+          ["Vattenstånd"],
+          lightMode
+        ),
+        findNearestVivaObservationForPoint(
+          station.latitude,
+          station.longitude,
+          ["Vattentemperatur", "Vatten Temperatur", "Ytvattentemperatur"],
+          lightMode
+        )
+      ]);
+
+      const [smhiWaveResult, smhiWaterResult] = await Promise.all([
+        vivaWaveResult ? Promise.resolve(null) : fetchWaveDataForStation(station.id),
+        vivaWaterResult ? Promise.resolve(null) : findNearestWaterLevelForPoint(station.latitude, station.longitude, lightMode)
+      ]);
+
+      const waveResult = vivaWaveResult || smhiWaveResult;
+      const waterResult = vivaWaterResult || smhiWaterResult;
+      const waterTempResult = vivaWaterTempResult || null;
+
+      return {
+        waveResult,
+        waterResult,
+        waterTempResult,
+        hasAnySeaData: Boolean(waveResult || waterResult)
+      };
+    })();
+
+    waveEvaluationCache.set(cacheKey, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      waveEvaluationCache.delete(cacheKey);
+      throw error;
+    }
+  }
+
+  async function selectWaveStation(station) {
+    saveSelection("wave", {
+      id: station.id,
+      name: station.name,
+      lat: station.latitude,
+      lon: station.longitude
+    });
+
+    setWaveSelectionMarker(station.latitude, station.longitude, station.name);
+
+    try {
+      const { waveResult, waterResult, waterTempResult, hasAnySeaData } = await evaluateWaveStation(station, false);
+
+      if (waveResult) {
+        setText("waveHeightValue", formatObservedValue(formatWave(waveResult.latest.value), waveResult.latest));
+        setText("waveObsTimeValue", `${formatObsTime(waveResult.latest.date || waveResult.latest.time)} (${formatWaveSourceLabel(waveResult)})`);
+      } else {
+        setText("waveHeightValue", "--");
+        setText("waveObsTimeValue", "--");
+      }
+
+      if (waterResult) {
+        setText("waterLevelValue", formatObservedValue(formatWaterLevel(waterResult.latest.value), waterResult.latest));
+        setText("waterLevelStationValue", formatWaterStationLabel(waterResult));
+      } else {
+        setText("waterLevelValue", "--");
+        setText("waterLevelStationValue", "Ingen hittad");
+      }
+
+      if (waterTempResult) {
+        setText("waterTempValue", formatObservedValue(formatTemp(waterTempResult.latest.value), waterTempResult.latest));
+      } else {
+        setText("waterTempValue", "--");
+      }
+
+      const usesViva =
+        waveResult?.source === "VIVA" ||
+        waterResult?.source === "VIVA" ||
+        waterTempResult?.source === "VIVA";
+
+      const usesSmhi =
+        Boolean(waveResult?.source !== "VIVA" && waveResult) ||
+        Boolean(waterResult?.source !== "VIVA" && waterResult);
+
+      let statusText = "Ingen havsdata";
+      if (hasAnySeaData) {
+        if (usesViva && usesSmhi) {
+          statusText = "Havsdata laddad • VIVA + SMHI";
+        } else if (usesViva) {
+          statusText = "Havsdata laddad • VIVA";
+        } else {
+          statusText = "Havsdata laddad • SMHI";
+        }
+      }
+
+      setText("waveStatusValue", statusText);
+
+      setWaveMarkerColorById(
+        station.id,
+        hasAnySeaData ? "active" : "inactive",
+        `${station.name} • ${hasAnySeaData ? "har havsdata" : "ingen havsdata"}`
+      );
+    } catch (error) {
+      console.error(error);
+      setText("waveStatusValue", "Kunde inte ladda havsdata");
+      setWaveMarkerColorById(station.id, "inactive", `${station.name} • kunde inte laddas`);
+    }
+  }
+
+  async function startWaveBackgroundCheck() {
+    if (waveBackgroundCheckStarted) return;
+    waveBackgroundCheckStarted = true;
+
+    const stations = Array.from(waveStationsCache.values());
+    let checked = 0;
+    const concurrency = 3;
+    let index = 0;
+
+    async function worker() {
+      while (index < stations.length) {
+        const currentIndex = index++;
+        const station = stations[currentIndex];
+
+        try {
+          const result = await evaluateWaveStation(station, true);
+
+          setWaveMarkerColorById(
+            station.id,
+            result.hasAnySeaData ? "active" : "inactive",
+            `${station.name} • ${result.hasAnySeaData ? "har havsdata" : "ingen havsdata"}`
+          );
+        } catch {
+          setWaveMarkerColorById(station.id, "inactive", `${station.name} • kunde inte laddas`);
+        }
+
+        checked += 1;
+        if (activeMode === "wave") {
+          setText("waveStatusValue", `Bakgrundskoll bojar: ${checked}/${stations.length}`);
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+
+    if (activeMode === "wave") {
+      setText("waveStatusValue", "Bakgrundskoll bojar klar");
+    }
+  }
+
+  async function ensureLighthouseStationsLoaded() {
+    if (lighthouseStationsLoaded) return;
+    if (lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
+
+    lighthouseStationsLoadingPromise = (async () => {
+      try {
+        const res = await fetch("/api/lighthouse-stations");
+        const data = await res.json();
+        const stations = Array.isArray(data?.stations) ? data.stations : [];
+
+        if (!stations.length) {
+          if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Inga stationer hittades");
+          return;
+        }
+
+        stations.forEach((station) => {
+          lighthouseStationsCache.set(station.id, station);
+
+          const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 5,
+            weight: 2,
+            color: "#69b7ff",
+            fillColor: "#69b7ff",
+            fillOpacity: 0.8
+          });
+
+          marker.bindTooltip(`${station.name} • ej kontrollerad ännu`, { direction: "top" });
+
+          marker.on("click", (event) => {
+            L.DomEvent.stopPropagation(event);
+            selectLighthouseStation(station);
+          });
+
+          lighthouseMarkerMap.set(station.id, marker);
+          lighthouseStationsLayer.addLayer(marker);
+        });
+
+        lighthouseStationsLoaded = true;
+        if (activeMode === "lighthouse") {
+          setText("lighthouseStatusValue", "Bakgrundskollar stationer...");
+        }
+        startLighthouseBackgroundCheck();
+      } catch (error) {
+        console.error(error);
+        if (activeMode === "lighthouse") {
+          setText("lighthouseStatusValue", "Kunde inte ladda stationer");
+        }
+      } finally {
+        lighthouseStationsLoadingPromise = null;
+      }
+    })();
+
+    return lighthouseStationsLoadingPromise;
+  }
+
+  async function fetchLighthouseObservations(stationId) {
+    if (lighthouseObservationCache.has(stationId)) {
+      return lighthouseObservationCache.get(stationId);
+    }
+
+    const promise = (async () => {
+      const res = await fetch(`/api/lighthouse-observations?stationId=${stationId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Kunde inte ladda stationsdata");
+      }
+
+      const obs = data.observations || {};
+      const hasAnyData = Boolean(
+        obs.temp?.value != null ||
+        obs.windSpeed?.value != null ||
+        obs.windDir?.value != null ||
+        obs.pressure?.value != null ||
+        obs.gust?.value != null
+      );
+
+      return { obs, hasAnyData };
+    })();
+
+    lighthouseObservationCache.set(stationId, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      lighthouseObservationCache.delete(stationId);
+      throw error;
+    }
+  }
+
+  async function selectLighthouseStation(station) {
+    saveSelection("lighthouse", {
+      id: station.id,
+      name: station.name,
+      lat: station.latitude,
+      lon: station.longitude
+    });
+
+    setLighthouseSelectionMarker(station.latitude, station.longitude, station.name);
+
+    try {
+      const { obs, hasAnyData } = await fetchLighthouseObservations(station.id);
+
+      setText("lhTempValue", formatObservedValue(formatTemp(obs.temp?.value), obs.temp));
+      setText("lhWindValue", formatObservedValue(formatWind(obs.windSpeed?.value), obs.windSpeed));
+      setText("lhWindDirValue", formatObservedValue(formatWindDirection(obs.windDir?.value), obs.windDir));
+      setText("lhGustValue", formatObservedValue(formatWind(obs.gust?.value), obs.gust));
+      setText("lhPressureValue", formatObservedValue(formatPressure(obs.pressure?.value), obs.pressure));
+      setText("lighthouseStatusValue", hasAnyData ? "Stationsdata laddad" : "Ingen aktuell data");
+
+      setLighthouseMarkerColorById(
+        station.id,
+        hasAnyData ? "active" : "inactive",
+        `${station.name} • ${hasAnyData ? "har data" : "ingen data"}`
+      );
+    } catch (error) {
+      console.error(error);
+      setText("lighthouseStatusValue", "Kunde inte ladda stationsdata");
+      setLighthouseMarkerColorById(station.id, "inactive", `${station.name} • kunde inte laddas`);
+    }
+  }
+
+  async function startLighthouseBackgroundCheck() {
+    if (lighthouseBackgroundCheckStarted) return;
+    lighthouseBackgroundCheckStarted = true;
+
+    const stations = Array.from(lighthouseStationsCache.values());
+    let checked = 0;
+    const concurrency = 5;
+    let index = 0;
+
+    async function worker() {
+      while (index < stations.length) {
+        const currentIndex = index++;
+        const station = stations[currentIndex];
+
+        try {
+          const { hasAnyData } = await fetchLighthouseObservations(station.id);
+
+          setLighthouseMarkerColorById(
+            station.id,
+            hasAnyData ? "active" : "inactive",
+            `${station.name} • ${hasAnyData ? "har data" : "ingen data"}`
+          );
+        } catch {
+          setLighthouseMarkerColorById(station.id, "inactive", `${station.name} • kunde inte laddas`);
+        }
+
+        checked += 1;
+        if (activeMode === "lighthouse") {
+          setText("lighthouseStatusValue", `Bakgrundskoll stationer: ${checked}/${stations.length}`);
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+
+    if (activeMode === "lighthouse") {
+      setText("lighthouseStatusValue", "Bakgrundskoll stationer klar");
+    }
+  }
+
+  function startBackgroundPreload() {
+    ensureWaveStationsLoaded().catch((error) => {
+      console.error("Kunde inte starta boj-preload", error);
+    });
+
+    ensureLighthouseStationsLoaded().catch((error) => {
+      console.error("Kunde inte starta fyr-preload", error);
+    });
+  }
+
+  document.querySelectorAll(".mode-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeMode = btn.dataset.mode;
+      updateModeUI();
+      updateLastSelectionText();
+    });
+  });
+
+  const forecastToggleBtn = document.getElementById("forecastToggleBtn");
+  if (forecastToggleBtn) {
+    forecastToggleBtn.addEventListener("click", () => {
+      forecastExpanded = !forecastExpanded;
+
+      const hasForecast =
+        document.getElementById("forecast1Time")?.textContent !== "--" ||
+        document.getElementById("forecast2Time")?.textContent !== "--";
+
+      if (!hasForecast) return;
+
+      const days = [];
+      for (let i = 1; i <= 7; i++) {
+        const time = document.getElementById(`forecast${i}Time`)?.textContent;
+        const temp = document.getElementById(`forecast${i}Temp`)?.textContent;
+        const rain = document.getElementById(`forecast${i}Rain`)?.textContent;
+        const item = document.getElementById(`forecastItem${i}`);
+
+        if (!item || time === "--") continue;
+        days.push({ rendered: true });
+      }
+
+      for (let i = 1; i <= 7; i++) {
+        const itemEl = document.getElementById(`forecastItem${i}`);
+        if (!itemEl) continue;
+
+        if (i <= (forecastExpanded ? 7 : 3) && itemEl.querySelector(".forecast-time")?.textContent !== "--") {
+          itemEl.style.display = "";
+        } else if (itemEl.querySelector(".forecast-time")?.textContent !== "--") {
+          itemEl.style.display = "none";
+        }
+      }
+
+      forecastToggleBtn.textContent = forecastExpanded ? "Visa 3 dagar" : "Visa 7 dagar";
+    });
+  }
+
+  map.on("click", (event) => {
+    const lat = event.latlng.lat;
+    const lon = event.latlng.lng;
+
+    if (activeMode === "weather") {
+      saveSelection("weather", { lat, lon });
+      setWeatherMarker(lat, lon);
+      loadWeatherForPoint(lat, lon);
+    }
+  });
+
+  resetForecastDisplay();
+  updateModeUI();
+  updateLastSelectionText();
+  startBackgroundPreload();
+</script>
+</body>
+</html>
