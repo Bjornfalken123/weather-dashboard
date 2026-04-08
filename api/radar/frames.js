@@ -1,11 +1,6 @@
 const SMHI_RADAR_ROOT =
   "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp";
 
-const SWEDEN_BOUNDS_APPROX = [
-  [54.5, 10.0],
-  [69.8, 25.5]
-];
-
 function pad2(value) {
   return String(value).padStart(2, "0");
 }
@@ -221,30 +216,28 @@ export default async function handler(req, res) {
 
     dated.sort((a, b) => a.date - b.date);
 
-    const recentFrames = dated.slice(-framesRequested).map((item) => ({
+    let recentFrames = dated.slice(-framesRequested).map((item) => ({
       label: formatLabelSv(item.date),
-      imageUrl: item.url,
-      bounds: SWEDEN_BOUNDS_APPROX,
+      imageUrl: `/api/radar/image?url=${encodeURIComponent(item.url)}`,
+      sourceUrl: item.url,
       timestamp: item.date.toISOString()
     }));
 
     if (!recentFrames.length) {
-      const latestUrl = `${SMHI_RADAR_ROOT}/latest.png`;
+      const latestSource = `${SMHI_RADAR_ROOT}/latest.png`;
       const fallbackDate = new Date();
 
-      return res.status(200).json({
-        source: "SMHI",
-        note: "Historiska frames kunde inte listas, skickar latest.png som fallback.",
-        frames: [
-          {
-            label: formatLabelSv(fallbackDate),
-            imageUrl: latestUrl,
-            bounds: SWEDEN_BOUNDS_APPROX,
-            timestamp: fallbackDate.toISOString()
-          }
-        ]
-      });
+      recentFrames = [
+        {
+          label: formatLabelSv(fallbackDate),
+          imageUrl: `/api/radar/image?url=${encodeURIComponent(latestSource)}`,
+          sourceUrl: latestSource,
+          timestamp: fallbackDate.toISOString()
+        }
+      ];
     }
+
+    res.setHeader("Cache-Control", "no-store");
 
     return res.status(200).json({
       source: "SMHI",
