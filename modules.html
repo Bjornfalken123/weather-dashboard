@@ -517,7 +517,7 @@
 
     .layer-view-top {
       position: relative;
-      z-index: 1;
+      z-index: 3;
       display: flex;
       justify-content: space-between;
       gap: 12px;
@@ -597,11 +597,29 @@
       overflow: hidden;
     }
 
-    #layerMiniMap {
+    #layerVisualStage {
+      position: relative;
       width: 100%;
-      height: 240px;
+      height: 260px;
       border-radius: 22px;
       overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(10,20,32,0.96) 0%, rgba(7,13,24,0.98) 100%);
+    }
+
+    #layerMiniMap {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    #layerGraphicCanvas {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
     }
 
     .layer-visual-overlay {
@@ -609,7 +627,7 @@
       left: 14px;
       right: 14px;
       bottom: 14px;
-      z-index: 500;
+      z-index: 5;
       padding: 14px 16px;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.08);
@@ -628,57 +646,6 @@
       font-size: 10px;
       background: rgba(7, 14, 26, 0.72);
       color: #dfe8f7;
-    }
-
-    .leaflet-div-icon.layer-point-icon {
-      background: transparent;
-      border: none;
-    }
-
-    .layer-point-marker {
-      width: 14px;
-      height: 14px;
-      border-radius: 999px;
-      background: #ffffff;
-      border: 2px solid rgba(123, 199, 255, 0.9);
-      box-shadow:
-        0 0 0 6px rgba(123, 199, 255, 0.16),
-        0 0 16px rgba(123, 199, 255, 0.34);
-    }
-
-    .leaflet-div-icon.wind-arrow-icon {
-      background: transparent;
-      border: none;
-    }
-
-    .wind-arrow-wrap {
-      width: 56px;
-      height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      filter: drop-shadow(0 8px 18px rgba(0,0,0,0.35));
-    }
-
-    .wind-arrow {
-      width: 0;
-      height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-bottom: 26px solid rgba(152, 240, 219, 0.95);
-      transform-origin: 50% 68%;
-    }
-
-    .wind-arrow::after {
-      content: "";
-      position: absolute;
-      left: -3px;
-      top: 18px;
-      width: 6px;
-      height: 18px;
-      border-radius: 999px;
-      background: rgba(223, 232, 247, 0.92);
-      box-shadow: 0 0 10px rgba(223, 232, 247, 0.25);
     }
 
     .layer-visual-text {
@@ -703,7 +670,7 @@
 
     .layer-controls {
       position: relative;
-      z-index: 1;
+      z-index: 3;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -1113,8 +1080,8 @@
         border-radius: 18px;
       }
 
-      #layerMiniMap {
-        height: 210px;
+      #layerVisualStage {
+        height: 220px;
       }
 
       .forecast-grid,
@@ -1199,7 +1166,7 @@
           <div class="layer-panel-title-wrap">
             <h2>Väderlager</h2>
             <p class="layer-panel-subtitle">
-              Visuell tidsvy för nederbörd, moln och vind. Anpassad för att kopplas till radar och prognosdata utan att ändra resten av sidan.
+              Grafisk tidsvy för nederbörd, moln och vind. Byggd för riktiga visuella lager utan att ändra övriga moduler.
             </p>
           </div>
           <div class="layer-badge">Radar & lager</div>
@@ -1228,14 +1195,17 @@
 
           <div class="layer-visual-center">
             <div class="layer-visual-card">
-              <div id="layerMiniMap"></div>
+              <div id="layerVisualStage">
+                <div id="layerMiniMap"></div>
+                <canvas id="layerGraphicCanvas"></canvas>
 
-              <div class="layer-visual-overlay">
-                <div class="layer-visual-text">
-                  <span class="layer-visual-title" id="layerVisualTitle">Nederbördslager</span>
-                  <p class="layer-visual-desc" id="layerVisualDesc">
-                    SMHI-radar med tidsstyrning och uppspelning.
-                  </p>
+                <div class="layer-visual-overlay">
+                  <div class="layer-visual-text">
+                    <span class="layer-visual-title" id="layerVisualTitle">Nederbördslager</span>
+                    <p class="layer-visual-desc" id="layerVisualDesc">
+                      SMHI-radar med tidsstyrning och uppspelning.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1269,7 +1239,7 @@
                   <span>Nederbörd</span>
                 </div>
                 <div class="layer-legend-text" id="legendPrecipText">
-                  Radarvy med historik och uppspelning.
+                  Radar med färgkoder från SMHI.
                 </div>
               </div>
 
@@ -1279,7 +1249,7 @@
                   <span>Moln</span>
                 </div>
                 <div class="layer-legend-text" id="legendCloudText">
-                  Molnandel från prognosdata för vald punkt eller kartcentrum.
+                  Grafiskt molntäcke renderat över scenen.
                 </div>
               </div>
 
@@ -1289,7 +1259,7 @@
                   <span>Vind</span>
                 </div>
                 <div class="layer-legend-text" id="legendWindText">
-                  Vindhastighet och riktning över tid för vald punkt eller kartcentrum.
+                  Fält av små pilar som visar vindriktning.
                 </div>
               </div>
             </div>
@@ -2675,6 +2645,8 @@
   const layerRangeStart = document.getElementById("layerRangeStart");
   const layerRangeEnd = document.getElementById("layerRangeEnd");
   const layerAreaLabel = document.getElementById("layerAreaLabel");
+  const layerGraphicCanvas = document.getElementById("layerGraphicCanvas");
+  const layerVisualStage = document.getElementById("layerVisualStage");
 
   const layerMiniMap = L.map("layerMiniMap", {
     zoomControl: false,
@@ -2700,8 +2672,6 @@
   let smhiRadarOverlay = null;
   let layerPointTimeSeries = [];
   let layerPointIndex = 0;
-  let layerPointMarker = null;
-  let windArrowMarker = null;
 
   const layerCopy = {
     precipitation: {
@@ -2712,14 +2682,14 @@
     },
     clouds: {
       label: "Moln",
-      title: "Molntäcke över tid",
-      desc: "Molnandel från prognosdata för vald väderpunkt eller kartans centrum.",
+      title: "Molntäcke",
+      desc: "Grafiskt molntäcke renderat ovanpå kartan utifrån prognosdata för vald punkt.",
       status: "Hämtar molnprognos..."
     },
     wind: {
       label: "Vind",
-      title: "Vind över tid",
-      desc: "Vindhastighet, riktning och vindpil från prognosdata för vald väderpunkt eller kartans centrum.",
+      title: "Vindfält",
+      desc: "Många små pilar visar vindriktning och styrka över scenen.",
       status: "Hämtar vindprognos..."
     }
   };
@@ -2747,49 +2717,30 @@
     };
   }
 
-  function clearLayerMiniMapOverlays() {
+  function resizeGraphicCanvas() {
+    const rect = layerVisualStage.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    layerGraphicCanvas.width = Math.round(rect.width * dpr);
+    layerGraphicCanvas.height = Math.round(rect.height * dpr);
+    layerGraphicCanvas.style.width = `${rect.width}px`;
+    layerGraphicCanvas.style.height = `${rect.height}px`;
+
+    const ctx = layerGraphicCanvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function clearGraphicCanvas() {
+    resizeGraphicCanvas();
+    const ctx = layerGraphicCanvas.getContext("2d");
+    const w = layerVisualStage.clientWidth;
+    const h = layerVisualStage.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+  }
+
+  function clearRadarOverlay() {
     if (smhiRadarOverlay && layerMiniMap.hasLayer(smhiRadarOverlay)) {
       layerMiniMap.removeLayer(smhiRadarOverlay);
     }
-  }
-
-  function clearLayerPointMarkers() {
-    if (layerPointMarker && layerMiniMap.hasLayer(layerPointMarker)) {
-      layerMiniMap.removeLayer(layerPointMarker);
-    }
-    if (windArrowMarker && layerMiniMap.hasLayer(windArrowMarker)) {
-      layerMiniMap.removeLayer(windArrowMarker);
-    }
-  }
-
-  function renderLayerPointMarker(lat, lon) {
-    clearLayerPointMarkers();
-
-    layerPointMarker = L.marker([lat, lon], {
-      icon: L.divIcon({
-        className: "layer-point-icon",
-        html: '<div class="layer-point-marker"></div>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9]
-      })
-    }).addTo(layerMiniMap);
-  }
-
-  function renderWindArrowMarker(lat, lon, windFromDeg) {
-    const rotateTo = ((Number(windFromDeg || 0) + 180) % 360);
-
-    windArrowMarker = L.marker([lat, lon], {
-      icon: L.divIcon({
-        className: "wind-arrow-icon",
-        html: `
-          <div class="wind-arrow-wrap">
-            <div class="wind-arrow" style="transform: rotate(${rotateTo}deg); position: relative;"></div>
-          </div>
-        `,
-        iconSize: [56, 56],
-        iconAnchor: [28, 28]
-      })
-    }).addTo(layerMiniMap);
   }
 
   function configureSliderForRadar() {
@@ -2810,17 +2761,101 @@
     layerRangeEnd.textContent = "Senare";
   }
 
+  function drawCloudField(cloudPercent) {
+    clearGraphicCanvas();
+    const ctx = layerGraphicCanvas.getContext("2d");
+    const w = layerVisualStage.clientWidth;
+    const h = layerVisualStage.clientHeight;
+
+    const normalized = Math.max(0, Math.min(1, (Number(cloudPercent) || 0) / 100));
+    const puffCount = Math.round(12 + normalized * 34);
+
+    for (let i = 0; i < puffCount; i++) {
+      const x = (i % 8) * (w / 8) + ((i * 37) % 40);
+      const y = (Math.floor(i / 8) * (h / 5)) + 20 + ((i * 29) % 30);
+      const radius = 18 + normalized * 38 + ((i * 11) % 14);
+
+      const gradient = ctx.createRadialGradient(x, y, radius * 0.25, x, y, radius);
+      gradient.addColorStop(0, `rgba(240, 246, 255, ${0.18 + normalized * 0.34})`);
+      gradient.addColorStop(0.55, `rgba(220, 232, 247, ${0.12 + normalized * 0.22})`);
+      gradient.addColorStop(1, "rgba(220, 232, 247, 0)");
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (normalized > 0.65) {
+      ctx.fillStyle = `rgba(220, 232, 247, ${0.08 + normalized * 0.12})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+
+  function drawWindField(windSpeed, windDir) {
+    clearGraphicCanvas();
+    const ctx = layerGraphicCanvas.getContext("2d");
+    const w = layerVisualStage.clientWidth;
+    const h = layerVisualStage.clientHeight;
+
+    const cols = 8;
+    const rows = 4;
+    const speed = Number(windSpeed) || 0;
+    const rotation = ((Number(windDir) || 0) + 180) * Math.PI / 180;
+    const arrowLen = Math.max(10, Math.min(24, 10 + speed * 1.2));
+
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = "rgba(223, 232, 247, 0.82)";
+    ctx.fillStyle = "rgba(152, 240, 219, 0.92)";
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const x = ((col + 0.5) * w) / cols;
+        const y = ((row + 0.5) * h) / rows;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+
+        ctx.beginPath();
+        ctx.moveTo(0, arrowLen * -0.6);
+        ctx.lineTo(0, arrowLen * 0.5);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, arrowLen * -0.8);
+        ctx.lineTo(-4, arrowLen * -0.45);
+        ctx.lineTo(4, arrowLen * -0.45);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawCloudLegendText(cloudValue) {
+    const pct = formatPercent(cloudValue);
+    if (Number(cloudValue) < 20) {
+      setText("layerStatus", `Molntäcke: ${pct} • Lätt molnighet`);
+    } else if (Number(cloudValue) < 60) {
+      setText("layerStatus", `Molntäcke: ${pct} • Delvis molnigt`);
+    } else {
+      setText("layerStatus", `Molntäcke: ${pct} • Tätt molntäcke`);
+    }
+  }
+
   function updateRadarFrameFromIndex() {
     if (!radarFrameData.length) return;
 
     const frame = radarFrameData[radarFrameIndex];
     if (!frame) return;
 
-    clearLayerPointMarkers();
-    clearLayerMiniMapOverlays();
+    clearGraphicCanvas();
+    clearRadarOverlay();
 
     smhiRadarOverlay = L.imageOverlay(frame.imageUrl, frame.bounds, {
-      opacity: 0.72,
+      opacity: 0.78,
       interactive: false
     }).addTo(layerMiniMap);
 
@@ -2828,13 +2863,13 @@
     setText("layerTimestamp", frame.label || "--");
     setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
     setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
-    setText("legendPrecipText", "SMHI-radar med historik och uppspelning.");
+    setText("legendPrecipText", "SMHI-radar med färgkoder och tidsstyrning.");
   }
 
   async function loadSmhiRadarFrames() {
     setText("layerStatus", "Hämtar radarbilder...");
-    clearLayerPointMarkers();
-    clearLayerMiniMapOverlays();
+    clearGraphicCanvas();
+    clearRadarOverlay();
 
     try {
       const res = await fetch("/api/radar/frames");
@@ -2904,7 +2939,7 @@
     layerAreaLabel.textContent = `Område: ${point.label}`;
     setText("layerStatus", activeLayer === "clouds" ? "Hämtar molnprognos..." : "Hämtar vindprognos...");
 
-    clearLayerMiniMapOverlays();
+    clearRadarOverlay();
 
     try {
       const res = await fetch(`/api/weather?lat=${point.lat}&lon=${point.lon}`);
@@ -2926,18 +2961,15 @@
       setText("layerStatus", "Det gick inte att hämta lagerdata");
       setText("layerTimestamp", "--");
       setText("layerSelectedTime", "Vald tid: --");
+      clearGraphicCanvas();
     }
   }
 
   function updatePointLayerViewFromIndex() {
     if (!layerPointTimeSeries.length) return;
 
-    const point = getLayerPoint();
     const item = layerPointTimeSeries[layerPointIndex];
     if (!item) return;
-
-    clearLayerMiniMapOverlays();
-    renderLayerPointMarker(point.lat, point.lon);
 
     layerSlider.value = String(layerPointIndex);
     const timeLabel = formatShortLayerTime(item.time);
@@ -2945,41 +2977,22 @@
     setText("layerSelectedTime", `Vald tid: ${timeLabel}`);
 
     if (activeLayer === "clouds") {
-      const cloudValue = Number(item.cloud);
-      const cloudText = formatPercent(item.cloud);
-
-      layerVisualTitle.textContent = "Molntäcke över tid";
+      drawCloudField(item.cloud);
+      layerVisualTitle.textContent = "Molntäcke";
       layerVisualDesc.textContent =
-        `Molnandel: ${cloudText}. Väderläge: ${weatherLabelFromSymbol(item.symbol)}. Nederbörd: ${formatRain(item.precipitation)}.`;
-
-      if (!Number.isNaN(cloudValue)) {
-        if (cloudValue < 20) {
-          setText("layerStatus", `Moln: ${cloudText} • Mest klart`);
-        } else if (cloudValue < 60) {
-          setText("layerStatus", `Moln: ${cloudText} • Delvis molnigt`);
-        } else {
-          setText("layerStatus", `Moln: ${cloudText} • Tätt molntäcke`);
-        }
-      } else {
-        setText("layerStatus", `Moln: ${cloudText}`);
-      }
-
-      setText("legendCloudText", "Visar molnandel och väderläge för vald punkt över tid.");
+        `Grafiskt molntäcke baserat på prognosdata. Molnandel: ${formatPercent(item.cloud)}. Väderläge: ${weatherLabelFromSymbol(item.symbol)}.`;
+      drawCloudLegendText(item.cloud);
+      setText("legendCloudText", "Visar molntäcke grafiskt utifrån molnandel i prognosen.");
       return;
     }
 
     if (activeLayer === "wind") {
-      renderWindArrowMarker(point.lat, point.lon, item.windDir);
-
-      const speed = formatWind(item.windSpeed);
-      const dir = formatWindDirection(item.windDir);
-
-      layerVisualTitle.textContent = "Vind över tid";
+      drawWindField(item.windSpeed, item.windDir);
+      layerVisualTitle.textContent = "Vindfält";
       layerVisualDesc.textContent =
-        `Vind: ${speed}. Riktning: ${dir}. Temperatur: ${formatTemp(item.airTemp)}.`;
-
-      setText("layerStatus", `Vind: ${speed} • ${dir}`);
-      setText("legendWindText", "Visar vindhastighet, riktning och vindpil för vald punkt över tid.");
+        `Små pilar visar vindriktning. Vind: ${formatWind(item.windSpeed)}. Riktning: ${formatWindDirection(item.windDir)}.`;
+      setText("layerStatus", `Vind: ${formatWind(item.windSpeed)} • ${formatWindDirection(item.windDir)}`);
+      setText("legendWindText", "Visar vindriktning med fält av mindre pilar.");
     }
   }
 
@@ -3096,6 +3109,15 @@
     });
   }
 
+  window.addEventListener("resize", () => {
+    if (activeLayer === "clouds" || activeLayer === "wind") {
+      updatePointLayerViewFromIndex();
+    } else {
+      clearGraphicCanvas();
+    }
+  });
+
+  resizeGraphicCanvas();
   applyLayerCopy(activeLayer);
   resetForecastDisplay();
   updateModeUI();
