@@ -630,6 +630,57 @@
       color: #dfe8f7;
     }
 
+    .leaflet-div-icon.layer-point-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .layer-point-marker {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 2px solid rgba(123, 199, 255, 0.9);
+      box-shadow:
+        0 0 0 6px rgba(123, 199, 255, 0.16),
+        0 0 16px rgba(123, 199, 255, 0.34);
+    }
+
+    .leaflet-div-icon.wind-arrow-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .wind-arrow-wrap {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,0.35));
+    }
+
+    .wind-arrow {
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 26px solid rgba(152, 240, 219, 0.95);
+      transform-origin: 50% 68%;
+    }
+
+    .wind-arrow::after {
+      content: "";
+      position: absolute;
+      left: -3px;
+      top: 18px;
+      width: 6px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(223, 232, 247, 0.92);
+      box-shadow: 0 0 10px rgba(223, 232, 247, 0.25);
+    }
+
     .layer-visual-text {
       max-width: 34ch;
     }
@@ -2649,6 +2700,8 @@
   let smhiRadarOverlay = null;
   let layerPointTimeSeries = [];
   let layerPointIndex = 0;
+  let layerPointMarker = null;
+  let windArrowMarker = null;
 
   const layerCopy = {
     precipitation: {
@@ -2666,7 +2719,7 @@
     wind: {
       label: "Vind",
       title: "Vind över tid",
-      desc: "Vindhastighet och vindriktning från prognosdata för vald väderpunkt eller kartans centrum.",
+      desc: "Vindhastighet, riktning och vindpil från prognosdata för vald väderpunkt eller kartans centrum.",
       status: "Hämtar vindprognos..."
     }
   };
@@ -2700,6 +2753,45 @@
     }
   }
 
+  function clearLayerPointMarkers() {
+    if (layerPointMarker && layerMiniMap.hasLayer(layerPointMarker)) {
+      layerMiniMap.removeLayer(layerPointMarker);
+    }
+    if (windArrowMarker && layerMiniMap.hasLayer(windArrowMarker)) {
+      layerMiniMap.removeLayer(windArrowMarker);
+    }
+  }
+
+  function renderLayerPointMarker(lat, lon) {
+    clearLayerPointMarkers();
+
+    layerPointMarker = L.marker([lat, lon], {
+      icon: L.divIcon({
+        className: "layer-point-icon",
+        html: '<div class="layer-point-marker"></div>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      })
+    }).addTo(layerMiniMap);
+  }
+
+  function renderWindArrowMarker(lat, lon, windFromDeg) {
+    const rotateTo = ((Number(windFromDeg || 0) + 180) % 360);
+
+    windArrowMarker = L.marker([lat, lon], {
+      icon: L.divIcon({
+        className: "wind-arrow-icon",
+        html: `
+          <div class="wind-arrow-wrap">
+            <div class="wind-arrow" style="transform: rotate(${rotateTo}deg); position: relative;"></div>
+          </div>
+        `,
+        iconSize: [56, 56],
+        iconAnchor: [28, 28]
+      })
+    }).addTo(layerMiniMap);
+  }
+
   function configureSliderForRadar() {
     const max = Math.max(0, radarFrameData.length - 1);
     layerSlider.min = "0";
@@ -2724,6 +2816,7 @@
     const frame = radarFrameData[radarFrameIndex];
     if (!frame) return;
 
+    clearLayerPointMarkers();
     clearLayerMiniMapOverlays();
 
     smhiRadarOverlay = L.imageOverlay(frame.imageUrl, frame.bounds, {
@@ -2740,6 +2833,7 @@
 
   async function loadSmhiRadarFrames() {
     setText("layerStatus", "Hämtar radarbilder...");
+    clearLayerPointMarkers();
     clearLayerMiniMapOverlays();
 
     try {
@@ -2774,8 +2868,8 @@
     return (
       details.cloud_area_fraction ??
       details.total_cloud_cover ??
-      details.medium_cloud_cover ??
-      details.low_cloud_cover ??
+      details.medium_cloud_area_fraction ??
+      details.low_cloud_area_fraction ??
       null
     );
   }
@@ -2810,6 +2904,8 @@
     layerAreaLabel.textContent = `Område: ${point.label}`;
     setText("layerStatus", activeLayer === "clouds" ? "Hämtar molnprognos..." : "Hämtar vindprognos...");
 
+    clearLayerMiniMapOverlays();
+
     try {
       const res = await fetch(`/api/weather?lat=${point.lat}&lon=${point.lon}`);
       const data = await res.json();
@@ -2836,8 +2932,12 @@
   function updatePointLayerViewFromIndex() {
     if (!layerPointTimeSeries.length) return;
 
+    const point = getLayerPoint();
     const item = layerPointTimeSeries[layerPointIndex];
     if (!item) return;
+
+    clearLayerMiniMapOverlays();
+    renderLayerPointMarker(point.lat, point.lon);
 
     layerSlider.value = String(layerPointIndex);
     const timeLabel = formatShortLayerTime(item.time);
@@ -2845,23 +2945,41 @@
     setText("layerSelectedTime", `Vald tid: ${timeLabel}`);
 
     if (activeLayer === "clouds") {
-      const value = formatPercent(item.cloud);
+      const cloudValue = Number(item.cloud);
+      const cloudText = formatPercent(item.cloud);
+
       layerVisualTitle.textContent = "Molntäcke över tid";
       layerVisualDesc.textContent =
-        `Molnandel: ${value}. Väderläge: ${weatherLabelFromSymbol(item.symbol)}. Nederbörd: ${formatRain(item.precipitation)}.`;
-      setText("layerStatus", `Moln: ${value} • ${weatherLabelFromSymbol(item.symbol)}`);
+        `Molnandel: ${cloudText}. Väderläge: ${weatherLabelFromSymbol(item.symbol)}. Nederbörd: ${formatRain(item.precipitation)}.`;
+
+      if (!Number.isNaN(cloudValue)) {
+        if (cloudValue < 20) {
+          setText("layerStatus", `Moln: ${cloudText} • Mest klart`);
+        } else if (cloudValue < 60) {
+          setText("layerStatus", `Moln: ${cloudText} • Delvis molnigt`);
+        } else {
+          setText("layerStatus", `Moln: ${cloudText} • Tätt molntäcke`);
+        }
+      } else {
+        setText("layerStatus", `Moln: ${cloudText}`);
+      }
+
       setText("legendCloudText", "Visar molnandel och väderläge för vald punkt över tid.");
       return;
     }
 
     if (activeLayer === "wind") {
+      renderWindArrowMarker(point.lat, point.lon, item.windDir);
+
       const speed = formatWind(item.windSpeed);
       const dir = formatWindDirection(item.windDir);
+
       layerVisualTitle.textContent = "Vind över tid";
       layerVisualDesc.textContent =
         `Vind: ${speed}. Riktning: ${dir}. Temperatur: ${formatTemp(item.airTemp)}.`;
+
       setText("layerStatus", `Vind: ${speed} • ${dir}`);
-      setText("legendWindText", "Visar vindhastighet och riktning för vald punkt över tid.");
+      setText("legendWindText", "Visar vindhastighet, riktning och vindpil för vald punkt över tid.");
     }
   }
 
@@ -2887,7 +3005,6 @@
       return;
     }
 
-    clearLayerMiniMapOverlays();
     await loadPointLayerDataForActiveLayer();
   }
 
