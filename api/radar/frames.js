@@ -185,10 +185,7 @@ async function collectPngsForDay(dayUrl) {
 
 export default async function handler(req, res) {
   try {
-    const framesRequested = Math.max(
-      1,
-      Math.min(36, Number(req.query.limit || 18))
-    );
+    const framesRequested = Math.max(1, Math.min(24, Number(req.query.limit || 12)));
 
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -218,20 +215,16 @@ export default async function handler(req, res) {
 
     let recentFrames = dated.slice(-framesRequested).map((item) => ({
       label: formatLabelSv(item.date),
-      imageUrl: `/api/radar/image?url=${encodeURIComponent(item.url)}`,
-      sourceUrl: item.url,
+      imageUrl: item.url,
       timestamp: item.date.toISOString()
     }));
 
     if (!recentFrames.length) {
-      const latestSource = `${SMHI_RADAR_ROOT}/latest.png`;
       const fallbackDate = new Date();
-
       recentFrames = [
         {
           label: formatLabelSv(fallbackDate),
-          imageUrl: `/api/radar/image?url=${encodeURIComponent(latestSource)}`,
-          sourceUrl: latestSource,
+          imageUrl: `${SMHI_RADAR_ROOT}/latest.png`,
           timestamp: fallbackDate.toISOString()
         }
       ];
