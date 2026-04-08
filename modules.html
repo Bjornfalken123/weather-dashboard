@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Moduler – väder, boj och fyr</title>
+  <title>Kustväder</title>
 
   <link
     rel="stylesheet"
@@ -320,8 +320,8 @@
     <section class="hero">
       <div class="hero-top">
         <div class="title-wrap">
-          <h1>Modulöversikt</h1>
-          <p class="subtitle">En sida med separata moduler för väder, bojar och fyrar/stationer.</p>
+          <h1>Kustväder</h1>
+          <p class="subtitle">Väder, havsdata och stationsobservationer för kust, sjö och inland.</p>
         </div>
 
         <div class="status-pill">
@@ -567,6 +567,7 @@
 <script>
   let activeMode = "weather";
   let forecastExpanded = false;
+  let currentForecastDays = [];
 
   const savedSelections = {
     weather: null,
@@ -919,6 +920,7 @@
   }
 
   function resetForecastDisplay() {
+    currentForecastDays = [];
     for (let i = 1; i <= 7; i++) {
       const itemEl = document.getElementById(`forecastItem${i}`);
       if (itemEl) itemEl.style.display = i <= 3 ? "" : "none";
@@ -1078,18 +1080,18 @@
       setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
       setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
 
-      const dailyForecast = buildDailyForecast(timeseries);
-      renderForecast(dailyForecast);
+      currentForecastDays = buildDailyForecast(timeseries);
+      renderForecast(currentForecastDays);
 
       if (gustRes.ok) {
         const gustData = JSON.parse(gustText);
         setText("weatherGustValue", formatWind(gustData.value));
         setText("weatherGustSourceValue", "Open-Meteo • punktdata");
-        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
+        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
       } else {
         setText("weatherGustValue", "--");
         setText("weatherGustSourceValue", "Ingen byvind tillgänglig");
-        setText("weatherStatusValue", dailyForecast.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
+        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väder + dagsprognos laddad" : "Väderdata laddad");
       }
     } catch (error) {
       console.error(error);
@@ -1679,37 +1681,9 @@
   const forecastToggleBtn = document.getElementById("forecastToggleBtn");
   if (forecastToggleBtn) {
     forecastToggleBtn.addEventListener("click", () => {
+      if (!currentForecastDays.length) return;
       forecastExpanded = !forecastExpanded;
-
-      const hasForecast =
-        document.getElementById("forecast1Time")?.textContent !== "--" ||
-        document.getElementById("forecast2Time")?.textContent !== "--";
-
-      if (!hasForecast) return;
-
-      const days = [];
-      for (let i = 1; i <= 7; i++) {
-        const time = document.getElementById(`forecast${i}Time`)?.textContent;
-        const temp = document.getElementById(`forecast${i}Temp`)?.textContent;
-        const rain = document.getElementById(`forecast${i}Rain`)?.textContent;
-        const item = document.getElementById(`forecastItem${i}`);
-
-        if (!item || time === "--") continue;
-        days.push({ rendered: true });
-      }
-
-      for (let i = 1; i <= 7; i++) {
-        const itemEl = document.getElementById(`forecastItem${i}`);
-        if (!itemEl) continue;
-
-        if (i <= (forecastExpanded ? 7 : 3) && itemEl.querySelector(".forecast-time")?.textContent !== "--") {
-          itemEl.style.display = "";
-        } else if (itemEl.querySelector(".forecast-time")?.textContent !== "--") {
-          itemEl.style.display = "none";
-        }
-      }
-
-      forecastToggleBtn.textContent = forecastExpanded ? "Visa 3 dagar" : "Visa 7 dagar";
+      renderForecast(currentForecastDays);
     });
   }
 
