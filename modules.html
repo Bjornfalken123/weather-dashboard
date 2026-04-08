@@ -2698,7 +2698,7 @@
     }
   }
 
- function drawWindField(windSpeed, windDir) {
+function drawWindField(windSpeed, windDir) {
   clearGraphicCanvas();
   const ctx = layerGraphicCanvas.getContext("2d");
   const w = layerVisualStage.clientWidth;
@@ -2711,8 +2711,8 @@
   const arrowLen = Math.max(8, Math.min(20, 8 + speed * 1.2));
 
   ctx.lineWidth = 1.8;
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.88)";
-  ctx.fillStyle = "rgba(0, 0, 0, 0.92)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.9)";
+  ctx.fillStyle = "rgba(0, 0, 0, 0.95)";
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
