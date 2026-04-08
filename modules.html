@@ -418,7 +418,7 @@
           </div>
           <div class="forecast-item">
             <div class="forecast-time" id="forecast3Time">--</div>
-                        <div class="forecast-temp" id="forecast3Temp">--</div>
+            <div class="forecast-temp" id="forecast3Temp">--</div>
             <div class="forecast-rain" id="forecast3Rain">--</div>
           </div>
         </div>
@@ -558,10 +558,14 @@
 
   const waveStationsCache = new Map();
   const lighthouseStationsCache = new Map();
+
   let waterLevelStationsPromise = null;
   let vivaStationsPromise = null;
+
   const vivaStationDataCache = new Map();
   const vivaNearestCache = new Map();
+  const waveEvaluationCache = new Map();
+  const lighthouseObservationCache = new Map();
 
   function setText(id, value) {
     const el = document.getElementById(id);
@@ -753,6 +757,10 @@
     return `${latKey}:${lonKey}:${samplesKey}:${lightMode ? "light" : "full"}`;
   }
 
+  function buildWaveEvaluationCacheKey(station, lightMode) {
+    return `${station.id}:${lightMode ? "light" : "full"}`;
+  }
+
   function toRad(deg) {
     return deg * Math.PI / 180;
   }
@@ -838,7 +846,8 @@
       marker.bindTooltip(tooltipText, { direction: "top" });
     }
   }
-    function setLighthouseMarkerColorById(stationId, state, tooltipText) {
+
+  function setLighthouseMarkerColorById(stationId, state, tooltipText) {
     const marker = lighthouseMarkerMap.get(stationId);
     if (!marker) return;
 
@@ -862,17 +871,20 @@
 
     if (activeMode === "weather") {
       setText("activeModeText", "Väder");
+      setText("pageStatus", "Vädermodul aktiv");
       setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
       if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
       if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
     } else if (activeMode === "wave") {
       setText("activeModeText", "Boj / våg");
+      setText("pageStatus", "Bojmodul aktiv");
       setText("mapNote", "Bakgrundskoll pågår. Blå = ej kollad än, röd = har havsdata, grå = ingen data.");
       ensureWaveStationsLoaded();
       if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
       if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
     } else {
       setText("activeModeText", "Fyr / station");
+      setText("pageStatus", "Fyrmodul aktiv");
       setText("mapNote", "Bakgrundskoll pågår. Blå = ej kollad än, röd = har data, grå = ingen data.");
       ensureLighthouseStationsLoaded();
       if (!map.hasLayer(lighthouseStationsLayer)) map.addLayer(lighthouseStationsLayer);
@@ -995,7 +1007,7 @@
 
       const latest = extractLatestValue(data);
       if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
-        return { latest, period };
+        return { latest, period, source: "SMHI" };
       }
     }
     return null;
@@ -1158,7 +1170,7 @@
 
         const latest = extractLatestValue(data);
         if (latest && latest.value !== undefined && latest.value !== null && latest.value !== "") {
-          return { station, latest, period };
+          return { station, latest, period, source: "SMHI" };
         }
       }
     }
@@ -1167,34 +1179,51 @@
   }
 
   async function evaluateWaveStation(station, lightMode = false) {
-    const [vivaWaveResult, vivaWaterResult] = await Promise.all([
-      findNearestVivaObservationForPoint(
-        station.latitude,
-        station.longitude,
-        ["Våghöjd"],
-        lightMode
-      ),
-      findNearestVivaObservationForPoint(
-        station.latitude,
-        station.longitude,
-        ["Vattenstånd"],
-        lightMode
-      )
-    ]);
+    const cacheKey = buildWaveEvaluationCacheKey(station, lightMode);
 
-    const [smhiWaveResult, smhiWaterResult] = await Promise.all([
-      vivaWaveResult ? Promise.resolve(null) : fetchWaveDataForStation(station.id),
-      vivaWaterResult ? Promise.resolve(null) : findNearestWaterLevelForPoint(station.latitude, station.longitude, lightMode)
-    ]);
+    if (waveEvaluationCache.has(cacheKey)) {
+      return waveEvaluationCache.get(cacheKey);
+    }
 
-    const waveResult = vivaWaveResult || smhiWaveResult;
-    const waterResult = vivaWaterResult || smhiWaterResult;
+    const promise = (async () => {
+      const [vivaWaveResult, vivaWaterResult] = await Promise.all([
+        findNearestVivaObservationForPoint(
+          station.latitude,
+          station.longitude,
+          ["Våghöjd"],
+          lightMode
+        ),
+        findNearestVivaObservationForPoint(
+          station.latitude,
+          station.longitude,
+          ["Vattenstånd"],
+          lightMode
+        )
+      ]);
 
-    return {
-      waveResult,
-      waterResult,
-      hasAnySeaData: Boolean(waveResult || waterResult)
-    };
+      const [smhiWaveResult, smhiWaterResult] = await Promise.all([
+        vivaWaveResult ? Promise.resolve(null) : fetchWaveDataForStation(station.id),
+        vivaWaterResult ? Promise.resolve(null) : findNearestWaterLevelForPoint(station.latitude, station.longitude, lightMode)
+      ]);
+
+      const waveResult = vivaWaveResult || smhiWaveResult;
+      const waterResult = vivaWaterResult || smhiWaterResult;
+
+      return {
+        waveResult,
+        waterResult,
+        hasAnySeaData: Boolean(waveResult || waterResult)
+      };
+    })();
+
+    waveEvaluationCache.set(cacheKey, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      waveEvaluationCache.delete(cacheKey);
+      throw error;
+    }
   }
 
   async function selectWaveStation(station) {
@@ -1257,9 +1286,10 @@
   async function startWaveBackgroundCheck() {
     if (waveBackgroundCheckStarted) return;
     waveBackgroundCheckStarted = true;
-        const stations = Array.from(waveStationsCache.values());
+
+    const stations = Array.from(waveStationsCache.values());
     let checked = 0;
-    const concurrency = 2;
+    const concurrency = 3;
     let index = 0;
 
     async function worker() {
@@ -1339,23 +1369,38 @@
   }
 
   async function fetchLighthouseObservations(stationId) {
-    const res = await fetch(`/api/lighthouse-observations?stationId=${stationId}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data?.message || "Kunde inte ladda stationsdata");
+    if (lighthouseObservationCache.has(stationId)) {
+      return lighthouseObservationCache.get(stationId);
     }
 
-    const obs = data.observations || {};
-    const hasAnyData = Boolean(
-      obs.temp?.value != null ||
-      obs.windSpeed?.value != null ||
-      obs.windDir?.value != null ||
-      obs.pressure?.value != null ||
-      obs.gust?.value != null
-    );
+    const promise = (async () => {
+      const res = await fetch(`/api/lighthouse-observations?stationId=${stationId}`);
+      const data = await res.json();
 
-    return { obs, hasAnyData };
+      if (!res.ok) {
+        throw new Error(data?.message || "Kunde inte ladda stationsdata");
+      }
+
+      const obs = data.observations || {};
+      const hasAnyData = Boolean(
+        obs.temp?.value != null ||
+        obs.windSpeed?.value != null ||
+        obs.windDir?.value != null ||
+        obs.pressure?.value != null ||
+        obs.gust?.value != null
+      );
+
+      return { obs, hasAnyData };
+    })();
+
+    lighthouseObservationCache.set(stationId, promise);
+
+    try {
+      return await promise;
+    } catch (error) {
+      lighthouseObservationCache.delete(stationId);
+      throw error;
+    }
   }
 
   async function selectLighthouseStation(station) {
@@ -1396,7 +1441,7 @@
 
     const stations = Array.from(lighthouseStationsCache.values());
     let checked = 0;
-    const concurrency = 3;
+    const concurrency = 5;
     let index = 0;
 
     async function worker() {
