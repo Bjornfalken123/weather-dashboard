@@ -2740,20 +2740,20 @@
   }
 }
 
-  function updateRadarFrameFromIndex() {
-    if (!radarFrameData.length) return;
-    const frame = radarFrameData[radarFrameIndex];
-    if (!frame) return;
+function updateRadarFrameFromIndex() {
+  if (!radarFrameData.length) return;
+  const frame = radarFrameData[radarFrameIndex];
+  if (!frame) return;
 
-    clearGraphicCanvas();
-    showPrecipitationImage(frame.imageUrl);
+  clearGraphicCanvas();
+  showPrecipitationImage(frame.imageUrl);
 
-    layerSlider.value = String(radarFrameIndex);
-    setText("layerTimestamp", frame.label || "--");
-    setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
-    setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
-    setText("legendPrecipText", "Radarbild med färgkoder från SMHI.");
-  }
+  layerSlider.value = String(radarFrameIndex);
+  setText("layerTimestamp", frame.label || "--");
+  setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
+  setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
+  setText("legendPrecipText", "Radarbild med färgkoder från SMHI.");
+}
 
   async function loadSmhiRadarFrames() {
     setText("layerStatus", "Hämtar radarbilder...");
