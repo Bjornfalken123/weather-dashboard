@@ -2541,14 +2541,15 @@
 
     radarSelectionMarker = L.marker([lat, lon]).addTo(layerMiniMap);
   }
-    function scheduleLayerRefreshFromCenter() {
-    if (layerRefreshTimer) {
-      clearTimeout(layerRefreshTimer);
-    }
+  function scheduleLayerRefreshFromCenter() {
+  if (layerRefreshTimer) {
+    clearTimeout(layerRefreshTimer);
+  }
 
-    layerRefreshTimer = setTimeout(() => {
-      const center = layerMiniMap.getCenter();
+  layerRefreshTimer = setTimeout(() => {
+    const center = layerMiniMap.getCenter();
 
+    if (activeLayer === "clouds" || activeLayer === "wind") {
       radarSelectionPoint = {
         lat: center.lat,
         lon: center.lng
@@ -2559,33 +2560,31 @@
       }
 
       layerAreaLabel.textContent = `Punkt: ${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
-
-      if (activeLayer === "clouds" || activeLayer === "wind") {
-        loadPointLayerDataForActiveLayer().catch(console.error);
-        return;
-      }
-
-      if (activeLayer === "precipitation") {
-        loadSmhiRadarFrames().catch(console.error);
-      }
-    }, 250);
-  }
-
-  layerMiniMap.on("click", (event) => {
-    const lat = event.latlng.lat;
-    const lon = event.latlng.lng;
-
-    setRadarSelectionMarker(lat, lon);
-
-    if (activeLayer === "clouds" || activeLayer === "wind") {
       loadPointLayerDataForActiveLayer().catch(console.error);
       return;
     }
 
     if (activeLayer === "precipitation") {
+      layerAreaLabel.textContent = `Område: ${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
       loadSmhiRadarFrames().catch(console.error);
     }
-  });
+  }, 250);
+}
+
+layerMiniMap.on("click", (event) => {
+  const lat = event.latlng.lat;
+  const lon = event.latlng.lng;
+
+  if (activeLayer === "clouds" || activeLayer === "wind") {
+    setRadarSelectionMarker(lat, lon);
+    loadPointLayerDataForActiveLayer().catch(console.error);
+    return;
+  }
+
+  if (activeLayer === "precipitation") {
+    loadSmhiRadarFrames().catch(console.error);
+  }
+});
     layerMiniMap.on("moveend", () => {
     scheduleLayerRefreshFromCenter();
   });
@@ -2841,7 +2840,7 @@
       });
   }
 
- function updateRadarFrameFromIndex() {
+function updateRadarFrameFromIndex() {
   if (!radarFrameData.length) return;
 
   radarFrameIndex = Math.max(0, Math.min(radarFrameIndex, radarFrameData.length - 1));
@@ -2852,103 +2851,66 @@
   setText("layerTimestamp", frame.label || "--");
   setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
 
-  if (frame.kind === "radar") {
-    clearGraphicCanvas();
-    showPrecipitationImage(frame.imageUrl);
+  clearGraphicCanvas();
+  showPrecipitationImage(frame.imageUrl);
 
-    setText("layerVisualTitle", "Radarbild");
-    setText("layerVisualDesc", "Aktuell observerad nederbörd från SMHI radar.");
-    setText("layerStatus", "Nuvarande nederbörd • radar");
-    setText("legendPrecipText", "Nu = radar. Framåt = prognos för vald punkt.");
-    return;
-  }
-
-  hidePrecipitationImage();
-  drawPrecipitationForecastField(frame.precipitation);
-
-  setText("layerVisualTitle", "Nederbördsprognos");
-  setText(
-    "layerVisualDesc",
-    `${weatherLabelFromSymbol(frame.symbol)} • Nederbörd ${formatRain(frame.precipitation)} • Temp ${formatTemp(frame.airTemp)}.`
-  );
-  setText(
-    "layerStatus",
-    `Prognos framåt • ${formatRain(frame.precipitation)} • ${weatherLabelFromSymbol(frame.symbol)}`
-  );
-  setText("legendPrecipText", "Nu = radar. Framåt = prognos för vald punkt.");
+  setText("layerVisualTitle", "Radarbild");
+  setText("layerVisualDesc", "Radar för hela kartområdet. Zooma och panorera fritt.");
+  setText("layerStatus", `Radar aktiv • ${frame.label || "--"}`);
+  setText("legendPrecipText", "Radarbild för hela området. Visas oberoende av klickpunkt.");
 }
 
- async function loadSmhiRadarFrames() {
-  setText("layerStatus", "Hämtar nederbörd nu och framåt...");
+async function loadSmhiRadarFrames() {
+  setText("layerStatus", "Hämtar nederbördslager...");
   clearGraphicCanvas();
   hidePrecipitationImage();
 
   try {
-    const point = getLayerPoint();
-    layerAreaLabel.textContent = `Punkt: ${point.label}`;
+    const center = layerMiniMap.getCenter();
+    layerAreaLabel.textContent = `Område: ${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
 
-    const [radarRes, weatherRes] = await Promise.all([
-      fetch("/api/radar/frames"),
-      fetch(`/api/weather?lat=${point.lat}&lon=${point.lon}`)
-    ]);
-
+    const radarRes = await fetch("/api/radar/frames");
     const radarData = await radarRes.json();
-    const weatherData = await weatherRes.json();
 
     if (!radarRes.ok) {
       throw new Error(radarData?.message || "Kunde inte hämta radarbild");
     }
 
-    if (!weatherRes.ok) {
-      throw new Error(weatherData?.message || "Kunde inte hämta nederbördsprognos");
-    }
+    const frames = normalizeRadarFrames(radarData?.frames || []);
 
-    const latestRadarFrame =
-      Array.isArray(radarData?.frames) && radarData.frames.length
-        ? radarData.frames[0]
-        : null;
+    radarFrameData = frames.map((frame) => ({
+      kind: "radar",
+      label: frame.label || "Nu",
+      imageUrl: frame.imageUrl,
+      timestamp: frame.time || null
+    }));
 
-    const timeseries = weatherData?.properties?.timeseries || [];
-    const forecastFrames = buildPrecipitationForecastData(timeseries);
-
-    radarFrameData = [];
-
-    if (latestRadarFrame?.imageUrl) {
-      radarFrameData.push({
-        kind: "radar",
-        label: latestRadarFrame.label || "Nu",
-        imageUrl: latestRadarFrame.imageUrl,
-        timestamp: latestRadarFrame.timestamp || null
-      });
-    }
-
-    radarFrameData.push(...forecastFrames);
-    radarFrameIndex = 0;
+    radarFrameIndex = Math.max(0, radarFrameData.length - 1);
 
     if (!radarFrameData.length) {
-      setText("layerStatus", "Ingen nederbördsdata tillgänglig");
+      setText("layerStatus", "Ingen radar tillgänglig");
       setText("layerTimestamp", "--");
       setText("layerSelectedTime", "Vald tid: --");
       layerSlider.min = "0";
       layerSlider.max = "0";
       layerSlider.value = "0";
-      layerRangeStart.textContent = "Nu";
-      layerRangeEnd.textContent = "Senare";
+      layerRangeStart.textContent = "Tidigare";
+      layerRangeEnd.textContent = "Nu";
       return;
     }
 
     layerSlider.min = "0";
     layerSlider.max = String(Math.max(0, radarFrameData.length - 1));
-    layerSlider.value = "0";
-    layerRangeStart.textContent = radarFrameData[0]?.label || "Nu";
-    layerRangeEnd.textContent = radarFrameData[radarFrameData.length - 1]?.label || "Senare";
+    layerSlider.value = String(radarFrameIndex);
+    layerRangeStart.textContent = radarFrameData[0]?.label || "Tidigare";
+    layerRangeEnd.textContent = radarFrameData[radarFrameData.length - 1]?.label || "Nu";
 
     updateRadarFrameFromIndex();
   } catch (error) {
     console.error(error);
     radarFrameData = [];
     radarFrameIndex = 0;
-    setText("layerStatus", "Det gick inte att hämta nederbördsdata");
+    setText("layerStatus", "Det gick inte att hämta radar");
     setText("layerTimestamp", "--");
     setText("layerSelectedTime", "Vald tid: --");
     hidePrecipitationImage();
@@ -3082,25 +3044,29 @@
  function startLayerPlayback() {
   stopLayerPlayback();
 
-   if (activeLayer === "precipitation") {
-    if (!radarFrameData.length || radarFrameData.length < 2) {
-      setText("layerStatus", "Ingen prognos framåt tillgänglig");
-      return;
+  if (activeLayer === "precipitation") {
+  if (!radarFrameData.length || radarFrameData.length < 2) {
+    setText("layerStatus", "Ingen radaranimation tillgänglig");
+    return;
+  }
+
+  if (layerPlayBtn) {
+    layerPlayBtn.textContent = "Pausa";
+  }
+
+  layerPlaybackTimer = setInterval(() => {
+    if (!radarFrameData.length) return;
+
+    radarFrameIndex += 1;
+    if (radarFrameIndex >= radarFrameData.length) {
+      radarFrameIndex = 0;
     }
 
-    if (layerPlayBtn) {
-      layerPlayBtn.textContent = "Pausa";
-    }
+    updateRadarFrameFromIndex();
+  }, 1000);
 
-    layerPlaybackTimer = setInterval(() => {
-      if (!radarFrameData.length) return;
-
-      radarFrameIndex += 1;
-      if (radarFrameIndex >= radarFrameData.length) {
-        radarFrameIndex = radarFrameData.length - 1;
-        stopLayerPlayback();
-        return;
-      }
+  return;
+}
 
       updateRadarFrameFromIndex();
     }, 1000);
