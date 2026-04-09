@@ -2867,9 +2867,9 @@ async function loadSmhiRadarFrames() {
 
   try {
     const center = layerMiniMap.getCenter();
-    layerAreaLabel.textContent = `Område: ${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
+    layerAreaLabel.textContent = `Område: ${formatCoord(center.lat)}, ${formatCoord(center.lng || center.lng)}`;
 
-    const radarRes = await fetch("/api/radar/frames");
+    const radarRes = await fetch("/api/smhi-gust-nearest");
     const radarData = await radarRes.json();
 
     if (!radarRes.ok) {
@@ -3045,30 +3045,28 @@ async function loadSmhiRadarFrames() {
   stopLayerPlayback();
 
   if (activeLayer === "precipitation") {
-  if (!radarFrameData.length || radarFrameData.length < 2) {
-    setText("layerStatus", "Ingen radaranimation tillgänglig");
-    return;
-  }
-
-  if (layerPlayBtn) {
-    layerPlayBtn.textContent = "Pausa";
-  }
-
-  layerPlaybackTimer = setInterval(() => {
-    if (!radarFrameData.length) return;
-
-    radarFrameIndex += 1;
-    if (radarFrameIndex >= radarFrameData.length) {
-      radarFrameIndex = 0;
+    if (!radarFrameData.length || radarFrameData.length < 2) {
+      setText("layerStatus", "Ingen radaranimation tillgänglig");
+      return;
     }
 
-    updateRadarFrameFromIndex();
-  }, 1000);
+    if (layerPlayBtn) {
+      layerPlayBtn.textContent = "Pausa";
+    }
 
-  return;
-}
+    layerPlaybackTimer = setInterval(() => {
+      if (!radarFrameData.length) return;
 
+      radarFrameIndex += 1;
+      if (radarFrameIndex >= radarFrameData.length) {
+        radarFrameIndex = 0;
+      }
 
+      updateRadarFrameFromIndex();
+    }, 1000);
+
+    return;
+  }
 
   if (layerPlayBtn) {
     layerPlayBtn.textContent = "Pausa";
