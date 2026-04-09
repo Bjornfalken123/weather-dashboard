@@ -1,7 +1,8 @@
-const SMHI_RADAR_BASE =
+const SMHI_RADAR_API =
   "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp";
 
-const SMHI_LATEST_RADAR = `${SMHI_RADAR_BASE}/latest.png`;
+const SMHI_LATEST_RADAR = `${SMHI_RADAR_API}/latest.png`;
+const SMHI_TEMPORAL_EXTENT_JSON = `${SMHI_RADAR_API}/temporal_extent.json`;
 
 function formatLabelSv(date) {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -14,51 +15,87 @@ function formatLabelSv(date) {
   }).format(date).replace(".", "");
 }
 
-function pad(value) {
-  return String(value).padStart(2, "0");
+function safeDate(value) {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function toStockholmParts(date) {
-  const formatter = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Stockholm",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23"
+function buildLabelFromEntry(entry, index) {
+  const date =
+    safeDate(entry?.updated) ||
+    safeDate(entry?.timestamp) ||
+    safeDate(entry?.validTime) ||
+    safeDate(entry?.date);
+
+  if (date) {
+    return formatLabelSv(date);
+  }
+
+  return `Bild ${index + 1}`;
+}
+
+function collectPngEntries(node, results = []) {
+  if (!node) return results;
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      collectPngEntries(item, results);
+    }
+    return results;
+  }
+
+  if (typeof node !== "object") {
+    return results;
+  }
+
+  const link = typeof node.link === "string" ? node.link : null;
+  const key = typeof node.key === "string" ? node.key : null;
+
+  if (link && (link.includes(".png") || key === "png")) {
+    results.push({
+      link,
+      updated: node.updated || null,
+      timestamp: node.timestamp || null,
+      validTime: node.validTime || null,
+      date: node.date || null
+    });
+  }
+
+  for (const value of Object.values(node)) {
+    if (value && typeof value === "object") {
+      collectPngEntries(value, results);
+    }
+  }
+
+  return results;
+}
+
+function dedupeEntries(entries) {
+  const seen = new Set();
+  const out = [];
+
+  for (const entry of entries) {
+    if (!entry?.link) continue;
+    if (seen.has(entry.link)) continue;
+    seen.add(entry.link);
+    out.push(entry);
+  }
+
+  return out;
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "KustvaderRadar/1.0"
+    }
   });
 
-  const parts = Object.fromEntries(
-    formatter.formatToParts(date).map((part) => [part.type, part.value])
-  );
+  if (!res.ok) {
+    throw new Error(`SMHI json returned ${res.status}`);
+  }
 
-  return {
-    year: parts.year,
-    month: parts.month,
-    day: parts.day,
-    hour: parts.hour,
-    minute: parts.minute
-  };
-}
-
-function floorToFiveMinutes(date) {
-  const d = new Date(date);
-  d.setUTCSeconds(0, 0);
-  d.setUTCMinutes(Math.floor(d.getUTCMinutes() / 5) * 5);
-  return d;
-}
-
-function buildCandidateUrls(date) {
-  const p = toStockholmParts(date);
-  const hhmm = `${p.hour}${p.minute}`;
-
-  return [
-    `${SMHI_RADAR_BASE}/${p.year}/${p.month}/${p.day}/${hhmm}.png`,
-    `${SMHI_RADAR_BASE}/${p.year}/${p.month}/${p.day}/${hhmm}/png`,
-    `${SMHI_RADAR_BASE}/${p.year}/${p.month}/${p.day}/${hhmm}`,
-    `${SMHI_RADAR_BASE}/${p.year}/${p.month}/${p.day}/${hhmm}.png?format=png`
-  ];
+  return res.json();
 }
 
 async function fetchAsDataUrl(url) {
@@ -79,52 +116,83 @@ async function fetchAsDataUrl(url) {
   return `data:${contentType};base64,${base64}`;
 }
 
-async function fetchFrameForTime(date) {
-  const urls = buildCandidateUrls(date);
+async function fetchFramesFromTemporalExtent() {
+  const extentJson = await fetchJson(SMHI_TEMPORAL_EXTENT_JSON);
 
-  for (const url of urls) {
+  const allEntries = dedupeEntries(collectPngEntries(extentJson));
+  if (!allEntries.length) {
+    return [];
+  }
+
+  const sorted = allEntries.sort((a, b) => {
+    const aTime =
+      safeDate(a.updated)?.getTime() ||
+      safeDate(a.timestamp)?.getTime() ||
+      safeDate(a.validTime)?.getTime() ||
+      safeDate(a.date)?.getTime() ||
+      0;
+
+    const bTime =
+      safeDate(b.updated)?.getTime() ||
+      safeDate(b.timestamp)?.getTime() ||
+      safeDate(b.validTime)?.getTime() ||
+      safeDate(b.date)?.getTime() ||
+      0;
+
+    return aTime - bTime;
+  });
+
+  const latestEight = sorted.slice(-8);
+
+  const frames = [];
+  for (let i = 0; i < latestEight.length; i++) {
+    const entry = latestEight[i];
+
     try {
-      const imageUrl = await fetchAsDataUrl(url);
-
-      return {
-        label: formatLabelSv(date),
+      const imageUrl = await fetchAsDataUrl(entry.link);
+      frames.push({
+        label: buildLabelFromEntry(entry, i),
         imageUrl,
-        timestamp: date.toISOString()
-      };
+        timestamp:
+          entry.updated ||
+          entry.timestamp ||
+          entry.validTime ||
+          entry.date ||
+          null
+      });
     } catch {
-      // testa nästa kandidat-url
+      // hoppa över trasig frame
     }
   }
 
-  return null;
+  return frames;
 }
 
 export default async function handler(req, res) {
   try {
-    const now = new Date();
-    const latestRounded = floorToFiveMinutes(now);
+    let frames = [];
+    let debugSource = "temporal_extent";
+    let usedFallback = false;
 
-    const frames = [];
-    const wantedFrames = 8;
-
-    for (let i = wantedFrames - 1; i >= 0; i--) {
-      const candidateTime = new Date(latestRounded.getTime() - i * 5 * 60 * 1000);
-      const frame = await fetchFrameForTime(candidateTime);
-
-      if (frame) {
-        frames.push(frame);
-      }
+    try {
+      frames = await fetchFramesFromTemporalExtent();
+    } catch (error) {
+      debugSource = `temporal_extent_failed: ${error?.message || "unknown"}`;
+      frames = [];
     }
 
-       const usedFallback = frames.length === 0;
-
-    if (usedFallback) {
+    if (!frames.length) {
+      usedFallback = true;
+      const now = new Date();
       const latestImageUrl = await fetchAsDataUrl(SMHI_LATEST_RADAR);
-      frames.push({
-        label: formatLabelSv(now),
-        imageUrl: latestImageUrl,
-        timestamp: now.toISOString()
-      });
+
+      frames = [
+        {
+          label: formatLabelSv(now),
+          imageUrl: latestImageUrl,
+          timestamp: now.toISOString()
+        }
+      ];
     }
 
     res.setHeader("Cache-Control", "no-store");
@@ -135,7 +203,8 @@ export default async function handler(req, res) {
       debug: {
         frameCount: frames.length,
         usedFallback,
-        requestedFrames: wantedFrames
+        source: debugSource,
+        temporalExtentUrl: SMHI_TEMPORAL_EXTENT_JSON
       }
     });
   } catch (error) {
