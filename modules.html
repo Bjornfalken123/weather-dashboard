@@ -2529,36 +2529,67 @@
   let radarSelectionMarker = null;
   let radarSelectionPoint = null;
 
-  function setRadarSelectionMarker(lat, lon) {
-    radarSelectionPoint = { lat, lon };
-    layerAreaLabel.textContent = `Punkt: ${formatCoord(lat)}, ${formatCoord(lon)}`;
+function setRadarSelectionMarker(lat, lon) {
+  radarSelectionPoint = { lat, lon };
+  layerAreaLabel.textContent = `Punkt: ${formatCoord(lat)}, ${formatCoord(lon)}`;
 
-    if (radarSelectionMarker) {
-      radarSelectionMarker.setLatLng([lat, lon]);
-      return;
-    }
-
-    radarSelectionMarker = L.marker([lat, lon]).addTo(layerMiniMap);
+  if (radarSelectionMarker) {
+    radarSelectionMarker.setLatLng([lat, lon]);
+    return;
   }
 
-  layerMiniMap.on("click", (event) => {
-    const lat = event.latlng.lat;
-    const lon = event.latlng.lng;
-    setRadarSelectionMarker(lat, lon);
+  radarSelectionMarker = L.marker([lat, lon]).addTo(layerMiniMap);
+}
 
-    if (activeLayer === "clouds" || activeLayer === "wind") {
-      loadPointLayerDataForActiveLayer().catch(console.error);
-    }
-  });
+layerMiniMap.on("click", (event) => {
+  const lat = event.latlng.lat;
+  const lon = event.latlng.lng;
 
-  function getLayerPoint() {
-    if (radarSelectionPoint) {
-      return {
-        lat: radarSelectionPoint.lat,
-        lon: radarSelectionPoint.lon,
-        label: `${formatCoord(radarSelectionPoint.lat)}, ${formatCoord(radarSelectionPoint.lon)}`
-      };
-    }
+  setRadarSelectionMarker(lat, lon);
+  layerMiniMap.setView([lat, lon], layerMiniMap.getZoom(), { animate: true });
+
+  if (activeLayer === "clouds" || activeLayer === "wind") {
+    loadPointLayerDataForActiveLayer().catch(console.error);
+    return;
+  }
+
+  if (activeLayer === "precipitation") {
+    loadSmhiRadarFrames().catch(console.error);
+  }
+  layerMiniMap.on("moveend zoomend", () => {
+  const center = layerMiniMap.getCenter();
+
+  if (radarSelectionMarker) {
+    radarSelectionMarker.setLatLng(center);
+  }
+
+  radarSelectionPoint = {
+    lat: center.lat,
+    lon: center.lng
+  };
+
+  layerAreaLabel.textContent = `Punkt: ${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
+
+  if (activeLayer === "clouds" || activeLayer === "wind") {
+    loadPointLayerDataForActiveLayer().catch(console.error);
+    return;
+  }
+
+  if (activeLayer === "precipitation") {
+    loadSmhiRadarFrames().catch(console.error);
+  }
+});
+});
+
+function getLayerPoint() {
+  const center = layerMiniMap.getCenter();
+
+  return {
+    lat: center.lat,
+    lon: center.lng,
+    label: `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`
+  };
+}
 
     const center = layerMiniMap.getCenter();
     return {
