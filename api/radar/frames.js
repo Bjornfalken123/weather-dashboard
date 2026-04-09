@@ -1,8 +1,10 @@
-const SMHI_RADAR_API =
+const SMHI_RADAR_DOWNLOAD_API =
   "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp";
 
-const SMHI_LATEST_RADAR = `${SMHI_RADAR_API}/latest.png`;
-const SMHI_TEMPORAL_EXTENT_JSON = `${SMHI_RADAR_API}/temporal_extent.json`;
+const SMHI_RADAR_METADATA_API =
+  "https://opendata.smhi.se/radar/api/version/latest/area/sweden/product/comp";
+
+const SMHI_LATEST_RADAR = `${SMHI_RADAR_DOWNLOAD_API}/latest.png`;
 
 function formatLabelSv(date) {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -116,10 +118,64 @@ async function fetchAsDataUrl(url) {
   return `data:${contentType};base64,${base64}`;
 }
 
-async function fetchFramesFromTemporalExtent() {
-  const extentJson = await fetchJson(SMHI_TEMPORAL_EXTENT_JSON);
+function normalizeDownloadUrl(url) {
+  if (!url || typeof url !== "string") return null;
 
-  const allEntries = dedupeEntries(collectPngEntries(extentJson));
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url.replace("https://opendata.smhi.se/radar", "https://opendata-download-radar.smhi.se");
+  }
+
+  if (url.startsWith("/")) {
+    return `https://opendata-download-radar.smhi.se${url}`;
+  }
+
+  return null;
+}
+
+function collectPngLinksFromMetadata(node, results = []) {
+  if (!node) return results;
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      collectPngLinksFromMetadata(item, results);
+    }
+    return results;
+  }
+
+  if (typeof node !== "object") return results;
+
+  const link = normalizeDownloadUrl(node.link || node.href || node.url || null);
+  const key = typeof node.key === "string" ? node.key : null;
+  const type = typeof node.type === "string" ? node.type : null;
+
+  const looksLikePng =
+    (link && link.toLowerCase().includes(".png")) ||
+    key === "png" ||
+    type.toLowerCase?.() === "image/png";
+
+  if (looksLikePng && link) {
+    results.push({
+      link,
+      updated: node.updated || null,
+      timestamp: node.timestamp || null,
+      validTime: node.validTime || null,
+      date: node.date || null
+    });
+  }
+
+  for (const value of Object.values(node)) {
+    if (value && typeof value === "object") {
+      collectPngLinksFromMetadata(value, results);
+    }
+  }
+
+  return results;
+}
+
+async function fetchFramesFromMetadata() {
+  const metadataJson = await fetchJson(SMHI_RADAR_METADATA_API);
+
+  const allEntries = dedupeEntries(collectPngLinksFromMetadata(metadataJson));
   if (!allEntries.length) {
     return [];
   }
@@ -170,14 +226,14 @@ async function fetchFramesFromTemporalExtent() {
 
 export default async function handler(req, res) {
   try {
-    let frames = [];
-    let debugSource = "temporal_extent";
+       let frames = [];
+    let debugSource = "metadata_api";
     let usedFallback = false;
 
     try {
-      frames = await fetchFramesFromTemporalExtent();
+      frames = await fetchFramesFromMetadata();
     } catch (error) {
-      debugSource = `temporal_extent_failed: ${error?.message || "unknown"}`;
+      debugSource = `metadata_api_failed: ${error?.message || "unknown"}`;
       frames = [];
     }
 
@@ -200,11 +256,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       source: "SMHI",
       frames,
-      debug: {
+            debug: {
         frameCount: frames.length,
         usedFallback,
         source: debugSource,
-        temporalExtentUrl: SMHI_TEMPORAL_EXTENT_JSON
+        metadataUrl: SMHI_RADAR_METADATA_API
       }
     });
   } catch (error) {
