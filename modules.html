@@ -2528,6 +2528,7 @@
   let layerPointIndex = 0;
   let radarSelectionMarker = null;
   let radarSelectionPoint = null;
+  let layerRefreshTimer = null;
 
   function setRadarSelectionMarker(lat, lon) {
     radarSelectionPoint = { lat, lon };
@@ -2540,15 +2541,57 @@
 
     radarSelectionMarker = L.marker([lat, lon]).addTo(layerMiniMap);
   }
+    function scheduleLayerRefreshFromCenter() {
+    if (layerRefreshTimer) {
+      clearTimeout(layerRefreshTimer);
+    }
+
+    layerRefreshTimer = setTimeout(() => {
+      const center = layerMiniMap.getCenter();
+
+      radarSelectionPoint = {
+        lat: center.lat,
+        lon: center.lng
+      };
+
+      if (radarSelectionMarker) {
+        radarSelectionMarker.setLatLng([center.lat, center.lng]);
+      }
+
+      layerAreaLabel.textContent = `Punkt: ${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
+
+      if (activeLayer === "clouds" || activeLayer === "wind") {
+        loadPointLayerDataForActiveLayer().catch(console.error);
+        return;
+      }
+
+      if (activeLayer === "precipitation") {
+        loadSmhiRadarFrames().catch(console.error);
+      }
+    }, 250);
+  }
 
   layerMiniMap.on("click", (event) => {
     const lat = event.latlng.lat;
     const lon = event.latlng.lng;
+
     setRadarSelectionMarker(lat, lon);
 
     if (activeLayer === "clouds" || activeLayer === "wind") {
       loadPointLayerDataForActiveLayer().catch(console.error);
+      return;
     }
+
+    if (activeLayer === "precipitation") {
+      loadSmhiRadarFrames().catch(console.error);
+    }
+  });
+    layerMiniMap.on("moveend", () => {
+    scheduleLayerRefreshFromCenter();
+  });
+
+  layerMiniMap.on("zoomend", () => {
+    scheduleLayerRefreshFromCenter();
   });
 
   function getLayerPoint() {
