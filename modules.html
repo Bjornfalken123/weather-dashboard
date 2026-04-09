@@ -2710,19 +2710,60 @@
     }
   }
 
+  function normalizeRadarFrames(rawFrames) {
+    if (!Array.isArray(rawFrames)) return [];
+
+    return rawFrames
+      .map((frame, index) => {
+        const imageUrl =
+          frame?.imageUrl ||
+          frame?.url ||
+          frame?.image ||
+          frame?.src ||
+          frame?.tileUrl ||
+          null;
+
+        const timeValue =
+          frame?.time ||
+          frame?.timestamp ||
+          frame?.validTime ||
+          frame?.date ||
+          frame?.created ||
+          null;
+
+        if (!imageUrl) return null;
+
+        return {
+          imageUrl,
+          time: timeValue,
+          label: formatShortLayerTime(timeValue) !== "--"
+            ? formatShortLayerTime(timeValue)
+            : `Bild ${index + 1}`
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const aTime = a.time ? new Date(a.time).getTime() : 0;
+        const bTime = b.time ? new Date(b.time).getTime() : 0;
+        return aTime - bTime;
+      });
+  }
+
   function updateRadarFrameFromIndex() {
     if (!radarFrameData.length) return;
-    const frame = radarFrameData[0];
+
+    radarFrameIndex = Math.max(0, Math.min(radarFrameIndex, radarFrameData.length - 1));
+    const frame = radarFrameData[radarFrameIndex];
     if (!frame) return;
 
     clearGraphicCanvas();
     showPrecipitationImage(frame.imageUrl);
 
-    layerSlider.value = "0";
+    layerSlider.value = String(radarFrameIndex);
     setText("layerTimestamp", frame.label || "--");
     setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
-    setText("layerStatus", "Senaste radarbild");
-    setText("legendPrecipText", "Senaste radarbild med färgkoder från SMHI.");
+    setText("layerStatus", radarFrameData.length > 1 ? `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}` : "Senaste radarbild");
+    setText("legendPrecipText", "Radarbild med färgkoder från SMHI.");
   }
 
   async function loadSmhiRadarFrames() {
@@ -2738,24 +2779,32 @@
         throw new Error(data?.message || "Kunde inte hämta radarbild");
       }
 
-      radarFrameData = Array.isArray(data?.frames) ? data.frames : [];
+      radarFrameData = normalizeRadarFrames(data?.frames);
+      radarFrameIndex = Math.max(0, radarFrameData.length - 1);
 
       if (!radarFrameData.length) {
         setText("layerStatus", "Ingen radarbild tillgänglig");
         setText("layerTimestamp", "--");
         setText("layerSelectedTime", "Vald tid: --");
+        layerSlider.min = "0";
+        layerSlider.max = "0";
+        layerSlider.value = "0";
+        layerRangeStart.textContent = "Nu";
+        layerRangeEnd.textContent = "Nu";
         return;
       }
 
       layerSlider.min = "0";
-      layerSlider.max = "0";
-      layerSlider.value = "0";
-      layerRangeStart.textContent = "Nu";
-      layerRangeEnd.textContent = "Nu";
+      layerSlider.max = String(Math.max(0, radarFrameData.length - 1));
+      layerSlider.value = String(radarFrameIndex);
+      layerRangeStart.textContent = radarFrameData[0]?.label || "Tidigare";
+      layerRangeEnd.textContent = radarFrameData[radarFrameData.length - 1]?.label || "Nu";
 
       updateRadarFrameFromIndex();
     } catch (error) {
       console.error(error);
+      radarFrameData = [];
+      radarFrameIndex = 0;
       setText("layerStatus", "Det gick inte att hämta radarbild");
       setText("layerTimestamp", "--");
       setText("layerSelectedTime", "Vald tid: --");
@@ -2891,7 +2940,26 @@
     stopLayerPlayback();
 
     if (activeLayer === "precipitation") {
-      setText("layerStatus", "Uppspelning för nederbörd aktiveras när radarhistorik läggs tillbaka");
+      if (!radarFrameData.length || radarFrameData.length < 2) {
+        setText("layerStatus", "För få radarsteg för uppspelning");
+        return;
+      }
+
+      if (layerPlayBtn) {
+        layerPlayBtn.textContent = "Pausa";
+      }
+
+      layerPlaybackTimer = setInterval(() => {
+        if (!radarFrameData.length) return;
+
+        radarFrameIndex += 1;
+        if (radarFrameIndex >= radarFrameData.length) {
+          radarFrameIndex = 0;
+        }
+
+        updateRadarFrameFromIndex();
+      }, 700);
+
       return;
     }
 
@@ -2920,6 +2988,7 @@
   if (layerSlider) {
     layerSlider.addEventListener("input", () => {
       if (activeLayer === "precipitation") {
+        radarFrameIndex = Number(layerSlider.value);
         updateRadarFrameFromIndex();
         return;
       }
@@ -2932,6 +3001,9 @@
   if (layerStepBackBtn) {
     layerStepBackBtn.addEventListener("click", () => {
       if (activeLayer === "precipitation") {
+        if (!radarFrameData.length) return;
+        radarFrameIndex = Math.max(0, radarFrameIndex - 1);
+        updateRadarFrameFromIndex();
         return;
       }
 
@@ -2943,6 +3015,9 @@
   if (layerStepForwardBtn) {
     layerStepForwardBtn.addEventListener("click", () => {
       if (activeLayer === "precipitation") {
+        if (!radarFrameData.length) return;
+        radarFrameIndex = Math.min(Math.max(0, radarFrameData.length - 1), radarFrameIndex + 1);
+        updateRadarFrameFromIndex();
         return;
       }
 
@@ -2967,6 +3042,8 @@
   window.addEventListener("resize", () => {
     if (activeLayer === "clouds" || activeLayer === "wind") {
       updatePointLayerViewFromIndex();
+    } else if (activeLayer === "precipitation") {
+      updateRadarFrameFromIndex();
     } else {
       clearGraphicCanvas();
     }
