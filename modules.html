@@ -2637,6 +2637,27 @@
       };
     }).filter(Boolean);
   }
+  function buildPrecipitationForecastData(timeseries) {
+  return timeseries.slice(0, 12).map((item, index) => {
+    const details = item?.data?.instant?.details || {};
+    const next1 = item?.data?.next_1_hours?.details || {};
+    const next6 = item?.data?.next_6_hours?.details || {};
+    const summary =
+      item?.data?.next_1_hours?.summary?.symbol_code ||
+      item?.data?.next_6_hours?.summary?.symbol_code ||
+      item?.data?.next_12_hours?.summary?.symbol_code ||
+      null;
+
+    return {
+      kind: "forecast",
+      label: index === 0 ? "Snart" : formatShortLayerTime(item?.time),
+      time: item?.time || null,
+      precipitation: next1.precipitation_amount ?? next6.precipitation_amount ?? 0,
+      symbol: summary,
+      airTemp: details.air_temperature ?? null
+    };
+  }).filter((item) => item.time);
+}
 
   function drawCloudField(cloudPercent) {
     clearGraphicCanvas();
@@ -2709,6 +2730,34 @@
       }
     }
   }
+  function drawPrecipitationForecastField(precipitationAmount) {
+  clearGraphicCanvas();
+
+  const ctx = layerGraphicCanvas.getContext("2d");
+  const w = layerVisualStage.clientWidth;
+  const h = layerVisualStage.clientHeight;
+  const value = Math.max(0, Number(precipitationAmount) || 0);
+  const intensity = Math.min(1, value / 6);
+
+  ctx.fillStyle = `rgba(80, 170, 255, ${0.05 + intensity * 0.18})`;
+  ctx.fillRect(0, 0, w, h);
+
+  const drops = Math.max(18, Math.round(18 + intensity * 110));
+  const len = 8 + intensity * 12;
+
+  ctx.strokeStyle = `rgba(170, 220, 255, ${0.18 + intensity * 0.35})`;
+  ctx.lineWidth = 1.2;
+
+  for (let i = 0; i < drops; i++) {
+    const x = ((i * 37) % (w + 30)) - 15;
+    const y = ((i * 53) % (h + 30)) - 15;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - 4, y + len);
+    ctx.stroke();
+  }
+}
 
   function normalizeRadarFrames(rawFrames) {
     if (!Array.isArray(rawFrames)) return [];
@@ -2756,62 +2805,107 @@
   const frame = radarFrameData[radarFrameIndex];
   if (!frame) return;
 
-  clearGraphicCanvas();
-  showPrecipitationImage(frame.imageUrl);
-
   layerSlider.value = String(radarFrameIndex);
   setText("layerTimestamp", frame.label || "--");
   setText("layerSelectedTime", `Vald tid: ${frame.label || "--"}`);
 
-  if (radarFrameData.length > 1) {
-    setText("layerStatus", `Radarbild ${radarFrameIndex + 1}/${radarFrameData.length}`);
-  } else {
-    setText("layerStatus", "Senaste radarbild");
+  if (frame.kind === "radar") {
+    clearGraphicCanvas();
+    showPrecipitationImage(frame.imageUrl);
+
+    setText("layerVisualTitle", "Radarbild");
+    setText("layerVisualDesc", "Aktuell observerad nederbörd från SMHI radar.");
+    setText("layerStatus", "Nuvarande nederbörd • radar");
+    setText("legendPrecipText", "Nu = radar. Framåt = prognos för vald punkt.");
+    return;
   }
 
-  setText("legendPrecipText", "Radarbild med färgkoder från SMHI.");
+  hidePrecipitationImage();
+  drawPrecipitationForecastField(frame.precipitation);
+
+  setText("layerVisualTitle", "Nederbördsprognos");
+  setText(
+    "layerVisualDesc",
+    `${weatherLabelFromSymbol(frame.symbol)} • Nederbörd ${formatRain(frame.precipitation)} • Temp ${formatTemp(frame.airTemp)}.`
+  );
+  setText(
+    "layerStatus",
+    `Prognos framåt • ${formatRain(frame.precipitation)} • ${weatherLabelFromSymbol(frame.symbol)}`
+  );
+  setText("legendPrecipText", "Nu = radar. Framåt = prognos för vald punkt.");
 }
 
-  async function loadSmhiRadarFrames() {
-  setText("layerStatus", "Hämtar radarbild...");
+ async function loadSmhiRadarFrames() {
+  setText("layerStatus", "Hämtar nederbörd nu och framåt...");
   clearGraphicCanvas();
   hidePrecipitationImage();
 
   try {
-    const res = await fetch("/api/radar/frames");
-    const data = await res.json();
+    const point = getLayerPoint();
+    layerAreaLabel.textContent = `Punkt: ${point.label}`;
 
-    if (!res.ok) {
-      throw new Error(data?.message || "Kunde inte hämta radarbild");
+    const [radarRes, weatherRes] = await Promise.all([
+      fetch("/api/radar/frames"),
+      fetch(`/api/weather?lat=${point.lat}&lon=${point.lon}`)
+    ]);
+
+    const radarData = await radarRes.json();
+    const weatherData = await weatherRes.json();
+
+    if (!radarRes.ok) {
+      throw new Error(radarData?.message || "Kunde inte hämta radarbild");
     }
 
-    radarFrameData = Array.isArray(data?.frames) ? data.frames : [];
-    radarFrameIndex = Math.max(0, radarFrameData.length - 1);
+    if (!weatherRes.ok) {
+      throw new Error(weatherData?.message || "Kunde inte hämta nederbördsprognos");
+    }
+
+    const latestRadarFrame =
+      Array.isArray(radarData?.frames) && radarData.frames.length
+        ? radarData.frames[0]
+        : null;
+
+    const timeseries = weatherData?.properties?.timeseries || [];
+    const forecastFrames = buildPrecipitationForecastData(timeseries);
+
+    radarFrameData = [];
+
+    if (latestRadarFrame?.imageUrl) {
+      radarFrameData.push({
+        kind: "radar",
+        label: latestRadarFrame.label || "Nu",
+        imageUrl: latestRadarFrame.imageUrl,
+        timestamp: latestRadarFrame.timestamp || null
+      });
+    }
+
+    radarFrameData.push(...forecastFrames);
+    radarFrameIndex = 0;
 
     if (!radarFrameData.length) {
-      setText("layerStatus", "Ingen radarbild tillgänglig");
+      setText("layerStatus", "Ingen nederbördsdata tillgänglig");
       setText("layerTimestamp", "--");
       setText("layerSelectedTime", "Vald tid: --");
       layerSlider.min = "0";
       layerSlider.max = "0";
       layerSlider.value = "0";
       layerRangeStart.textContent = "Nu";
-      layerRangeEnd.textContent = "Nu";
+      layerRangeEnd.textContent = "Senare";
       return;
     }
 
     layerSlider.min = "0";
     layerSlider.max = String(Math.max(0, radarFrameData.length - 1));
-    layerSlider.value = String(radarFrameIndex);
+    layerSlider.value = "0";
     layerRangeStart.textContent = radarFrameData[0]?.label || "Nu";
-    layerRangeEnd.textContent = radarFrameData[radarFrameData.length - 1]?.label || "Nu";
+    layerRangeEnd.textContent = radarFrameData[radarFrameData.length - 1]?.label || "Senare";
 
     updateRadarFrameFromIndex();
   } catch (error) {
     console.error(error);
     radarFrameData = [];
     radarFrameIndex = 0;
-    setText("layerStatus", "Det gick inte att hämta radarbild");
+    setText("layerStatus", "Det gick inte att hämta nederbördsdata");
     setText("layerTimestamp", "--");
     setText("layerSelectedTime", "Vald tid: --");
     hidePrecipitationImage();
@@ -2945,9 +3039,9 @@
  function startLayerPlayback() {
   stopLayerPlayback();
 
-  if (activeLayer === "precipitation") {
+   if (activeLayer === "precipitation") {
     if (!radarFrameData.length || radarFrameData.length < 2) {
-      setText("layerStatus", "Endast en radarbild tillgänglig");
+      setText("layerStatus", "Ingen prognos framåt tillgänglig");
       return;
     }
 
@@ -2960,11 +3054,13 @@
 
       radarFrameIndex += 1;
       if (radarFrameIndex >= radarFrameData.length) {
-        radarFrameIndex = 0;
+        radarFrameIndex = radarFrameData.length - 1;
+        stopLayerPlayback();
+        return;
       }
 
       updateRadarFrameFromIndex();
-    }, 700);
+    }, 1000);
 
     return;
   }
