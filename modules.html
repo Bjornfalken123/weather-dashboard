@@ -2529,61 +2529,44 @@
   let radarSelectionMarker = null;
   let radarSelectionPoint = null;
 
-function setRadarSelectionMarker(lat, lon) {
-  radarSelectionPoint = { lat, lon };
-  layerAreaLabel.textContent = `Punkt: ${formatCoord(lat)}, ${formatCoord(lon)}`;
+  function setRadarSelectionMarker(lat, lon) {
+    radarSelectionPoint = { lat, lon };
+    layerAreaLabel.textContent = `Punkt: ${formatCoord(lat)}, ${formatCoord(lon)}`;
 
-  if (radarSelectionMarker) {
-    radarSelectionMarker.setLatLng([lat, lon]);
-    return;
+    if (radarSelectionMarker) {
+      radarSelectionMarker.setLatLng([lat, lon]);
+      return;
+    }
+
+    radarSelectionMarker = L.marker([lat, lon]).addTo(layerMiniMap);
   }
 
-  radarSelectionMarker = L.marker([lat, lon]).addTo(layerMiniMap);
-}
+  layerMiniMap.on("click", (event) => {
+    const lat = event.latlng.lat;
+    const lon = event.latlng.lng;
+    setRadarSelectionMarker(lat, lon);
 
-layerMiniMap.on("click", (event) => {
-  const lat = event.latlng.lat;
-  const lon = event.latlng.lng;
-  setRadarSelectionMarker(lat, lon);
+    if (activeLayer === "clouds" || activeLayer === "wind") {
+      loadPointLayerDataForActiveLayer().catch(console.error);
+    }
+  });
 
-  if (activeLayer === "clouds" || activeLayer === "wind") {
-    loadPointLayerDataForActiveLayer().catch(console.error);
-  }
+  function getLayerPoint() {
+    if (radarSelectionPoint) {
+      return {
+        lat: radarSelectionPoint.lat,
+        lon: radarSelectionPoint.lon,
+        label: `${formatCoord(radarSelectionPoint.lat)}, ${formatCoord(radarSelectionPoint.lon)}`
+      };
+    }
 
-  if (activeLayer === "precipitation") {
-    loadSmhiRadarFrames().catch(console.error);
-  }
-});
-
-layerMiniMap.on("moveend zoomend", () => {
-  const center = layerMiniMap.getCenter();
-
-  if (radarSelectionMarker) {
-    radarSelectionMarker.setLatLng(center);
-  }
-
-  radarSelectionPoint = {
-    lat: center.lat,
-    lon: center.lng
-  };
-
-
-function getLayerPoint() {
-  if (radarSelectionPoint) {
+    const center = layerMiniMap.getCenter();
     return {
-      lat: radarSelectionPoint.lat,
-      lon: radarSelectionPoint.lon,
-      label: `${formatCoord(radarSelectionPoint.lat)}, ${formatCoord(radarSelectionPoint.lon)}`
+      lat: center.lat,
+      lon: center.lng,
+      label: `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`
     };
   }
-
-  const center = layerMiniMap.getCenter();
-  return {
-    lat: center.lat,
-    lon: center.lng,
-    label: `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`
-  };
-}
 
   function resizeGraphicCanvas() {
     const rect = layerVisualStage.getBoundingClientRect();
