@@ -116,7 +116,9 @@ export default async function handler(req, res) {
       }
     }
 
-    if (!frames.length) {
+       const usedFallback = frames.length === 0;
+
+    if (usedFallback) {
       const latestImageUrl = await fetchAsDataUrl(SMHI_LATEST_RADAR);
       frames.push({
         label: formatLabelSv(now),
@@ -129,7 +131,12 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       source: "SMHI",
-      frames
+      frames,
+      debug: {
+        frameCount: frames.length,
+        usedFallback,
+        requestedFrames: wantedFrames
+      }
     });
   } catch (error) {
     console.error("radar/frames error:", error);
