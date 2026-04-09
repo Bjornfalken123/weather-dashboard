@@ -151,14 +151,14 @@ function collectPngLinksFromMetadata(node, results = []) {
 
   if (typeof node !== "object") return results;
 
-  const link = normalizeDownloadUrl(node.link || node.href || node.url || null);
+   const link = normalizeDownloadUrl(node.link || node.href || node.url || null);
   const key = typeof node.key === "string" ? node.key : null;
-  const type = typeof node.type === "string" ? node.type : null;
+  const type = typeof node.type === "string" ? node.type : "";
 
   const looksLikePng =
     (link && link.toLowerCase().includes(".png")) ||
     key === "png" ||
-    type.toLowerCase?.() === "image/png";
+    type.toLowerCase() === "image/png";
 
   if (looksLikePng && link) {
     results.push({
