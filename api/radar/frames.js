@@ -2,7 +2,7 @@ const SMHI_RADAR_DOWNLOAD_API =
   "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp";
 
 const SMHI_RADAR_METADATA_API =
-  "https://opendata.smhi.se/radar/api/version/latest/area/sweden/product/comp";
+  "https://opendata-download-radar.smhi.se/api/version/latest/area/sweden/product/comp";
 
 const SMHI_LATEST_RADAR = `${SMHI_RADAR_DOWNLOAD_API}/latest.png`;
 
@@ -89,7 +89,8 @@ function dedupeEntries(entries) {
 async function fetchJson(url) {
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "KustvaderRadar/1.0"
+      "User-Agent": "KustvaderRadar/1.0",
+      "Accept": "application/json"
     }
   });
 
@@ -97,7 +98,13 @@ async function fetchJson(url) {
     throw new Error(`SMHI json returned ${res.status}`);
   }
 
-  return res.json();
+  const text = await res.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Expected JSON but got: ${text.slice(0, 120)}`);
+  }
 }
 
 async function fetchAsDataUrl(url) {
