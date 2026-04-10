@@ -1153,10 +1153,14 @@
   <div class="map-instance-wrap">
     <div id="maptilerMap"></div>
 
-    <div id="mapOverlayPanel">
-      <div id="overlayTitle">Välj punkt</div>
-      <div id="overlayContent">Klicka i kartan för väderdata</div>
-    </div>
+   <div id="mapOverlayPanel">
+  <div id="overlayTitle">Välj punkt</div>
+  <div id="overlayContent">Klicka i kartan för väderdata</div>
+
+  <div style="margin-top:10px;">
+    <button id="toggleWindLayerBtn">Vind: På</button>
+  </div>
+</div>
 
     <div id="map" style="display:none;"></div>
   </div>
@@ -1499,6 +1503,7 @@
   let maptilerMap = null;
   let maptilerWeatherMarker = null;
   let maptilerWindLayer = null;
+  let windLayerVisible = true;
 
   if (window.maptilersdk) {
     maptilersdk.config.apiKey = MAPTILER_API_KEY;
@@ -1524,6 +1529,24 @@
             density: 200,
             color: [255, 255, 255, 35],
             fastColor: [255, 255, 255, 120]
+            const toggleBtn = document.getElementById("toggleWindLayerBtn");
+
+if (toggleBtn) {
+  toggleBtn.addEventListener("click", () => {
+    if (!maptilerWindLayer) return;
+
+    if (windLayerVisible) {
+      maptilerMap.removeLayer(maptilerWindLayer);
+      toggleBtn.textContent = "Vind: Av";
+    } else {
+      maptilerMap.addLayer(maptilerWindLayer);
+      toggleBtn.textContent = "Vind: På";
+    }
+
+    windLayerVisible = !windLayerVisible;
+  });
+}
+        
           });
 
           maptilerMap.addLayer(maptilerWindLayer);
