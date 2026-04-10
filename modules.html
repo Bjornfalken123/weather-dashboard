@@ -2434,94 +2434,94 @@ async function ensureWaveStationsLoaded() {
     }
   }
 
-   async function selectWaveStation(station) {
-    saveSelection("wave", {
-      id: station.id,
-      name: station.name,
-      lat: station.latitude,
-      lon: station.longitude
-    });
+ async function selectWaveStation(station) {
+  saveSelection("wave", {
+    id: station.id,
+    name: station.name,
+    lat: station.latitude,
+    lon: station.longitude
+  });
 
-    setWaveSelectionMarker(station.latitude, station.longitude, station.name);
+  setWaveSelectionMarker(station.latitude, station.longitude, station.name);
+
+  updateMapOverlay(
+    station.name || "Boj / våg",
+    `Laddar havsdata...<br>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}`
+  );
+
+  try {
+    const { waveResult, waterResult, waterTempResult, hasAnySeaData } = await evaluateWaveStation(station, false);
+
+    const waveValue = waveResult
+      ? formatObservedValue(formatWave(waveResult.latest.value), waveResult.latest)
+      : "--";
+
+    const waveObsValue = waveResult
+      ? `${formatObsTime(waveResult.latest.date || waveResult.latest.time)} (${formatWaveSourceLabel(waveResult)})`
+      : "--";
+
+    const waterLevelValue = waterResult
+      ? formatObservedValue(formatWaterLevel(waterResult.latest.value), waterResult.latest)
+      : "--";
+
+    const waterStationValue = waterResult
+      ? formatWaterStationLabel(waterResult)
+      : "Ingen station hittades";
+
+    const waterTempValue = waterTempResult
+      ? formatObservedValue(formatTemp(waterTempResult.latest.value), waterTempResult.latest)
+      : "--";
+
+    setText("waveHeightValue", waveValue);
+    setText("waveObsTimeValue", waveObsValue);
+    setText("waterLevelValue", waterLevelValue);
+    setText("waterLevelStationValue", waterStationValue);
+    setText("waterTempValue", waterTempValue);
+
+    const usesViva =
+      waveResult?.source === "VIVA" ||
+      waterResult?.source === "VIVA" ||
+      waterTempResult?.source === "VIVA";
+
+    const usesSmhi =
+      Boolean(waveResult?.source !== "VIVA" && waveResult) ||
+      Boolean(waterResult?.source !== "VIVA" && waterResult);
+
+    let statusText = "Ingen havsdata tillgänglig";
+    if (hasAnySeaData) {
+      if (usesViva && usesSmhi) statusText = "Havsdata hämtad • VIVA + SMHI";
+      else if (usesViva) statusText = "Havsdata hämtad • VIVA";
+      else statusText = "Havsdata hämtad • SMHI";
+    }
+
+    setText("waveStatusValue", statusText);
 
     updateMapOverlay(
       station.name || "Boj / våg",
-      `Laddar havsdata...<br>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}`
+      `
+        <div>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}</div>
+        <div>Våghöjd: ${waveValue}</div>
+        <div>Vattenstånd: ${waterLevelValue}</div>
+        <div>Vattentemp: ${waterTempValue}</div>
+        <div>Status: ${statusText}</div>
+      `
     );
 
-    try {
-      const { waveResult, waterResult, waterTempResult, hasAnySeaData } = await evaluateWaveStation(station, false);
-
-      const waveValue = waveResult
-        ? formatObservedValue(formatWave(waveResult.latest.value), waveResult.latest)
-        : "--";
-
-      const waveObsValue = waveResult
-        ? `${formatObsTime(waveResult.latest.date || waveResult.latest.time)} (${formatWaveSourceLabel(waveResult)})`
-        : "--";
-
-      const waterLevelValue = waterResult
-        ? formatObservedValue(formatWaterLevel(waterResult.latest.value), waterResult.latest)
-        : "--";
-
-      const waterStationValue = waterResult
-        ? formatWaterStationLabel(waterResult)
-        : "Ingen station hittades";
-
-      const waterTempValue = waterTempResult
-        ? formatObservedValue(formatTemp(waterTempResult.latest.value), waterTempResult.latest)
-        : "--";
-
-      setText("waveHeightValue", waveValue);
-      setText("waveObsTimeValue", waveObsValue);
-      setText("waterLevelValue", waterLevelValue);
-      setText("waterLevelStationValue", waterStationValue);
-      setText("waterTempValue", waterTempValue);
-
-      const usesViva =
-        waveResult?.source === "VIVA" ||
-        waterResult?.source === "VIVA" ||
-        waterTempResult?.source === "VIVA";
-
-      const usesSmhi =
-        Boolean(waveResult?.source !== "VIVA" && waveResult) ||
-        Boolean(waterResult?.source !== "VIVA" && waterResult);
-
-      let statusText = "Ingen havsdata tillgänglig";
-      if (hasAnySeaData) {
-        if (usesViva && usesSmhi) statusText = "Havsdata hämtad • VIVA + SMHI";
-        else if (usesViva) statusText = "Havsdata hämtad • VIVA";
-        else statusText = "Havsdata hämtad • SMHI";
-      }
-
-      setText("waveStatusValue", statusText);
-
-      updateMapOverlay(
-        station.name || "Boj / våg",
-        `
-          <div>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}</div>
-          <div>Våghöjd: ${waveValue}</div>
-          <div>Vattenstånd: ${waterLevelValue}</div>
-          <div>Vattentemp: ${waterTempValue}</div>
-          <div>Status: ${statusText}</div>
-        `
-      );
-
-      setWaveMarkerColorById(
-        station.id,
-        hasAnySeaData ? "active" : "inactive",
-        `${station.name} • ${hasAnySeaData ? "data tillgänglig" : "ingen data tillgänglig"}`
-      );
-    } catch (error) {
-      console.error(error);
-      setText("waveStatusValue", "Det gick inte att hämta havsdata");
-      updateMapOverlay(
-        station.name || "Boj / våg",
-        "Det gick inte att hämta havsdata för vald station."
-      );
-      setWaveMarkerColorById(station.id, "inactive", `${station.name} • kunde inte hämtas`);
-    }
+    setWaveMarkerColorById(
+      station.id,
+      hasAnySeaData ? "active" : "inactive",
+      `${station.name} • ${hasAnySeaData ? "data tillgänglig" : "ingen data tillgänglig"}`
+    );
+  } catch (error) {
+    console.error(error);
+    setText("waveStatusValue", "Det gick inte att hämta havsdata");
+    updateMapOverlay(
+      station.name || "Boj / våg",
+      "Det gick inte att hämta havsdata för vald station."
+    );
+    setWaveMarkerColorById(station.id, "inactive", `${station.name} • kunde inte hämtas`);
   }
+}
 
   async function startWaveBackgroundCheck() {
     if (waveBackgroundCheckStarted) return;
