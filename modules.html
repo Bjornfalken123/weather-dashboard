@@ -1067,20 +1067,34 @@
       .layer-control-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; }
       .layer-control-btn { width: 100%; }
     }
-    #mapOverlayPanel {
+ #mapOverlayPanel {
   position: absolute;
   top: 16px;
   left: 16px;
   z-index: 1000;
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(7, 14, 26, 0.75);
-  backdrop-filter: blur(10px);
+  background: rgba(7, 14, 26, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--text);
   font-size: 13px;
-  max-width: 220px;
+  min-width: 220px;
+  max-width: 280px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+#overlayTitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+#overlayContent {
+  color: var(--muted-soft);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 #overlayTitle {
@@ -1992,7 +2006,7 @@
     if (tooltipText) marker.bindTooltip(tooltipText, { direction: "top" });
   }
 
-  function updateModeUI() {
+   function updateModeUI() {
     document.querySelectorAll(".mode-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.mode === activeMode);
     });
@@ -2001,12 +2015,14 @@
       setText("activeModeText", "Väder");
       setText("pageStatus", "Vädermodul aktiv");
       setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+      updateMapOverlay("Väderpunkt", "Klicka i kartan för att visa aktuell väderdata för en vald punkt.");
       if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
       if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
     } else if (activeMode === "wave") {
       setText("activeModeText", "Boj / våg");
       setText("pageStatus", "Bojmodul aktiv");
       setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
+      updateMapOverlay("Boj / våg", "Välj en boj eller vågstation för att visa havsdata i nästa steg.");
       ensureWaveStationsLoaded();
       if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
       if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
@@ -2014,6 +2030,7 @@
       setText("activeModeText", "Fyr / station");
       setText("pageStatus", "Fyrmodul aktiv");
       setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
+      updateMapOverlay("Fyr / station", "Välj en station för att visa observationsdata i nästa steg.");
       ensureLighthouseStationsLoaded();
       if (!map.hasLayer(lighthouseStationsLayer)) map.addLayer(lighthouseStationsLayer);
       if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
