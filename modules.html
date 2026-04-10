@@ -2182,7 +2182,7 @@ async function ensureWaveStationsLoaded() {
         waveMarkerMap.set(station.id, leafletMarker);
         waveStationsLayer.addLayer(leafletMarker);
 
-        if (maptilerMap && window.maptilersdk) {
+            if (maptilerMap && window.maptilersdk) {
           const el = document.createElement("div");
           el.style.width = "10px";
           el.style.height = "10px";
@@ -2191,6 +2191,7 @@ async function ensureWaveStationsLoaded() {
           el.style.border = "2px solid rgba(255,255,255,0.75)";
           el.style.boxShadow = "0 0 0 4px rgba(105,183,255,0.12)";
           el.style.cursor = "pointer";
+          el.style.display = activeMode === "wave" ? "block" : "none";
           el.title = `${station.name} • ännu inte kontrollerad`;
 
           el.addEventListener("click", (event) => {
