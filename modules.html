@@ -1454,8 +1454,9 @@
     attribution: "&copy; OpenStreetMap"
   }).addTo(map);
 
-  const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
+   const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
   let maptilerMap = null;
+  let maptilerWeatherMarker = null;
 
   if (window.maptilersdk) {
     maptilersdk.config.apiKey = MAPTILER_API_KEY;
@@ -2575,10 +2576,23 @@
     });
   }
 
-   function handlePrimaryMapClick(lat, lon) {
+  function setMaptilerWeatherMarker(lat, lon) {
+    if (!maptilerMap || !window.maptilersdk) return;
+
+    if (maptilerWeatherMarker) {
+      maptilerWeatherMarker.remove();
+    }
+
+    maptilerWeatherMarker = new maptilersdk.Marker()
+      .setLngLat([lon, lat])
+      .addTo(maptilerMap);
+  }
+
+  function handlePrimaryMapClick(lat, lon) {
     if (activeMode === "weather") {
       saveSelection("weather", { lat, lon });
       setWeatherMarker(lat, lon);
+      setMaptilerWeatherMarker(lat, lon);
       loadWeatherForPoint(lat, lon);
     }
   }
@@ -2589,6 +2603,8 @@
 
   if (maptilerMap) {
     maptilerMap.on("click", (event) => {
+      console.log("MapTiler click:", event);
+
       const lngLat = event.lngLat;
       if (!lngLat) return;
 
