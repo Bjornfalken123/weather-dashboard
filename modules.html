@@ -2683,42 +2683,41 @@ async function ensureWaveStationsLoaded() {
   );
 
   try {
-    const obs = await fetchLighthouseObservations(station.id);
+    const { obs, hasAnyData } = await fetchLighthouseObservations(station.id);
 
-    if (!obs) throw new Error("Ingen data");
+    const tempValue = formatObservedValue(formatTemp(obs.temp?.value), obs.temp);
+    const windValue = formatObservedValue(formatWind(obs.windSpeed?.value), obs.windSpeed);
+    const dirValue = formatObservedValue(formatWindDirection(obs.windDir?.value), obs.windDir);
+    const gustValue = formatObservedValue(formatWind(obs.gust?.value), obs.gust);
+    const pressureValue = formatObservedValue(formatPressure(obs.pressure?.value), obs.pressure);
 
-    const temp = formatTemp(obs.air_temperature);
-    const wind = formatWind(obs.wind_speed);
-    const gust = formatWind(obs.wind_gust);
-    const dir = formatWindDirection(obs.wind_from_direction);
-    const pressure = formatPressure(obs.air_pressure_at_sea_level);
-
-    setText("lighthouseTempValue", temp);
-    setText("lighthouseWindValue", wind);
-    setText("lighthouseGustValue", gust);
-    setText("lighthouseDirectionValue", dir);
-    setText("lighthousePressureValue", pressure);
+    setText("lhTempValue", tempValue);
+    setText("lhWindValue", windValue);
+    setText("lhWindDirValue", dirValue);
+    setText("lhGustValue", gustValue);
+    setText("lhPressureValue", pressureValue);
+    setText("lighthouseStatusValue", hasAnyData ? "Stationsdata hämtad" : "Ingen aktuell data tillgänglig");
 
     updateMapOverlay(
-      station.name,
+      station.name || "Fyr / station",
       `
         <div>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}</div>
-        <div>Temp: ${temp}</div>
-        <div>Vind: ${wind}</div>
-        <div>Byar: ${gust}</div>
-        <div>Riktning: ${dir}</div>
-        <div>Tryck: ${pressure}</div>
+        <div>Temp: ${tempValue}</div>
+        <div>Vind: ${windValue}</div>
+        <div>Riktning: ${dirValue}</div>
+        <div>Byar: ${gustValue}</div>
+        <div>Tryck: ${pressureValue}</div>
       `
     );
 
     setLighthouseMarkerColorById(
       station.id,
-      "active",
-      `${station.name} • data tillgänglig`
+      hasAnyData ? "active" : "inactive",
+      `${station.name} • ${hasAnyData ? "data tillgänglig" : "ingen data tillgänglig"}`
     );
   } catch (error) {
     console.error(error);
-    setText("lighthouseStatusValue", "Det gick inte att hämta data");
+    setText("lighthouseStatusValue", "Det gick inte att hämta stationsdata");
 
     updateMapOverlay(
       station.name || "Fyr / station",
@@ -2728,7 +2727,7 @@ async function ensureWaveStationsLoaded() {
     setLighthouseMarkerColorById(
       station.id,
       "inactive",
-      `${station.name} • ingen data`
+      `${station.name} • kunde inte hämtas`
     );
   }
 }
