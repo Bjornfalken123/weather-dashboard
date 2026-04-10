@@ -1153,12 +1153,13 @@
   <div class="map-instance-wrap">
     <div id="maptilerMap"></div>
 
-   <div id="mapOverlayPanel">
+  <div id="mapOverlayPanel">
   <div id="overlayTitle">Välj punkt</div>
   <div id="overlayContent">Klicka i kartan för väderdata</div>
 
-  <div style="margin-top:10px;">
+  <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
     <button id="toggleWindLayerBtn">Vind: På</button>
+    <button id="togglePrecipLayerBtn">Nederbörd: Av</button>
   </div>
 </div>
 
@@ -1500,11 +1501,12 @@
   }).addTo(map);
 
    const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
-  let maptilerMap = null;
-  let maptilerWeatherMarker = null;
-  let maptilerWindLayer = null;
-  let windLayerVisible = true;
-
+let maptilerMap = null;
+let maptilerWeatherMarker = null;
+let maptilerWindLayer = null;
+let maptilerPrecipitationLayer = null;
+let windLayerVisible = true;
+let precipitationLayerVisible = false;
   if (window.maptilersdk) {
     maptilersdk.config.apiKey = MAPTILER_API_KEY;
 
@@ -1517,7 +1519,7 @@
 
     maptilerMap.addControl(new maptilersdk.NavigationControl(), "top-right");
 
-   maptilerMap.on("load", () => {
+maptilerMap.on("load", () => {
   if (window.maptilerweather) {
     try {
       maptilerWindLayer = new maptilerweather.WindLayer({
@@ -1531,27 +1533,50 @@
         fastColor: [255, 255, 255, 120]
       });
 
+      maptilerPrecipitationLayer = new maptilerweather.PrecipitationLayer({
+        id: "main-precipitation-layer",
+        opacity: 0.8,
+        smooth: true
+      });
+
       maptilerMap.addLayer(maptilerWindLayer);
 
-      const toggleBtn = document.getElementById("toggleWindLayerBtn");
+      const toggleWindBtn = document.getElementById("toggleWindLayerBtn");
+      const togglePrecipBtn = document.getElementById("togglePrecipLayerBtn");
 
-      if (toggleBtn) {
-        toggleBtn.addEventListener("click", () => {
+      if (toggleWindBtn) {
+        toggleWindBtn.addEventListener("click", () => {
           if (!maptilerWindLayer) return;
 
           if (windLayerVisible) {
             maptilerMap.removeLayer("main-wind-layer");
-            toggleBtn.textContent = "Vind: Av";
+            toggleWindBtn.textContent = "Vind: Av";
           } else {
             maptilerMap.addLayer(maptilerWindLayer);
-            toggleBtn.textContent = "Vind: På";
+            toggleWindBtn.textContent = "Vind: På";
           }
 
           windLayerVisible = !windLayerVisible;
         });
       }
+
+      if (togglePrecipBtn) {
+        togglePrecipBtn.addEventListener("click", () => {
+          if (!maptilerPrecipitationLayer) return;
+
+          if (precipitationLayerVisible) {
+            maptilerMap.removeLayer("main-precipitation-layer");
+            togglePrecipBtn.textContent = "Nederbörd: Av";
+          } else {
+            maptilerMap.addLayer(maptilerPrecipitationLayer, "Water");
+            togglePrecipBtn.textContent = "Nederbörd: På";
+          }
+
+          precipitationLayerVisible = !precipitationLayerVisible;
+        });
+      }
     } catch (error) {
-      console.error("Det gick inte att skapa vindlager.", error);
+      console.error("Det gick inte att skapa väderlager.", error);
     }
   } else {
     console.error("MapTiler Weather kunde inte laddas.");
