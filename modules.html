@@ -1571,10 +1571,10 @@
   let waveBackgroundCheckStarted = false;
   let lighthouseBackgroundCheckStarted = false;
 
-    const waveMarkerMap = new Map();
-  const lighthouseMarkerMap = new Map();
-  const waveMaptilerMarkerMap = new Map();
-  const lighthouseMaptilerMarkerMap = new Map();
+  const waveMarkerMap = new Map();
+const lighthouseMarkerMap = new Map();
+const waveMaptilerMarkerMap = new Map();
+const lighthouseMaptilerMarkerMap = new Map();
 
   const waveStationsCache = new Map();
   const lighthouseStationsCache = new Map();
@@ -2559,55 +2559,82 @@ async function ensureWaveStationsLoaded() {
   }
 
   async function ensureLighthouseStationsLoaded() {
-    if (lighthouseStationsLoaded) return;
-    if (lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
+  if (lighthouseStationsLoaded) return;
+  if (lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
 
-    lighthouseStationsLoadingPromise = (async () => {
-      try {
-        const res = await fetch("/api/lighthouse-stations");
-        const data = await res.json();
-        const stations = Array.isArray(data?.stations) ? data.stations : [];
+  lighthouseStationsLoadingPromise = (async () => {
+    try {
+      const res = await fetch("/api/lighthouse-stations");
+      const data = await res.json();
+      const stations = Array.isArray(data?.stations) ? data.stations : [];
 
-        if (!stations.length) {
-          if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Inga stationer hittades");
-          return;
-        }
+      if (!stations.length) {
+        if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Inga stationer hittades");
+        return;
+      }
 
-        stations.forEach((station) => {
-          lighthouseStationsCache.set(station.id, station);
+      stations.forEach((station) => {
+        lighthouseStationsCache.set(station.id, station);
 
-          const marker = L.circleMarker([station.latitude, station.longitude], {
-            radius: 5,
-            weight: 2,
-            color: "#69b7ff",
-            fillColor: "#69b7ff",
-            fillOpacity: 0.8
-          });
+        const leafletMarker = L.circleMarker([station.latitude, station.longitude], {
+          radius: 5,
+          weight: 2,
+          color: "#9bffb0",
+          fillColor: "#9bffb0",
+          fillOpacity: 0.8
+        });
 
-          marker.bindTooltip(`${station.name} • ännu inte kontrollerad`, { direction: "top" });
+        leafletMarker.bindTooltip(`${station.name} • ännu inte kontrollerad`, { direction: "top" });
 
-          marker.on("click", (event) => {
-            L.DomEvent.stopPropagation(event);
+        leafletMarker.on("click", (event) => {
+          L.DomEvent.stopPropagation(event);
+          selectLighthouseStation(station);
+        });
+
+        lighthouseMarkerMap.set(station.id, leafletMarker);
+        lighthouseStationsLayer.addLayer(leafletMarker);
+
+        if (maptilerMap && window.maptilersdk) {
+          const el = document.createElement("div");
+          el.style.width = "10px";
+          el.style.height = "10px";
+          el.style.borderRadius = "999px";
+          el.style.background = "#9bffb0";
+          el.style.border = "2px solid rgba(255,255,255,0.75)";
+          el.style.boxShadow = "0 0 0 4px rgba(155,255,176,0.12)";
+          el.style.cursor = "pointer";
+          el.style.display = activeMode === "lighthouse" ? "block" : "none";
+          el.title = `${station.name} • ännu inte kontrollerad`;
+
+          el.addEventListener("click", (event) => {
+            event.stopPropagation();
             selectLighthouseStation(station);
           });
 
-          lighthouseMarkerMap.set(station.id, marker);
-          lighthouseStationsLayer.addLayer(marker);
-        });
+          const maptilerMarker = new maptilersdk.Marker({ element: el })
+            .setLngLat([station.longitude, station.latitude])
+            .addTo(maptilerMap);
 
-        lighthouseStationsLoaded = true;
-        if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Bakgrundskontrollerar stationer...");
-        startLighthouseBackgroundCheck();
-      } catch (error) {
-        console.error(error);
-        if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Det gick inte att hämta stationer");
-      } finally {
-        lighthouseStationsLoadingPromise = null;
-      }
-    })();
+          lighthouseMaptilerMarkerMap.set(station.id, {
+            marker: maptilerMarker,
+            element: el
+          });
+        }
+      });
 
-    return lighthouseStationsLoadingPromise;
-  }
+      lighthouseStationsLoaded = true;
+      if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Bakgrundskontrollerar stationer...");
+      startLighthouseBackgroundCheck();
+    } catch (error) {
+      console.error(error);
+      if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Det gick inte att hämta stationer");
+    } finally {
+      lighthouseStationsLoadingPromise = null;
+    }
+  })();
+
+  return lighthouseStationsLoadingPromise;
+}
 
   async function fetchLighthouseObservations(stationId) {
     if (lighthouseObservationCache.has(stationId)) return lighthouseObservationCache.get(stationId);
@@ -2640,38 +2667,71 @@ async function ensureWaveStationsLoaded() {
     }
   }
 
-  async function selectLighthouseStation(station) {
-    saveSelection("lighthouse", {
-      id: station.id,
-      name: station.name,
-      lat: station.latitude,
-      lon: station.longitude
-    });
+ async function selectLighthouseStation(station) {
+  saveSelection("lighthouse", {
+    id: station.id,
+    name: station.name,
+    lat: station.latitude,
+    lon: station.longitude
+  });
 
-    setLighthouseSelectionMarker(station.latitude, station.longitude, station.name);
+  setLighthouseSelectionMarker(station.latitude, station.longitude, station.name);
 
-    try {
-      const { obs, hasAnyData } = await fetchLighthouseObservations(station.id);
+  updateMapOverlay(
+    station.name || "Fyr / station",
+    `Laddar data...<br>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}`
+  );
 
-      setText("lhTempValue", formatObservedValue(formatTemp(obs.temp?.value), obs.temp));
-      setText("lhWindValue", formatObservedValue(formatWind(obs.windSpeed?.value), obs.windSpeed));
-      setText("lhWindDirValue", formatObservedValue(formatWindDirection(obs.windDir?.value), obs.windDir));
-      setText("lhGustValue", formatObservedValue(formatWind(obs.gust?.value), obs.gust));
-      setText("lhPressureValue", formatObservedValue(formatPressure(obs.pressure?.value), obs.pressure));
-      setText("lighthouseStatusValue", hasAnyData ? "Stationsdata hämtad" : "Ingen aktuell data tillgänglig");
+  try {
+    const obs = await fetchLighthouseObservations(station.id);
 
-      setLighthouseMarkerColorById(
-        station.id,
-        hasAnyData ? "active" : "inactive",
-        `${station.name} • ${hasAnyData ? "data tillgänglig" : "ingen data tillgänglig"}`
-      );
-    } catch (error) {
-      console.error(error);
-      setText("lighthouseStatusValue", "Det gick inte att hämta stationsdata");
-      setLighthouseMarkerColorById(station.id, "inactive", `${station.name} • kunde inte hämtas`);
-    }
+    if (!obs) throw new Error("Ingen data");
+
+    const temp = formatTemp(obs.air_temperature);
+    const wind = formatWind(obs.wind_speed);
+    const gust = formatWind(obs.wind_gust);
+    const dir = formatWindDirection(obs.wind_from_direction);
+    const pressure = formatPressure(obs.air_pressure_at_sea_level);
+
+    setText("lighthouseTempValue", temp);
+    setText("lighthouseWindValue", wind);
+    setText("lighthouseGustValue", gust);
+    setText("lighthouseDirectionValue", dir);
+    setText("lighthousePressureValue", pressure);
+
+    updateMapOverlay(
+      station.name,
+      `
+        <div>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}</div>
+        <div>Temp: ${temp}</div>
+        <div>Vind: ${wind}</div>
+        <div>Byar: ${gust}</div>
+        <div>Riktning: ${dir}</div>
+        <div>Tryck: ${pressure}</div>
+      `
+    );
+
+    setLighthouseMarkerColorById(
+      station.id,
+      "active",
+      `${station.name} • data tillgänglig`
+    );
+  } catch (error) {
+    console.error(error);
+    setText("lighthouseStatusValue", "Det gick inte att hämta data");
+
+    updateMapOverlay(
+      station.name || "Fyr / station",
+      "Det gick inte att hämta data för vald station."
+    );
+
+    setLighthouseMarkerColorById(
+      station.id,
+      "inactive",
+      `${station.name} • ingen data`
+    );
   }
-
+}
   async function startLighthouseBackgroundCheck() {
     if (lighthouseBackgroundCheckStarted) return;
     lighthouseBackgroundCheckStarted = true;
