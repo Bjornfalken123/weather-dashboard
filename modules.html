@@ -1517,46 +1517,46 @@
 
     maptilerMap.addControl(new maptilersdk.NavigationControl(), "top-right");
 
-    maptilerMap.on("load", () => {
-      if (window.maptilerweather) {
-        try {
-          maptilerWindLayer = new maptilerweather.WindLayer({
-            id: "main-wind-layer",
-            colorramp: maptilerweather.ColorRamp.builtin.NULL,
-            speed: 0.001,
-            fadeFactor: 0.03,
-            maxAmount: 256,
-            density: 200,
-            color: [255, 255, 255, 35],
-            fastColor: [255, 255, 255, 120]
-            const toggleBtn = document.getElementById("toggleWindLayerBtn");
+   maptilerMap.on("load", () => {
+  if (window.maptilerweather) {
+    try {
+      maptilerWindLayer = new maptilerweather.WindLayer({
+        id: "main-wind-layer",
+        colorramp: maptilerweather.ColorRamp.builtin.NULL,
+        speed: 0.001,
+        fadeFactor: 0.03,
+        maxAmount: 256,
+        density: 200,
+        color: [255, 255, 255, 35],
+        fastColor: [255, 255, 255, 120]
+      });
 
-if (toggleBtn) {
-  toggleBtn.addEventListener("click", () => {
-    if (!maptilerWindLayer) return;
-
-    if (windLayerVisible) {
-      maptilerMap.removeLayer(maptilerWindLayer);
-      toggleBtn.textContent = "Vind: Av";
-    } else {
       maptilerMap.addLayer(maptilerWindLayer);
-      toggleBtn.textContent = "Vind: På";
-    }
 
-    windLayerVisible = !windLayerVisible;
-  });
-}
-        
-          });
+      const toggleBtn = document.getElementById("toggleWindLayerBtn");
 
-          maptilerMap.addLayer(maptilerWindLayer);
-        } catch (error) {
-          console.error("Det gick inte att skapa vindlager.", error);
-        }
-      } else {
-        console.error("MapTiler Weather kunde inte laddas.");
+      if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
+          if (!maptilerWindLayer) return;
+
+          if (windLayerVisible) {
+            maptilerMap.removeLayer("main-wind-layer");
+            toggleBtn.textContent = "Vind: Av";
+          } else {
+            maptilerMap.addLayer(maptilerWindLayer);
+            toggleBtn.textContent = "Vind: På";
+          }
+
+          windLayerVisible = !windLayerVisible;
+        });
       }
-    });
+    } catch (error) {
+      console.error("Det gick inte att skapa vindlager.", error);
+    }
+  } else {
+    console.error("MapTiler Weather kunde inte laddas.");
+  }
+});
 
     let isSyncingFromMapTiler = false;
     let isSyncingFromLeaflet = false;
