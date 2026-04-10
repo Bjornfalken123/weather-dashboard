@@ -1066,6 +1066,31 @@
       .layer-control-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; }
       .layer-control-btn { width: 100%; }
     }
+    #mapOverlayPanel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(7, 14, 26, 0.75);
+  backdrop-filter: blur(10px);
+  color: var(--text);
+  font-size: 13px;
+  max-width: 220px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+#overlayTitle {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+#overlayContent {
+  color: var(--muted-soft);
+  font-size: 12px;
+}
   </style>
 </head>
 <body>
@@ -1110,16 +1135,19 @@
         </div>
 
                 <div class="map-stack">
-          <div class="map-instance-wrap">
-            <div class="map-instance-label">Nuvarande karta</div>
-            <div id="map"></div>
-          </div>
+  <div class="map-instance-wrap">
+    <div id="maptilerMap"></div>
 
-          <div class="map-instance-wrap">
-            <div class="map-instance-label">Ny kartmotor – testläge</div>
-            <div id="maptilerMap"></div>
-          </div>
-        </div>
+    <!-- Diskret overlay-panel (framtida info-panel) -->
+    <div id="mapOverlayPanel">
+      <div id="overlayTitle">Välj punkt</div>
+      <div id="overlayContent">Klicka i kartan för väderdata</div>
+    </div>
+
+    <!-- Göm gamla kartan -->
+    <div id="map" style="display:none;"></div>
+  </div>
+</div>
       </section>
 
       <aside class="layer-panel">
