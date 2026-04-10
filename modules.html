@@ -17,9 +17,9 @@
     crossorigin=""
   ></script>
 
-  <link href="https://cdn.maptiler.com/maptiler-sdk-js/latest/maptiler-sdk.css" rel="stylesheet" />
-  <script src="https://cdn.maptiler.com/maptiler-sdk-js/latest/maptiler-sdk.umd.min.js"></script>
-
+   <link href="https://cdn.maptiler.com/maptiler-sdk-js/v3.10.2/maptiler-sdk.css" rel="stylesheet" />
+  <script src="https://cdn.maptiler.com/maptiler-sdk-js/v3.10.2/maptiler-sdk.umd.min.js"></script>
+  <script src="https://cdn.maptiler.com/maptiler-weather/v3.1.1/maptiler-weather.umd.min.js"></script>
   <style>
     :root {
       --bg-1: #040913;
@@ -1498,6 +1498,7 @@
    const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
   let maptilerMap = null;
   let maptilerWeatherMarker = null;
+  let maptilerWindLayer = null;
 
   if (window.maptilersdk) {
     maptilersdk.config.apiKey = MAPTILER_API_KEY;
@@ -1510,7 +1511,31 @@
     });
 
     maptilerMap.addControl(new maptilersdk.NavigationControl(), "top-right");
-           let isSyncingFromMapTiler = false;
+
+    maptilerMap.on("load", () => {
+      if (window.maptilerweather) {
+        try {
+          maptilerWindLayer = new maptilerweather.WindLayer({
+            id: "main-wind-layer",
+            colorramp: maptilerweather.ColorRamp.builtin.NULL,
+            speed: 0.001,
+            fadeFactor: 0.03,
+            maxAmount: 256,
+            density: 200,
+            color: [255, 255, 255, 35],
+            fastColor: [255, 255, 255, 120]
+          });
+
+          maptilerMap.addLayer(maptilerWindLayer);
+        } catch (error) {
+          console.error("Det gick inte att skapa vindlager.", error);
+        }
+      } else {
+        console.error("MapTiler Weather kunde inte laddas.");
+      }
+    });
+
+    let isSyncingFromMapTiler = false;
     let isSyncingFromLeaflet = false;
 
     // 🔄 Synka MapTiler → Leaflet
