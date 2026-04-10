@@ -2575,16 +2575,26 @@
     });
   }
 
-  map.on("click", (event) => {
-    const lat = event.latlng.lat;
-    const lon = event.latlng.lng;
-
+   function handlePrimaryMapClick(lat, lon) {
     if (activeMode === "weather") {
       saveSelection("weather", { lat, lon });
       setWeatherMarker(lat, lon);
       loadWeatherForPoint(lat, lon);
     }
+  }
+
+  map.on("click", (event) => {
+    handlePrimaryMapClick(event.latlng.lat, event.latlng.lng);
   });
+
+  if (maptilerMap) {
+    maptilerMap.on("click", (event) => {
+      const lngLat = event.lngLat;
+      if (!lngLat) return;
+
+      handlePrimaryMapClick(lngLat.lat, lngLat.lng);
+    });
+  }
 
   const layerTabs = Array.from(document.querySelectorAll(".layer-tab"));
   const layerView = document.getElementById("layerView");
