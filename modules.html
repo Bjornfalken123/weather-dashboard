@@ -1571,8 +1571,10 @@
   let waveBackgroundCheckStarted = false;
   let lighthouseBackgroundCheckStarted = false;
 
-  const waveMarkerMap = new Map();
+    const waveMarkerMap = new Map();
   const lighthouseMarkerMap = new Map();
+  const waveMaptilerMarkerMap = new Map();
+  const lighthouseMaptilerMarkerMap = new Map();
 
   const waveStationsCache = new Map();
   const lighthouseStationsCache = new Map();
@@ -1977,9 +1979,9 @@
   }
 
   function setWaveMarkerColorById(stationId, state, tooltipText) {
-    const marker = waveMarkerMap.get(stationId);
-    if (!marker) return;
+  const marker = waveMarkerMap.get(stationId);
 
+  if (marker) {
     const styles = {
       unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
       active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
@@ -1988,8 +1990,26 @@
 
     marker.setStyle(styles[state] || styles.unknown);
 
-    if (tooltipText) marker.bindTooltip(tooltipText, { direction: "top" });
+    if (tooltipText) {
+      marker.bindTooltip(tooltipText, { direction: "top" });
+    }
   }
+
+  const maptilerMarkerData = waveMaptilerMarkerMap.get(stationId);
+
+  if (maptilerMarkerData && maptilerMarkerData.element) {
+    const colors = {
+      unknown: "#69b7ff",
+      active: "#ff8b8b",
+      inactive: "#8b95a7"
+    };
+
+    maptilerMarkerData.element.style.background = colors[state] || colors.unknown;
+    maptilerMarkerData.element.style.width = state === "active" ? "14px" : "10px";
+    maptilerMarkerData.element.style.height = state === "active" ? "14px" : "10px";
+    maptilerMarkerData.element.title = tooltipText || "";
+  }
+}
 
   function setLighthouseMarkerColorById(stationId, state, tooltipText) {
     const marker = lighthouseMarkerMap.get(stationId);
@@ -2006,36 +2026,44 @@
     if (tooltipText) marker.bindTooltip(tooltipText, { direction: "top" });
   }
 
-   function updateModeUI() {
-    document.querySelectorAll(".mode-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.mode === activeMode);
-    });
+ function updateModeUI() {
+  document.querySelectorAll(".mode-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === activeMode);
+  });
 
-    if (activeMode === "weather") {
-      setText("activeModeText", "Väder");
-      setText("pageStatus", "Vädermodul aktiv");
-      setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
-      updateMapOverlay("Väderpunkt", "Klicka i kartan för att visa aktuell väderdata för en vald punkt.");
-      if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
-      if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
-    } else if (activeMode === "wave") {
-      setText("activeModeText", "Boj / våg");
-      setText("pageStatus", "Bojmodul aktiv");
-      setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
-      updateMapOverlay("Boj / våg", "Välj en boj eller vågstation för att visa havsdata i nästa steg.");
-      ensureWaveStationsLoaded();
-      if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
-      if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
-    } else {
-      setText("activeModeText", "Fyr / station");
-      setText("pageStatus", "Fyrmodul aktiv");
-      setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
-      updateMapOverlay("Fyr / station", "Välj en station för att visa observationsdata i nästa steg.");
-      ensureLighthouseStationsLoaded();
-      if (!map.hasLayer(lighthouseStationsLayer)) map.addLayer(lighthouseStationsLayer);
-      if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
-    }
+  waveMaptilerMarkerMap.forEach(({ element }) => {
+    element.style.display = activeMode === "wave" ? "block" : "none";
+  });
+
+  lighthouseMaptilerMarkerMap.forEach(({ element }) => {
+    element.style.display = activeMode === "lighthouse" ? "block" : "none";
+  });
+
+  if (activeMode === "weather") {
+    setText("activeModeText", "Väder");
+    setText("pageStatus", "Vädermodul aktiv");
+    setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+    updateMapOverlay("Väderpunkt", "Klicka i kartan för att visa aktuell väderdata för en vald punkt.");
+    if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
+    if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
+  } else if (activeMode === "wave") {
+    setText("activeModeText", "Boj / våg");
+    setText("pageStatus", "Bojmodul aktiv");
+    setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
+    updateMapOverlay("Boj / våg", "Välj en boj eller vågstation för att visa havsdata.");
+    ensureWaveStationsLoaded();
+    if (!map.hasLayer(waveStationsLayer)) map.addLayer(waveStationsLayer);
+    if (map.hasLayer(lighthouseStationsLayer)) map.removeLayer(lighthouseStationsLayer);
+  } else {
+    setText("activeModeText", "Fyr / station");
+    setText("pageStatus", "Fyrmodul aktiv");
+    setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
+    updateMapOverlay("Fyr / station", "Välj en station för att visa observationsdata i nästa steg.");
+    ensureLighthouseStationsLoaded();
+    if (!map.hasLayer(lighthouseStationsLayer)) map.addLayer(lighthouseStationsLayer);
+    if (map.hasLayer(waveStationsLayer)) map.removeLayer(waveStationsLayer);
   }
+}
 
    async function loadWeatherForPoint(lat, lon) {
     try {
@@ -2118,56 +2146,82 @@
     }
   }
 
-  async function ensureWaveStationsLoaded() {
-    if (waveStationsLoaded) return;
-    if (waveStationsLoadingPromise) return waveStationsLoadingPromise;
+async function ensureWaveStationsLoaded() {
+  if (waveStationsLoaded) return;
+  if (waveStationsLoadingPromise) return waveStationsLoadingPromise;
 
-    waveStationsLoadingPromise = (async () => {
-      try {
-        const res = await fetch("/api/ocean-wave-stations");
-        const data = await res.json();
-        const stations = Array.isArray(data?.stations) ? data.stations : [];
+  waveStationsLoadingPromise = (async () => {
+    try {
+      const res = await fetch("/api/ocean-wave-stations");
+      const data = await res.json();
+      const stations = Array.isArray(data?.stations) ? data.stations : [];
 
-        if (!stations.length) {
-          if (activeMode === "wave") setText("waveStatusValue", "Inga stationer hittades");
-          return;
-        }
+      if (!stations.length) {
+        if (activeMode === "wave") setText("waveStatusValue", "Inga stationer hittades");
+        return;
+      }
 
-        stations.forEach((station) => {
-          waveStationsCache.set(station.id, station);
+      stations.forEach((station) => {
+        waveStationsCache.set(station.id, station);
 
-          const marker = L.circleMarker([station.latitude, station.longitude], {
-            radius: 5,
-            weight: 2,
-            color: "#69b7ff",
-            fillColor: "#69b7ff",
-            fillOpacity: 0.8
-          });
+        const leafletMarker = L.circleMarker([station.latitude, station.longitude], {
+          radius: 5,
+          weight: 2,
+          color: "#69b7ff",
+          fillColor: "#69b7ff",
+          fillOpacity: 0.8
+        });
 
-          marker.bindTooltip(`${station.name} • ännu inte kontrollerad`, { direction: "top" });
+        leafletMarker.bindTooltip(`${station.name} • ännu inte kontrollerad`, { direction: "top" });
 
-          marker.on("click", (event) => {
-            L.DomEvent.stopPropagation(event);
+        leafletMarker.on("click", (event) => {
+          L.DomEvent.stopPropagation(event);
+          selectWaveStation(station);
+        });
+
+        waveMarkerMap.set(station.id, leafletMarker);
+        waveStationsLayer.addLayer(leafletMarker);
+
+        if (maptilerMap && window.maptilersdk) {
+          const el = document.createElement("div");
+          el.style.width = "10px";
+          el.style.height = "10px";
+          el.style.borderRadius = "999px";
+          el.style.background = "#69b7ff";
+          el.style.border = "2px solid rgba(255,255,255,0.75)";
+          el.style.boxShadow = "0 0 0 4px rgba(105,183,255,0.12)";
+          el.style.cursor = "pointer";
+          el.title = `${station.name} • ännu inte kontrollerad`;
+
+          el.addEventListener("click", (event) => {
+            event.stopPropagation();
             selectWaveStation(station);
           });
 
-          waveMarkerMap.set(station.id, marker);
-          waveStationsLayer.addLayer(marker);
-        });
+          const maptilerMarker = new maptilersdk.Marker({ element: el })
+            .setLngLat([station.longitude, station.latitude])
+            .addTo(maptilerMap);
 
-        waveStationsLoaded = true;
-        if (activeMode === "wave") setText("waveStatusValue", "Bakgrundskontrollerar bojar...");
-        startWaveBackgroundCheck();
-      } catch (error) {
-        console.error(error);
-        if (activeMode === "wave") setText("waveStatusValue", "Det gick inte att hämta stationer");
-      } finally {
-        waveStationsLoadingPromise = null;
-      }
-    })();
+          waveMaptilerMarkerMap.set(station.id, {
+            marker: maptilerMarker,
+            element: el
+          });
+        }
+      });
 
-    return waveStationsLoadingPromise;
-  }
+      waveStationsLoaded = true;
+      if (activeMode === "wave") setText("waveStatusValue", "Bakgrundskontrollerar bojar...");
+      startWaveBackgroundCheck();
+    } catch (error) {
+      console.error(error);
+      if (activeMode === "wave") setText("waveStatusValue", "Det gick inte att hämta stationer");
+    } finally {
+      waveStationsLoadingPromise = null;
+    }
+  })();
+
+  return waveStationsLoadingPromise;
+}
 
   async function fetchWaveDataForStation(stationId) {
     for (const period of ["latest-hour", "latest-day", "latest-months"]) {
