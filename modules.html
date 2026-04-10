@@ -378,11 +378,12 @@
       gap: 16px;
     }
 
-    .map-instance-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+ .map-instance-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
     .map-instance-label {
       color: var(--muted-soft);
@@ -1134,7 +1135,7 @@
           Klicka på kartan för att välja en punkt för vädermodulen.
         </div>
 
-               <div class="map-stack">
+<div class="map-stack">
   <div class="map-instance-wrap">
     <div id="maptilerMap"></div>
 
@@ -1143,11 +1144,6 @@
       <div id="overlayContent">Klicka i kartan för väderdata</div>
     </div>
 
-    <div id="map" style="display:none;"></div>
-  </div>
-</div>
-
-    <!-- Göm gamla kartan -->
     <div id="map" style="display:none;"></div>
   </div>
 </div>
