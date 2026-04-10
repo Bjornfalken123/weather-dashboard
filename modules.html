@@ -1575,6 +1575,13 @@
     const el = document.getElementById(id);
     if (el) el.textContent = value;
   }
+    function updateMapOverlay(title, content) {
+    const titleEl = document.getElementById("overlayTitle");
+    const contentEl = document.getElementById("overlayContent");
+
+    if (titleEl) titleEl.textContent = title;
+    if (contentEl) contentEl.innerHTML = content;
+  }
 
   function formatCoord(v) {
     return Number(v).toFixed(4);
@@ -2013,11 +2020,16 @@
     }
   }
 
-  async function loadWeatherForPoint(lat, lon) {
+   async function loadWeatherForPoint(lat, lon) {
     try {
       setText("weatherStatusValue", "Hämtar prognos...");
       setText("weatherGustSourceValue", "Hämtar...");
       resetForecastDisplay();
+
+      updateMapOverlay(
+        "Laddar väder...",
+        `${formatCoord(lat)}, ${formatCoord(lon)}`
+      );
 
       const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
       const gustUrl = `/api/openmeteo-gust?lat=${lat}&lon=${lon}`;
@@ -2051,19 +2063,41 @@
       currentForecastDays = buildDailyForecast(timeseries);
       renderForecast(currentForecastDays);
 
+      let gustFormatted = "--";
+
       if (gustRes.ok) {
         const gustData = JSON.parse(gustText);
-        setText("weatherGustValue", formatWind(gustData.value));
+        gustFormatted = formatWind(gustData.value);
+        setText("weatherGustValue", gustFormatted);
         setText("weatherGustSourceValue", "Open-Meteo • punktdata");
-        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
+        setText(
+          "weatherStatusValue",
+          currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad"
+        );
       } else {
         setText("weatherGustValue", "--");
         setText("weatherGustSourceValue", "Inga vindbyar tillgängliga");
-        setText("weatherStatusValue", currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
+        setText(
+          "weatherStatusValue",
+          currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad"
+        );
       }
+
+      updateMapOverlay(
+        weatherLabelFromSymbol(symbol),
+        `
+          <div>${formatCoord(lat)}, ${formatCoord(lon)}</div>
+          <div>Temp: ${formatTemp(instant.air_temperature)}</div>
+          <div>Vind: ${formatWind(instant.wind_speed)}</div>
+          <div>Byar: ${gustFormatted}</div>
+          <div>Regn: ${formatRain(precip)}</div>
+          <div>Tryck: ${formatPressure(instant.air_pressure_at_sea_level)}</div>
+        `
+      );
     } catch (error) {
       console.error(error);
       setText("weatherStatusValue", "Det gick inte att hämta väderdata");
+      updateMapOverlay("Fel", "Det gick inte att hämta väderdata för vald punkt.");
     }
   }
 
