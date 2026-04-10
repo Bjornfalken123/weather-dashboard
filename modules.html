@@ -1099,12 +1099,45 @@
 
 #overlayTitle {
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  color: var(--text);
 }
 
 #overlayContent {
   color: var(--muted-soft);
   font-size: 12px;
+  line-height: 1.6;
+}
+
+#layerPanel {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.layer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+}
+
+.layer-row span {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.layer-row button {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  background: #2b6cff;
+  color: white;
+  cursor: pointer;
 }
   </style>
 </head>
@@ -1157,10 +1190,17 @@
   <div id="overlayTitle">Välj punkt</div>
   <div id="overlayContent">Klicka i kartan för väderdata</div>
 
-  <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-    <button id="toggleWindLayerBtn">Vind: På</button>
-    <button id="togglePrecipLayerBtn">Nederbörd: Av</button>
+ <div id="layerPanel">
+  <div class="layer-row">
+    <span>Vind</span>
+    <button id="toggleWindLayerBtn">På</button>
   </div>
+
+  <div class="layer-row">
+    <span>Nederbörd</span>
+    <button id="togglePrecipLayerBtn">Av</button>
+  </div>
+</div>
 </div>
 
     <div id="map" style="display:none;"></div>
@@ -1550,10 +1590,10 @@ maptilerMap.on("load", () => {
 
           if (windLayerVisible) {
             maptilerMap.removeLayer("main-wind-layer");
-            toggleWindBtn.textContent = "Vind: Av";
+            toggleWindBtn.textContent = "Av";
           } else {
             maptilerMap.addLayer(maptilerWindLayer);
-            toggleWindBtn.textContent = "Vind: På";
+            toggleWindBtn.textContent = "På";
           }
 
           windLayerVisible = !windLayerVisible;
@@ -1566,10 +1606,10 @@ maptilerMap.on("load", () => {
 
           if (precipitationLayerVisible) {
             maptilerMap.removeLayer("main-precipitation-layer");
-            togglePrecipBtn.textContent = "Nederbörd: Av";
+            togglePrecipBtn.textContent = "Av";
           } else {
             maptilerMap.addLayer(maptilerPrecipitationLayer, "Water");
-            togglePrecipBtn.textContent = "Nederbörd: På";
+            togglePrecipBtn.textContent = "På";
           }
 
           precipitationLayerVisible = !precipitationLayerVisible;
