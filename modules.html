@@ -1468,6 +1468,28 @@
     });
 
     maptilerMap.addControl(new maptilersdk.NavigationControl(), "top-right");
+        // 🔄 Synka MapTiler → Leaflet
+    maptilerMap.on("moveend", () => {
+      const center = maptilerMap.getCenter();
+      const zoom = maptilerMap.getZoom();
+
+      map.setView([center.lat, center.lng], zoom, {
+        animate: false
+      });
+    });
+
+    // 🔄 Synka Leaflet → MapTiler
+    map.on("moveend", () => {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+
+      if (maptilerMap) {
+        maptilerMap.jumpTo({
+          center: [center.lng, center.lat],
+          zoom: zoom
+        });
+      }
+    });
   } else {
     console.error("MapTiler SDK kunde inte laddas.");
     setText("pageStatus", "MapTiler kunde inte laddas");
