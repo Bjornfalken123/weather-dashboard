@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kustväder – väder, vågor och stationer i realtid</title>
 
-  <link
+    <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
@@ -16,6 +16,9 @@
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
+
+  <link href="https://cdn.maptiler.com/maptiler-sdk-js/latest/maptiler-sdk.css" rel="stylesheet" />
+  <script src="https://cdn.maptiler.com/maptiler-sdk-js/latest/maptiler-sdk.umd.min.js"></script>
 
   <style>
     :root {
@@ -367,7 +370,30 @@
       line-height: 1.6;
     }
 
-    #map {
+       .map-stack {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .map-instance-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .map-instance-label {
+      color: var(--muted-soft);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #map,
+    #maptilerMap {
       position: relative;
       z-index: 1;
       width: 100%;
@@ -1083,7 +1109,17 @@
           Klicka på kartan för att välja en punkt för vädermodulen.
         </div>
 
-        <div id="map"></div>
+                <div class="map-stack">
+          <div class="map-instance-wrap">
+            <div class="map-instance-label">Nuvarande karta</div>
+            <div id="map"></div>
+          </div>
+
+          <div class="map-instance-wrap">
+            <div class="map-instance-label">Ny kartmotor – testläge</div>
+            <div id="maptilerMap"></div>
+          </div>
+        </div>
       </section>
 
       <aside class="layer-panel">
@@ -1411,12 +1447,31 @@
     lighthouse: null
   };
 
-  const map = L.map("map").setView([58.6, 13.0], 6);
+   const map = L.map("map").setView([58.6, 13.0], 6);
 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap"
   }).addTo(map);
+
+  const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
+  let maptilerMap = null;
+
+  if (window.maptilersdk) {
+    maptilersdk.config.apiKey = MAPTILER_API_KEY;
+
+    maptilerMap = new maptilersdk.Map({
+      container: "maptilerMap",
+      style: maptilersdk.MapStyle.STREETS.DARK,
+      center: [13.0, 58.6],
+      zoom: 5
+    });
+
+    maptilerMap.addControl(new maptilersdk.NavigationControl(), "top-right");
+  } else {
+    console.error("MapTiler SDK kunde inte laddas.");
+    setText("pageStatus", "MapTiler kunde inte laddas");
+  }
 
   let weatherMarker = null;
   let waveSelectionMarker = null;
