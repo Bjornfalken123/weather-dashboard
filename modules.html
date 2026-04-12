@@ -1203,6 +1203,25 @@
   font-weight: 600;
 }
 
+.time-toolbar {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+#timePlayPauseBtn {
+  min-width: 64px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(43, 108, 255, 0.9);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+
 #timeSlider {
   width: 100%;
   margin-top: 8px;
@@ -1287,11 +1306,16 @@
     </div>
   </div>
 
-   <div id="timeControl">
+    <div id="timeControl">
     <div class="time-header">
       <div class="layer-panel-title">Tid</div>
       <div id="timeValueLabel">--</div>
     </div>
+
+    <div class="time-toolbar">
+      <button id="timePlayPauseBtn">Spela</button>
+    </div>
+
     <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
   </div>
 </div>
@@ -1735,8 +1759,10 @@ maptilerMap.on("load", () => {
         });
       }
 
-                if (timeSlider && maptilerWindLayer) {
+                 if (timeSlider && maptilerWindLayer) {
         const timeValueLabel = document.getElementById("timeValueLabel");
+        const timePlayPauseBtn = document.getElementById("timePlayPauseBtn");
+        let isTimePlaying = false;
 
         function formatMapTime(date) {
           if (!date) return "--";
@@ -1756,6 +1782,18 @@ maptilerMap.on("load", () => {
             if (timeValueLabel) {
               timeValueLabel.textContent = formatMapTime(currentDate);
             }
+          }
+        }
+
+        function setAnimationFactor(factor) {
+          if (maptilerWindLayer) {
+            maptilerWindLayer.animateByFactor(factor);
+          }
+          if (maptilerPrecipitationLayer) {
+            maptilerPrecipitationLayer.animateByFactor(factor);
+          }
+          if (maptilerCloudLayer) {
+            maptilerCloudLayer.animateByFactor(factor);
           }
         }
 
@@ -1782,6 +1820,14 @@ maptilerMap.on("load", () => {
         });
 
         timeSlider.addEventListener("input", () => {
+          if (isTimePlaying) {
+            setAnimationFactor(0);
+            isTimePlaying = false;
+            if (timePlayPauseBtn) {
+              timePlayPauseBtn.textContent = "Spela";
+            }
+          }
+
           const selectedTimeSeconds = parseInt(timeSlider.value, 10) / 1000;
 
           if (maptilerWindLayer) {
@@ -1796,6 +1842,20 @@ maptilerMap.on("load", () => {
             maptilerCloudLayer.setAnimationTime(selectedTimeSeconds);
           }
         });
+
+        if (timePlayPauseBtn) {
+          timePlayPauseBtn.addEventListener("click", () => {
+            if (isTimePlaying) {
+              setAnimationFactor(0);
+              timePlayPauseBtn.textContent = "Spela";
+            } else {
+              setAnimationFactor(3600);
+              timePlayPauseBtn.textContent = "Pausa";
+            }
+
+            isTimePlaying = !isTimePlaying;
+          });
+        }
       }
     } catch (error) {
       console.error("Det gick inte att skapa väderlager.", error);
