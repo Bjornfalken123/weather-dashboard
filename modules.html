@@ -1063,7 +1063,9 @@
     height: 100vh;
   }
 
-  .hero {
+  .hero,
+  .layer-panel,
+  .modules-grid {
     display: none;
   }
 
@@ -1074,8 +1076,8 @@
 
   .map-panel {
     padding: 0;
-    border-radius: 0;
     border: none;
+    border-radius: 0;
     background: transparent;
     box-shadow: none;
     min-height: 100vh;
@@ -1084,28 +1086,6 @@
   .map-panel::before,
   .map-panel::after {
     display: none;
-  }
-
-  .map-toolbar {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    right: 14px;
-    z-index: 1200;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 0;
-  }
-
-  .mode-btn {
-    width: 100%;
-    min-height: 42px;
-    padding: 10px 12px;
-    font-size: 12px;
-    border-radius: 12px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
 
   .map-note {
@@ -1120,25 +1100,38 @@
   #map,
   #maptilerMap {
     height: 100vh;
-    border-radius: 0;
     border: none;
+    border-radius: 0;
     box-shadow: none;
   }
 
-  .layer-panel {
-    display: none;
+  .map-topbar {
+    top: 12px;
+    left: 12px;
+    right: 12px;
   }
 
-  .modules-grid {
-    display: none;
+  #filterToggleBtn {
+    min-height: 40px;
+    padding: 9px 14px;
+  }
+
+  #filterDrawer {
+    top: 60px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    padding: 12px;
+    border-radius: 16px;
   }
 
   #mapOverlayPanel {
-    top: 68px;
+    top: 60px;
     left: 12px;
     right: 12px;
-    max-width: none;
     min-width: 0;
+    max-width: none;
     padding: 12px 13px;
     border-radius: 14px;
     font-size: 12px;
@@ -1154,74 +1147,48 @@
     line-height: 1.5;
   }
 
-  #layerPanel {
-    gap: 6px;
+  .filter-row {
+    padding: 8px 9px;
   }
 
-  .layer-row {
-    padding: 7px 8px;
-    border-radius: 10px;
-  }
-
-  .layer-row-left span:last-child {
+  .filter-row-left span:last-child {
     font-size: 11px;
   }
 
-  .layer-row button {
-    min-width: 44px;
-    min-height: 32px;
+  .filter-row button,
+  #filterCloseBtn {
+    min-width: 46px;
+    min-height: 34px;
+    padding: 6px 9px;
     font-size: 11px;
-    padding: 4px 8px;
   }
 
   #timeControl {
-    position: absolute;
     left: 12px;
     right: 12px;
     bottom: 12px;
-    z-index: 1200;
-    margin-top: 0;
-    padding: 12px;
-    border-top: none;
+    padding: 11px 12px;
     border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(7, 14, 26, 0.78);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.28);
   }
 
-  .time-header {
-    margin-bottom: 8px;
-  }
-
-  .time-toolbar {
-    margin-top: 0;
-    margin-bottom: 8px;
+  .time-compact-bottom {
+    grid-template-columns: 72px 1fr;
+    gap: 8px;
   }
 
   #timePlayPauseBtn {
-    min-width: 72px;
-    min-height: 34px;
+    min-height: 36px;
   }
-
-  #timeSlider {
-    margin-top: 0;
-  }
-
- 
-
-
 }
 #mapOverlayPanel {
   position: absolute;
-  top: 16px;
+  top: 72px;
   left: 16px;
-  z-index: 1000;
-  padding: 14px 16px;
+  z-index: 1100;
+  padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(7, 14, 26, 0.78);
+  background: rgba(7, 14, 26, 0.76);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--text);
@@ -1229,6 +1196,197 @@
   min-width: 220px;
   max-width: 280px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+#overlayTitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+#overlayContent {
+  color: var(--muted-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.map-topbar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1200;
+  display: flex;
+  gap: 8px;
+}
+
+#filterToggleBtn,
+#filterCloseBtn,
+.filter-row button,
+#timePlayPauseBtn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(11, 20, 34, 0.78);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+#filterDrawer {
+  position: absolute;
+  top: 64px;
+  left: 16px;
+  width: 280px;
+  max-width: calc(100% - 32px);
+  z-index: 1250;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(7, 14, 26, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.32);
+}
+
+#filterDrawer.is-hidden {
+  display: none;
+}
+
+.filter-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.filter-drawer-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.filter-group + .filter-group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.filter-group-title {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.filter-row + .filter-row {
+  margin-top: 8px;
+}
+
+.filter-row-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-row-left span:last-child {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.layer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.layer-dot.wind {
+  background: #dfe8f7;
+  box-shadow: 0 0 10px rgba(223, 232, 247, 0.35);
+}
+
+.layer-dot.precip {
+  background: #7bc7ff;
+  box-shadow: 0 0 10px rgba(123, 199, 255, 0.45);
+}
+
+.layer-dot.cloud {
+  background: #b7c5d9;
+  box-shadow: 0 0 10px rgba(183, 197, 217, 0.4);
+}
+
+#timeControl {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1200;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(7, 14, 26, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+}
+
+.time-compact-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.time-compact-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#timeValueLabel {
+  font-size: 11px;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.time-compact-bottom {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+#timePlayPauseBtn {
+  min-width: 68px;
+}
+
+#timeSlider {
+  width: 100%;
+  margin: 0;
 }
 
 #overlayTitle {
@@ -1405,23 +1563,93 @@
 
     <section class="map-layer-grid">
       <section class="map-panel">
-        <div class="map-toolbar">
-          <button class="mode-btn active" data-mode="weather">Väderpunkt</button>
-          <button class="mode-btn" data-mode="wave">Boj / våg</button>
-          <button class="mode-btn" data-mode="lighthouse">Fyr / station</button>
-        </div>
-
         <div class="map-note" id="mapNote">
-          Klicka på kartan för att välja en punkt för vädermodulen.
-        </div>
+  Klicka på kartan för att välja en punkt för vädermodulen.
+</div>
 
 <div class="map-stack">
   <div class="map-instance-wrap">
     <div id="maptilerMap"></div>
 
+    <div class="map-topbar">
+      <button id="filterToggleBtn" type="button">Filter</button>
+    </div>
+
     <div id="mapOverlayPanel">
       <div id="overlayTitle">Välj punkt</div>
       <div id="overlayContent">Klicka i kartan för väderdata</div>
+    </div>
+
+    <div id="filterDrawer" class="is-hidden">
+      <div class="filter-drawer-header">
+        <div class="filter-drawer-title">Visa på kartan</div>
+        <button id="filterCloseBtn" type="button">Stäng</button>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-title">Kartdata</div>
+
+        <div class="filter-row">
+          <div class="filter-row-left">
+            <span class="layer-dot wind"></span>
+            <span>Vind</span>
+          </div>
+          <button id="toggleWindLayerBtn" type="button">På</button>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-row-left">
+            <span class="layer-dot precip"></span>
+            <span>Nederbörd</span>
+          </div>
+          <button id="togglePrecipLayerBtn" type="button">Av</button>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-row-left">
+            <span class="layer-dot cloud"></span>
+            <span>Moln</span>
+          </div>
+          <button id="toggleCloudLayerBtn" type="button">Av</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-title">Objekt</div>
+
+        <div class="filter-row">
+          <div class="filter-row-left">
+            <span class="layer-dot precip"></span>
+            <span>Boj / våg</span>
+          </div>
+          <button id="toggleWaveModeBtn" type="button">Av</button>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-row-left">
+            <span class="layer-dot cloud"></span>
+            <span>Fyr / station</span>
+          </div>
+          <button id="toggleLighthouseModeBtn" type="button">Av</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="timeControl">
+      <div class="time-compact-top">
+        <div class="time-compact-label">Tid</div>
+        <div id="timeValueLabel">--</div>
+      </div>
+
+      <div class="time-compact-bottom">
+        <button id="timePlayPauseBtn" type="button">Spela</button>
+        <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
+      </div>
+    </div>
+
+    <div id="map" style="display:none;"></div>
+  </div>
+</div>
 
       <div id="layerPanel">
         <div class="layer-panel-title">Lager</div>
@@ -3364,14 +3592,69 @@ async function ensureWaveStationsLoaded() {
     });
   });
 
-  const forecastToggleBtn = document.getElementById("forecastToggleBtn");
-  if (forecastToggleBtn) {
-    forecastToggleBtn.addEventListener("click", () => {
-      if (!currentForecastDays.length) return;
-      forecastExpanded = !forecastExpanded;
-      renderForecast(currentForecastDays);
-    });
+const forecastToggleBtn = document.getElementById("forecastToggleBtn");
+if (forecastToggleBtn) {
+  forecastToggleBtn.addEventListener("click", () => {
+    if (!currentForecastDays.length) return;
+    forecastExpanded = !forecastExpanded;
+    renderForecast(currentForecastDays);
+  });
+}
+
+const filterDrawer = document.getElementById("filterDrawer");
+const filterToggleBtn = document.getElementById("filterToggleBtn");
+const filterCloseBtn = document.getElementById("filterCloseBtn");
+const toggleWaveModeBtn = document.getElementById("toggleWaveModeBtn");
+const toggleLighthouseModeBtn = document.getElementById("toggleLighthouseModeBtn");
+
+function syncFilterModeButtons() {
+  if (toggleWaveModeBtn) {
+    toggleWaveModeBtn.textContent = activeMode === "wave" ? "På" : "Av";
   }
+
+  if (toggleLighthouseModeBtn) {
+    toggleLighthouseModeBtn.textContent = activeMode === "lighthouse" ? "På" : "Av";
+  }
+}
+
+function closeFilterDrawer() {
+  if (filterDrawer) {
+    filterDrawer.classList.add("is-hidden");
+  }
+}
+
+if (filterToggleBtn) {
+  filterToggleBtn.addEventListener("click", () => {
+    if (!filterDrawer) return;
+    filterDrawer.classList.toggle("is-hidden");
+  });
+}
+
+if (filterCloseBtn) {
+  filterCloseBtn.addEventListener("click", () => {
+    closeFilterDrawer();
+  });
+}
+
+if (toggleWaveModeBtn) {
+  toggleWaveModeBtn.addEventListener("click", () => {
+    activeMode = activeMode === "wave" ? "weather" : "wave";
+    updateModeUI();
+    updateLastSelectionText();
+    syncFilterModeButtons();
+  });
+}
+
+if (toggleLighthouseModeBtn) {
+  toggleLighthouseModeBtn.addEventListener("click", () => {
+    activeMode = activeMode === "lighthouse" ? "weather" : "lighthouse";
+    updateModeUI();
+    updateLastSelectionText();
+    syncFilterModeButtons();
+  });
+}
+
+syncFilterModeButtons();
 
   function setMaptilerWeatherMarker(lat, lon) {
     if (!maptilerMap || !window.maptilersdk) return;
