@@ -1585,7 +1585,7 @@ maptilerMap.on("load", () => {
         initializeForecastTimeFromWindLayer();
       }, 800);
 
-          if (timeSlider) {
+            if (timeSlider) {
         const handleTimeSliderChange = () => {
           stopTimePlayback();
           selectedForecastTime = parseInt(timeSlider.value, 10);
@@ -1596,38 +1596,31 @@ maptilerMap.on("load", () => {
           event.stopPropagation();
         };
 
-        const stopMapTouchHard = (event) => {
-          event.stopPropagation();
-          if (event.cancelable) {
-            event.preventDefault();
-          }
-        };
-
         timeSlider.addEventListener("input", handleTimeSliderChange);
         timeSlider.addEventListener("change", handleTimeSliderChange);
 
-        timeSlider.addEventListener("touchstart", stopMapTouchHard, { passive: false });
-        timeSlider.addEventListener("touchmove", stopMapTouchHard, { passive: false });
+        timeSlider.addEventListener("touchstart", stopMapTouch, { passive: true });
+        timeSlider.addEventListener("touchmove", stopMapTouch, { passive: true });
         timeSlider.addEventListener("touchend", (event) => {
-          stopMapTouchHard(event);
+          stopMapTouch(event);
           handleTimeSliderChange();
-        }, { passive: false });
+        }, { passive: true });
 
         timeSlider.addEventListener("pointerdown", stopMapTouch);
         timeSlider.addEventListener("pointermove", stopMapTouch);
         timeSlider.addEventListener("pointerup", stopMapTouch);
 
         if (timePlayPauseBtn) {
-          timePlayPauseBtn.addEventListener("touchstart", stopMapTouchHard, { passive: false });
-          timePlayPauseBtn.addEventListener("touchend", stopMapTouchHard, { passive: false });
+          timePlayPauseBtn.addEventListener("touchstart", stopMapTouch, { passive: true });
+          timePlayPauseBtn.addEventListener("touchend", stopMapTouch, { passive: true });
           timePlayPauseBtn.addEventListener("pointerdown", stopMapTouch);
           timePlayPauseBtn.addEventListener("click", stopMapTouch);
         }
 
         const timeControl = document.getElementById("timeControl");
         if (timeControl) {
-          timeControl.addEventListener("touchstart", stopMapTouchHard, { passive: false });
-          timeControl.addEventListener("touchmove", stopMapTouchHard, { passive: false });
+          timeControl.addEventListener("touchstart", stopMapTouch, { passive: true });
+          timeControl.addEventListener("touchmove", stopMapTouch, { passive: true });
           timeControl.addEventListener("pointerdown", stopMapTouch);
         }
       }
