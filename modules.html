@@ -3592,8 +3592,7 @@ if (toggleWaveModeBtn) {
   toggleWaveModeBtn.addEventListener("click", () => {
     activeMode = activeMode === "wave" ? "weather" : "wave";
     updateModeUI();
-    updateLastSelectionText();
-    syncFilterModeButtons();
+    closeFilterDrawer();
   });
 }
 
@@ -3601,8 +3600,7 @@ if (toggleLighthouseModeBtn) {
   toggleLighthouseModeBtn.addEventListener("click", () => {
     activeMode = activeMode === "lighthouse" ? "weather" : "lighthouse";
     updateModeUI();
-    updateLastSelectionText();
-    syncFilterModeButtons();
+    closeFilterDrawer();
   });
 }
 
