@@ -1592,141 +1592,95 @@
     </section>
 
     <section class="map-layer-grid">
-      <section class="map-panel">
-        <div class="map-note" id="mapNote">
-  Klicka på kartan för att välja en punkt för vädermodulen.
-</div>
-
-<div class="map-stack">
-  <div class="map-instance-wrap">
-    <div id="maptilerMap"></div>
-
-    <div class="map-topbar">
-      <button id="filterToggleBtn" type="button">Filter</button>
-    </div>
-
-    <div id="mapOverlayPanel">
-      <div id="overlayTitle">Välj punkt</div>
-      <div id="overlayContent">Klicka i kartan för väderdata</div>
-    </div>
-
-    <div id="filterDrawer" class="is-hidden">
-      <div class="filter-drawer-header">
-        <div class="filter-drawer-title">Visa på kartan</div>
-        <button id="filterCloseBtn" type="button">Stäng</button>
-      </div>
-
-      <div class="filter-group">
-        <div class="filter-group-title">Kartdata</div>
-
-        <div class="filter-row">
-          <div class="filter-row-left">
-            <span class="layer-dot wind"></span>
-            <span>Vind</span>
-          </div>
-          <button id="toggleWindLayerBtn" type="button">På</button>
-        </div>
-
-        <div class="filter-row">
-          <div class="filter-row-left">
-            <span class="layer-dot precip"></span>
-            <span>Nederbörd</span>
-          </div>
-          <button id="togglePrecipLayerBtn" type="button">Av</button>
-        </div>
-
-        <div class="filter-row">
-          <div class="filter-row-left">
-            <span class="layer-dot cloud"></span>
-            <span>Moln</span>
-          </div>
-          <button id="toggleCloudLayerBtn" type="button">Av</button>
-        </div>
-      </div>
-
-      <div class="filter-group">
-        <div class="filter-group-title">Objekt</div>
-
-        <div class="filter-row">
-          <div class="filter-row-left">
-            <span class="layer-dot precip"></span>
-            <span>Boj / våg</span>
-          </div>
-          <button id="toggleWaveModeBtn" type="button">Av</button>
-        </div>
-
-        <div class="filter-row">
-          <div class="filter-row-left">
-            <span class="layer-dot cloud"></span>
-            <span>Fyr / station</span>
-          </div>
-          <button id="toggleLighthouseModeBtn" type="button">Av</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="timeControl">
-  <div class="time-compact-top">
-    <div class="time-compact-label">Tid</div>
-    <div id="timeValueLabel">Laddar tid...</div>
+     <section class="map-panel">
+  <div class="map-note" id="mapNote">
+    Klicka på kartan för att välja en punkt för vädermodulen.
   </div>
 
-  <div class="time-compact-bottom">
-    <button id="timePlayPauseBtn" type="button">Spela</button>
-    <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-  </div>
-</div>
+  <div class="map-stack">
+    <div class="map-instance-wrap">
+      <div id="maptilerMap"></div>
 
-    <div id="map" style="display:none;"></div>
-  </div>
-</div>
+      <div class="map-topbar">
+        <button id="filterToggleBtn" type="button">Filter</button>
+      </div>
 
-      <div id="layerPanel">
-        <div class="layer-panel-title">Lager</div>
+      <div id="mapOverlayPanel">
+        <div id="overlayTitle">Välj punkt</div>
+        <div id="overlayContent">Klicka i kartan för väderdata</div>
+      </div>
 
-        <div class="layer-row">
-          <div class="layer-row-left">
-            <span class="layer-dot wind"></span>
-            <span>Vind</span>
-          </div>
-          <button id="toggleWindLayerBtn">På</button>
+      <div id="filterDrawer" class="is-hidden">
+        <div class="filter-drawer-header">
+          <div class="filter-drawer-title">Visa på kartan</div>
+          <button id="filterCloseBtn" type="button">Stäng</button>
         </div>
 
-        <div class="layer-row">
-          <div class="layer-row-left">
-            <span class="layer-dot precip"></span>
-            <span>Nederbörd</span>
+        <div class="filter-group">
+          <div class="filter-group-title">Kartdata</div>
+
+          <div class="filter-row">
+            <div class="filter-row-left">
+              <span class="layer-dot wind"></span>
+              <span>Vind</span>
+            </div>
+            <button id="toggleWindLayerBtn" type="button">På</button>
           </div>
-          <button id="togglePrecipLayerBtn">Av</button>
+
+          <div class="filter-row">
+            <div class="filter-row-left">
+              <span class="layer-dot precip"></span>
+              <span>Nederbörd</span>
+            </div>
+            <button id="togglePrecipLayerBtn" type="button">Av</button>
+          </div>
+
+          <div class="filter-row">
+            <div class="filter-row-left">
+              <span class="layer-dot cloud"></span>
+              <span>Moln</span>
+            </div>
+            <button id="toggleCloudLayerBtn" type="button">Av</button>
+          </div>
         </div>
 
-        <div class="layer-row">
-          <div class="layer-row-left">
-            <span class="layer-dot cloud"></span>
-            <span>Moln</span>
+        <div class="filter-group">
+          <div class="filter-group-title">Objekt</div>
+
+          <div class="filter-row">
+            <div class="filter-row-left">
+              <span class="layer-dot precip"></span>
+              <span>Boj / våg</span>
+            </div>
+            <button id="toggleWaveModeBtn" type="button">Av</button>
           </div>
-          <button id="toggleCloudLayerBtn">Av</button>
+
+          <div class="filter-row">
+            <div class="filter-row-left">
+              <span class="layer-dot cloud"></span>
+              <span>Fyr / station</span>
+            </div>
+            <button id="toggleLighthouseModeBtn" type="button">Av</button>
+          </div>
         </div>
       </div>
+
+      <div id="timeControl">
+        <div class="time-compact-top">
+          <div class="time-compact-label">Tid</div>
+          <div id="timeValueLabel">Laddar tid...</div>
+        </div>
+
+        <div class="time-compact-bottom">
+          <button id="timePlayPauseBtn" type="button">Spela</button>
+          <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
+        </div>
+      </div>
+
+      <div id="map" style="display:none;"></div>
     </div>
-
-    <div id="timeControl">
-      <div class="time-header">
-        <div class="layer-panel-title">Tid</div>
-        <div id="timeValueLabel">--</div>
-      </div>
-
-      <div class="time-toolbar">
-        <button id="timePlayPauseBtn">Spela</button>
-      </div>
-
-      <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-    </div>
-
-    <div id="map" style="display:none;"></div>
   </div>
-</div>
-      </section>
+</section>
 
       <aside class="layer-panel">
         <div class="layer-panel-header">
