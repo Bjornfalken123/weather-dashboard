@@ -1416,95 +1416,51 @@
   <div class="map-instance-wrap">
     <div id="maptilerMap"></div>
 
-<div id="mapOverlayPanel">
-  <div id="overlayTitle">Välj punkt</div>
-  <div id="overlayContent">Klicka i kartan för väderdata</div>
+    <div id="mapOverlayPanel">
+      <div id="overlayTitle">Välj punkt</div>
+      <div id="overlayContent">Klicka i kartan för väderdata</div>
 
-  <div id="layerPanel">
-    <div class="layer-panel-title">Lager</div>
+      <div id="layerPanel">
+        <div class="layer-panel-title">Lager</div>
 
-    <div class="layer-row">
-      <div class="layer-row-left">
-        <span class="layer-dot wind"></span>
-        <span>Vind</span>
+        <div class="layer-row">
+          <div class="layer-row-left">
+            <span class="layer-dot wind"></span>
+            <span>Vind</span>
+          </div>
+          <button id="toggleWindLayerBtn">På</button>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-row-left">
+            <span class="layer-dot precip"></span>
+            <span>Nederbörd</span>
+          </div>
+          <button id="togglePrecipLayerBtn">Av</button>
+        </div>
+
+        <div class="layer-row">
+          <div class="layer-row-left">
+            <span class="layer-dot cloud"></span>
+            <span>Moln</span>
+          </div>
+          <button id="toggleCloudLayerBtn">Av</button>
+        </div>
       </div>
-      <button id="toggleWindLayerBtn">På</button>
     </div>
 
-    <div class="layer-row">
-      <div class="layer-row-left">
-        <span class="layer-dot precip"></span>
-        <span>Nederbörd</span>
+    <div id="timeControl">
+      <div class="time-header">
+        <div class="layer-panel-title">Tid</div>
+        <div id="timeValueLabel">--</div>
       </div>
-      <button id="togglePrecipLayerBtn">Av</button>
-    </div>
 
-    <div class="layer-row">
-      <div class="layer-row-left">
-        <span class="layer-dot cloud"></span>
-        <span>Moln</span>
+      <div class="time-toolbar">
+        <button id="timePlayPauseBtn">Spela</button>
       </div>
-      <button id="toggleCloudLayerBtn">Av</button>
+
+      <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
     </div>
-  </div>
-</div>
-
-<div id="timeControl">
-  <div class="time-header">
-    <div class="layer-panel-title">Tid</div>
-    <div id="timeValueLabel">--</div>
-  </div>
-
-  <div class="time-toolbar">
-    <button id="timePlayPauseBtn">Spela</button>
-  </div>
-
-  <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-</div><div id="mapOverlayPanel">
-  <div id="overlayTitle">Välj punkt</div>
-  <div id="overlayContent">Klicka i kartan för väderdata</div>
-
-  <div id="layerPanel">
-    <div class="layer-panel-title">Lager</div>
-
-    <div class="layer-row">
-      <div class="layer-row-left">
-        <span class="layer-dot wind"></span>
-        <span>Vind</span>
-      </div>
-      <button id="toggleWindLayerBtn">På</button>
-    </div>
-
-    <div class="layer-row">
-      <div class="layer-row-left">
-        <span class="layer-dot precip"></span>
-        <span>Nederbörd</span>
-      </div>
-      <button id="togglePrecipLayerBtn">Av</button>
-    </div>
-
-    <div class="layer-row">
-      <div class="layer-row-left">
-        <span class="layer-dot cloud"></span>
-        <span>Moln</span>
-      </div>
-      <button id="toggleCloudLayerBtn">Av</button>
-    </div>
-  </div>
-</div>
-
-<div id="timeControl">
-  <div class="time-header">
-    <div class="layer-panel-title">Tid</div>
-    <div id="timeValueLabel">--</div>
-  </div>
-
-  <div class="time-toolbar">
-    <button id="timePlayPauseBtn">Spela</button>
-  </div>
-
-  <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-</div>
 
     <div id="map" style="display:none;"></div>
   </div>
