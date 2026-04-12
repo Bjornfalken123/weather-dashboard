@@ -1720,31 +1720,45 @@ maptilerMap.on("load", () => {
         });
       }
 
-      if (timeSlider && maptilerWindLayer) {
-        maptilerWindLayer.on("sourceReady", () => {
-          const start = maptilerWindLayer.getAnimationStartDate();
-          const end = maptilerWindLayer.getAnimationEndDate();
-          const current = maptilerWindLayer.getAnimationTimeDate();
+           if (timeSlider && maptilerWindLayer) {
+        function syncSliderFromWindLayer() {
+          const currentDate = maptilerWindLayer.getAnimationTimeDate();
+          if (currentDate) {
+            timeSlider.value = String(+currentDate);
+          }
+        }
 
-          timeSlider.min = +start;
-          timeSlider.max = +end;
-          timeSlider.value = +current;
+        maptilerWindLayer.on("sourceReady", () => {
+          const startDate = maptilerWindLayer.getAnimationStartDate();
+          const endDate = maptilerWindLayer.getAnimationEndDate();
+          const currentDate = maptilerWindLayer.getAnimationTimeDate();
+
+          timeSlider.min = String(+startDate);
+          timeSlider.max = String(+endDate);
+          timeSlider.value = String(+currentDate);
+        });
+
+        maptilerWindLayer.on("animationTimeSet", () => {
+          syncSliderFromWindLayer();
+        });
+
+        maptilerWindLayer.on("tick", () => {
+          syncSliderFromWindLayer();
         });
 
         timeSlider.addEventListener("input", () => {
-          const selectedTime = parseInt(timeSlider.value, 10);
-          const selectedDate = new Date(selectedTime);
+          const selectedTimeSeconds = parseInt(timeSlider.value, 10) / 1000;
 
           if (maptilerWindLayer) {
-            maptilerWindLayer.setAnimationTime(selectedDate);
+            maptilerWindLayer.setAnimationTime(selectedTimeSeconds);
           }
 
           if (maptilerPrecipitationLayer) {
-            maptilerPrecipitationLayer.setAnimationTime(selectedDate);
+            maptilerPrecipitationLayer.setAnimationTime(selectedTimeSeconds);
           }
 
           if (maptilerCloudLayer) {
-            maptilerCloudLayer.setAnimationTime(selectedDate);
+            maptilerCloudLayer.setAnimationTime(selectedTimeSeconds);
           }
         });
       }
