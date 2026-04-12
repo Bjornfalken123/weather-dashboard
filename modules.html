@@ -1641,32 +1641,29 @@ let cloudLayerVisible = false;
 maptilerMap.on("load", () => {
   if (window.maptilerweather) {
     try {
-                maptilerWindLayer = new maptilerweather.WindLayer({
+             maptilerWindLayer = new maptilerweather.WindLayer({
         id: "main-wind-layer",
-        colorramp: maptilerweather.ColorRamp.builtin.WIND,
-        speed: 0.0009,
-        fadeFactor: 0.05,
-        maxAmount: 80,
-        density: 45,
-        size: 1.2,
-        fastIsLarger: true,
-        color: [255, 255, 255, 45],
+        colorramp: maptilerweather.ColorRamp.builtin.NULL,
+        speed: 0.001,
+        fadeFactor: 0.03,
+        maxAmount: 256,
+        density: 200,
+        color: [255, 255, 255, 35],
         fastColor: [255, 255, 255, 120]
       });
 
       maptilerPrecipitationLayer = new maptilerweather.PrecipitationLayer({
         id: "main-precipitation-layer",
-        opacity: 0.7,
+        opacity: 0.8,
         smooth: true
       });
 
       maptilerCloudLayer = new maptilerweather.RadarLayer({
         id: "main-cloud-layer",
         colorramp: maptilerweather.ColorRamp.builtin.RADAR_CLOUD,
-        opacity: 0.7,
+        opacity: 0.65,
         smooth: true
       });
-
       maptilerMap.addLayer(maptilerWindLayer);
 
       const toggleWindBtn = document.getElementById("toggleWindLayerBtn");
