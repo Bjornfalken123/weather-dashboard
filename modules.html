@@ -1209,13 +1209,7 @@
     margin-top: 0;
   }
 
-  #locateBtn {
-    top: 70px;
-    right: 12px;
-    width: 42px;
-    height: 42px;
-    z-index: 3000;
-  }
+ 
 
 
 }
@@ -1829,14 +1823,6 @@ maptilerMap = new maptilersdk.Map({
   center: [13.0, 58.6],
   zoom: 5
 });
-
-maptilerMap.addControl(
-  new maptilersdk.NavigationControl({
-    showCompass: false,
-    showZoom: true
-  }),
-  "top-right"
-);
 
 maptilerMap.addControl(
   new maptilersdk.GeolocateControl({
