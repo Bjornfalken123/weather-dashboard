@@ -1657,7 +1657,7 @@
     attribution: "&copy; OpenStreetMap"
   }).addTo(map);
 
-  const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
+const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
 let maptilerMap = null;
 let maptilerWeatherMarker = null;
 let maptilerWindLayer = null;
@@ -1666,6 +1666,8 @@ let maptilerCloudLayer = null;
 let windLayerVisible = true;
 let precipitationLayerVisible = false;
 let cloudLayerVisible = false;
+let selectedForecastTime = null;
+let timePlaybackTimer = null;
   if (window.maptilersdk) {
     maptilersdk.config.apiKey = MAPTILER_API_KEY;
 
@@ -1759,9 +1761,11 @@ maptilerMap.on("load", () => {
         });
       }
 
-                 if (timeSlider && maptilerWindLayer) {
+                      if (timeSlider && maptilerWindLayer) {
         const timeValueLabel = document.getElementById("timeValueLabel");
         const timePlayPauseBtn = document.getElementById("timePlayPauseBtn");
+        let forecastStartTime = null;
+        let forecastEndTime = null;
         let isTimePlaying = false;
 
         function formatMapTime(date) {
@@ -1775,60 +1779,10 @@ maptilerMap.on("load", () => {
           });
         }
 
-        function syncSliderFromWindLayer() {
-          const currentDate = maptilerWindLayer.getAnimationTimeDate();
-          if (currentDate) {
-            timeSlider.value = String(+currentDate);
-            if (timeValueLabel) {
-              timeValueLabel.textContent = formatMapTime(currentDate);
-            }
-          }
-        }
+        function applySelectedForecastTime() {
+          if (!selectedForecastTime) return;
 
-        function setAnimationFactor(factor) {
-          if (maptilerWindLayer) {
-            maptilerWindLayer.animateByFactor(factor);
-          }
-          if (maptilerPrecipitationLayer) {
-            maptilerPrecipitationLayer.animateByFactor(factor);
-          }
-          if (maptilerCloudLayer) {
-            maptilerCloudLayer.animateByFactor(factor);
-          }
-        }
-
-        maptilerWindLayer.on("sourceReady", () => {
-          const startDate = maptilerWindLayer.getAnimationStartDate();
-          const endDate = maptilerWindLayer.getAnimationEndDate();
-          const currentDate = maptilerWindLayer.getAnimationTimeDate();
-
-          timeSlider.min = String(+startDate);
-          timeSlider.max = String(+endDate);
-          timeSlider.value = String(+currentDate);
-
-          if (timeValueLabel) {
-            timeValueLabel.textContent = formatMapTime(currentDate);
-          }
-        });
-
-        maptilerWindLayer.on("animationTimeSet", () => {
-          syncSliderFromWindLayer();
-        });
-
-        maptilerWindLayer.on("tick", () => {
-          syncSliderFromWindLayer();
-        });
-
-        timeSlider.addEventListener("input", () => {
-          if (isTimePlaying) {
-            setAnimationFactor(0);
-            isTimePlaying = false;
-            if (timePlayPauseBtn) {
-              timePlayPauseBtn.textContent = "Spela";
-            }
-          }
-
-          const selectedTimeSeconds = parseInt(timeSlider.value, 10) / 1000;
+          const selectedTimeSeconds = selectedForecastTime / 1000;
 
           if (maptilerWindLayer) {
             maptilerWindLayer.setAnimationTime(selectedTimeSeconds);
@@ -1841,19 +1795,77 @@ maptilerMap.on("load", () => {
           if (maptilerCloudLayer) {
             maptilerCloudLayer.setAnimationTime(selectedTimeSeconds);
           }
+
+          timeSlider.value = String(selectedForecastTime);
+
+          if (timeValueLabel) {
+            timeValueLabel.textContent = formatMapTime(selectedForecastTime);
+          }
+        }
+
+        function stopTimePlayback() {
+          if (timePlaybackTimer) {
+            clearInterval(timePlaybackTimer);
+            timePlaybackTimer = null;
+          }
+
+          isTimePlaying = false;
+
+          if (timePlayPauseBtn) {
+            timePlayPauseBtn.textContent = "Spela";
+          }
+        }
+
+        maptilerWindLayer.on("sourceReady", () => {
+          const startDate = maptilerWindLayer.getAnimationStartDate();
+          const endDate = maptilerWindLayer.getAnimationEndDate();
+          const currentDate = maptilerWindLayer.getAnimationTimeDate();
+
+          forecastStartTime = +startDate;
+          forecastEndTime = +endDate;
+          selectedForecastTime = +currentDate;
+
+          timeSlider.min = String(forecastStartTime);
+          timeSlider.max = String(forecastEndTime);
+          timeSlider.value = String(selectedForecastTime);
+
+          if (timeValueLabel) {
+            timeValueLabel.textContent = formatMapTime(selectedForecastTime);
+          }
+        });
+
+        timeSlider.addEventListener("input", () => {
+          stopTimePlayback();
+
+          selectedForecastTime = parseInt(timeSlider.value, 10);
+          applySelectedForecastTime();
         });
 
         if (timePlayPauseBtn) {
           timePlayPauseBtn.addEventListener("click", () => {
+            if (!forecastStartTime || !forecastEndTime || !selectedForecastTime) return;
+
             if (isTimePlaying) {
-              setAnimationFactor(0);
-              timePlayPauseBtn.textContent = "Spela";
-            } else {
-              setAnimationFactor(3600);
-              timePlayPauseBtn.textContent = "Pausa";
+              stopTimePlayback();
+              return;
             }
 
-            isTimePlaying = !isTimePlaying;
+            isTimePlaying = true;
+            timePlayPauseBtn.textContent = "Pausa";
+
+            timePlaybackTimer = setInterval(() => {
+              if (!selectedForecastTime) return;
+
+              const nextTime = selectedForecastTime + 60 * 60 * 1000;
+
+              if (nextTime > forecastEndTime) {
+                selectedForecastTime = forecastStartTime;
+              } else {
+                selectedForecastTime = nextTime;
+              }
+
+              applySelectedForecastTime();
+            }, 700);
           });
         }
       }
