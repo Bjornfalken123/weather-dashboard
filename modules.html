@@ -101,10 +101,9 @@
       padding: 30px;
     }
 
-    .hero,
+      .hero,
     .map-panel,
-    .module-card,
-    .layer-panel {
+    .module-card {
       position: relative;
       overflow: hidden;
       border-radius: var(--radius-lg);
@@ -123,8 +122,7 @@
 
     .hero::before,
     .map-panel::before,
-    .module-card::before,
-    .layer-panel::before {
+    .module-card::before {
       content: "";
       position: absolute;
       inset: 0;
@@ -136,8 +134,7 @@
 
     .hero::after,
     .map-panel::after,
-    .module-card::after,
-    .layer-panel::after {
+    .module-card::after {
       content: "";
       position: absolute;
       inset: 1px;
@@ -659,8 +656,6 @@
     height: 100vh;
   }
 
-  .hero,
-  .layer-panel,
   .modules-grid {
     display: none;
   }
@@ -705,25 +700,37 @@
     top: 12px;
     left: 12px;
     right: 12px;
+    z-index: 4200;
   }
 
   #filterToggleBtn {
-    min-height: 40px;
-    padding: 9px 14px;
+    min-height: 42px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    touch-action: manipulation;
   }
 
   #filterDrawer {
-    top: 60px;
+    top: 64px;
     left: 12px;
     right: 12px;
     width: auto;
     max-width: none;
-    padding: 12px;
-    border-radius: 16px;
+    padding: 14px;
+    border-radius: 18px;
+    z-index: 4300;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #filterDrawer,
+  #filterDrawer * {
+    pointer-events: auto;
   }
 
   #mapOverlayPanel {
-    top: 60px;
+    top: 64px;
     left: 12px;
     right: 12px;
     min-width: 0;
@@ -731,6 +738,7 @@
     padding: 12px 13px;
     border-radius: 14px;
     font-size: 12px;
+    z-index: 4100;
   }
 
   #overlayTitle {
@@ -743,20 +751,26 @@
     line-height: 1.5;
   }
 
+  .filter-group-title {
+    font-size: 10px;
+  }
+
   .filter-row {
-    padding: 8px 9px;
+    padding: 10px 10px;
+    min-height: 48px;
   }
 
   .filter-row-left span:last-child {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .filter-row button,
   #filterCloseBtn {
-    min-width: 46px;
-    min-height: 34px;
-    padding: 6px 9px;
+    min-width: 52px;
+    min-height: 36px;
+    padding: 7px 10px;
     font-size: 11px;
+    touch-action: manipulation;
   }
 
   #timeControl {
@@ -765,6 +779,7 @@
     bottom: 12px;
     padding: 11px 12px;
     border-radius: 14px;
+    z-index: 4200;
   }
 
   .time-compact-bottom {
@@ -773,7 +788,7 @@
   }
 
   #timePlayPauseBtn {
-    min-height: 36px;
+    min-height: 38px;
   }
 }
 #mapOverlayPanel {
@@ -1010,32 +1025,7 @@
 </head>
 <body>
   <div class="container">
-    <section class="hero">
-      <div class="hero-top">
-        <div class="title-wrap">
-          <h1>Kustväder</h1>
-          <p class="subtitle">Väder, vågor och stationer i realtid</p>
-        </div>
-
-        <div class="status-pill">
-          <span class="dot"></span>
-          <span id="pageStatus">Vädermodul aktiv</span>
-        </div>
-      </div>
-
-      <div class="hero-bottom">
-        <div class="hero-info">
-          <div>
-            <div class="hero-block-label">Aktivt kartläge</div>
-            <div class="hero-block-value" id="activeModeText">Väder</div>
-          </div>
-          <div>
-            <div class="hero-block-label">Senaste val</div>
-            <div class="hero-block-value" id="lastSelectionText">Inget val gjort ännu</div>
-          </div>
-        </div>
-      </div>
-    </section>
+   
 
     <section class="map-layer-grid">
      <section class="map-panel">
@@ -3070,17 +3060,45 @@ function closeFilterDrawer() {
   }
 }
 
+if (filterDrawer) {
+  filterDrawer.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+
+  filterDrawer.addEventListener("touchstart", (event) => {
+    event.stopPropagation();
+  }, { passive: true });
+
+  filterDrawer.addEventListener("touchmove", (event) => {
+    event.stopPropagation();
+  }, { passive: true });
+}
+
 if (filterToggleBtn) {
-  filterToggleBtn.addEventListener("click", () => {
-    if (!filterDrawer) return;
+  filterToggleBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+
+    if (!filterDrawer) {
+      return;
+    }
+
     filterDrawer.classList.toggle("is-hidden");
   });
+
+  filterToggleBtn.addEventListener("touchstart", (event) => {
+    event.stopPropagation();
+  }, { passive: true });
 }
 
 if (filterCloseBtn) {
-  filterCloseBtn.addEventListener("click", () => {
+  filterCloseBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
     closeFilterDrawer();
   });
+
+  filterCloseBtn.addEventListener("touchstart", (event) => {
+    event.stopPropagation();
+  }, { passive: true });
 }
 
 if (toggleWaveModeBtn) {
