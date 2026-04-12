@@ -3554,11 +3554,17 @@ const toggleLighthouseModeBtn = document.getElementById("toggleLighthouseModeBtn
 
 function syncFilterModeButtons() {
   if (toggleWaveModeBtn) {
-    toggleWaveModeBtn.textContent = activeMode === "wave" ? "På" : "Av";
+    const isWaveActive = activeMode === "wave";
+    toggleWaveModeBtn.textContent = isWaveActive ? "På" : "Av";
+    toggleWaveModeBtn.classList.toggle("is-on", isWaveActive);
+    toggleWaveModeBtn.classList.toggle("is-off", !isWaveActive);
   }
 
   if (toggleLighthouseModeBtn) {
-    toggleLighthouseModeBtn.textContent = activeMode === "lighthouse" ? "På" : "Av";
+    const isLighthouseActive = activeMode === "lighthouse";
+    toggleLighthouseModeBtn.textContent = isLighthouseActive ? "På" : "Av";
+    toggleLighthouseModeBtn.classList.toggle("is-on", isLighthouseActive);
+    toggleLighthouseModeBtn.classList.toggle("is-off", !isLighthouseActive);
   }
 }
 
