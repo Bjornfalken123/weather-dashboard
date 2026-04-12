@@ -1235,6 +1235,27 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.filter-row button.is-on {
+  background: rgba(43, 108, 255, 0.9);
+  color: #ffffff;
+  border-color: rgba(123, 199, 255, 0.35);
+}
+
+.filter-row button.is-off {
+  background: rgba(255,255,255,0.06);
+  color: var(--muted-soft);
+  border-color: rgba(255,255,255,0.08);
+}
+
+#timeValueLabel {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 700;
+  text-align: right;
+  min-width: 140px;
 }
 
 #filterDrawer {
@@ -1636,16 +1657,16 @@
     </div>
 
     <div id="timeControl">
-      <div class="time-compact-top">
-        <div class="time-compact-label">Tid</div>
-        <div id="timeValueLabel">--</div>
-      </div>
+  <div class="time-compact-top">
+    <div class="time-compact-label">Tid</div>
+    <div id="timeValueLabel">Laddar tid...</div>
+  </div>
 
-      <div class="time-compact-bottom">
-        <button id="timePlayPauseBtn" type="button">Spela</button>
-        <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-      </div>
-    </div>
+  <div class="time-compact-bottom">
+    <button id="timePlayPauseBtn" type="button">Spela</button>
+    <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
+  </div>
+</div>
 
     <div id="map" style="display:none;"></div>
   </div>
@@ -2086,10 +2107,25 @@ maptilerMap.on("load", () => {
       });
       maptilerMap.addLayer(maptilerWindLayer);
 
-      const toggleWindBtn = document.getElementById("toggleWindLayerBtn");
+          const toggleWindBtn = document.getElementById("toggleWindLayerBtn");
       const togglePrecipBtn = document.getElementById("togglePrecipLayerBtn");
       const toggleCloudBtn = document.getElementById("toggleCloudLayerBtn");
       const timeSlider = document.getElementById("timeSlider");
+
+      function setToggleButtonState(button, isOn) {
+        if (!button) return;
+        button.textContent = isOn ? "På" : "Av";
+        button.classList.toggle("is-on", isOn);
+        button.classList.toggle("is-off", !isOn);
+      }
+
+      function syncLayerToggleButtons() {
+        setToggleButtonState(toggleWindBtn, windLayerVisible);
+        setToggleButtonState(togglePrecipBtn, precipitationLayerVisible);
+        setToggleButtonState(toggleCloudBtn, cloudLayerVisible);
+      }
+
+      syncLayerToggleButtons();
 
       if (toggleWindBtn) {
         toggleWindBtn.addEventListener("click", () => {
@@ -2097,13 +2133,12 @@ maptilerMap.on("load", () => {
 
           if (windLayerVisible) {
             maptilerMap.removeLayer("main-wind-layer");
-            toggleWindBtn.textContent = "Av";
           } else {
             maptilerMap.addLayer(maptilerWindLayer);
-            toggleWindBtn.textContent = "På";
           }
 
           windLayerVisible = !windLayerVisible;
+          syncLayerToggleButtons();
         });
       }
 
@@ -2113,13 +2148,12 @@ maptilerMap.on("load", () => {
 
           if (precipitationLayerVisible) {
             maptilerMap.removeLayer("main-precipitation-layer");
-            togglePrecipBtn.textContent = "Av";
           } else {
             maptilerMap.addLayer(maptilerPrecipitationLayer, "Water");
-            togglePrecipBtn.textContent = "På";
           }
 
           precipitationLayerVisible = !precipitationLayerVisible;
+          syncLayerToggleButtons();
         });
       }
 
@@ -2129,13 +2163,12 @@ maptilerMap.on("load", () => {
 
           if (cloudLayerVisible) {
             maptilerMap.removeLayer("main-cloud-layer");
-            toggleCloudBtn.textContent = "Av";
           } else {
             maptilerMap.addLayer(maptilerCloudLayer, "Water");
-            toggleCloudBtn.textContent = "På";
           }
 
           cloudLayerVisible = !cloudLayerVisible;
+          syncLayerToggleButtons();
         });
       }
 
