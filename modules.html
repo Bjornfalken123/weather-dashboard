@@ -1641,15 +1641,17 @@ let cloudLayerVisible = false;
 maptilerMap.on("load", () => {
   if (window.maptilerweather) {
     try {
-      maptilerWindLayer = new maptilerweather.WindLayer({
+           maptilerWindLayer = new maptilerweather.WindLayer({
         id: "main-wind-layer",
-        colorramp: maptilerweather.ColorRamp.builtin.NULL,
-        speed: 0.001,
-        fadeFactor: 0.03,
-        maxAmount: 256,
-        density: 200,
-        color: [255, 255, 255, 35],
-        fastColor: [255, 255, 255, 120]
+        colorramp: maptilerweather.ColorRamp.builtin.WIND,
+        speed: 0.0012,
+        fadeFactor: 0.04,
+        maxAmount: 140,
+        density: 90,
+        size: 1.6,
+        fastIsLarger: true,
+        color: [255, 255, 255, 55],
+        fastColor: [255, 255, 255, 150]
       });
 
       maptilerPrecipitationLayer = new maptilerweather.PrecipitationLayer({
@@ -1661,7 +1663,7 @@ maptilerMap.on("load", () => {
       maptilerCloudLayer = new maptilerweather.RadarLayer({
         id: "main-cloud-layer",
         colorramp: maptilerweather.ColorRamp.builtin.RADAR_CLOUD,
-        opacity: 0.65,
+        opacity: 0.82,
         smooth: true
       });
 
