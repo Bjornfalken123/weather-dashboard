@@ -1362,7 +1362,7 @@
   left: 16px;
   right: 16px;
   bottom: 16px;
-  z-index: 1200;
+  z-index: 1400;
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.08);
@@ -1370,6 +1370,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  pointer-events: auto;
 }
 
 .time-compact-top {
@@ -1389,9 +1390,11 @@
 }
 
 #timeValueLabel {
-  font-size: 11px;
-  color: var(--text-soft);
-  font-weight: 600;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 700;
+  text-align: right;
+  min-width: 140px;
 }
 
 .time-compact-bottom {
@@ -1408,6 +1411,10 @@
 #timeSlider {
   width: 100%;
   margin: 0;
+  pointer-events: auto;
+  touch-action: pan-y;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 #overlayTitle {
@@ -2281,12 +2288,16 @@ maptilerMap.on("load", () => {
         initializeForecastTimeFromWindLayer();
       }, 800);
 
-      if (timeSlider) {
-        timeSlider.addEventListener("input", () => {
+           if (timeSlider) {
+        const handleTimeSliderChange = () => {
           stopTimePlayback();
           selectedForecastTime = parseInt(timeSlider.value, 10);
           applySelectedForecastTime();
-        });
+        };
+
+        timeSlider.addEventListener("input", handleTimeSliderChange);
+        timeSlider.addEventListener("change", handleTimeSliderChange);
+        timeSlider.addEventListener("touchend", handleTimeSliderChange);
       }
 
       if (timePlayPauseBtn) {
