@@ -3519,15 +3519,7 @@ async function ensureWaveStationsLoaded() {
     });
   }
 
-  document.querySelectorAll(".mode-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      activeMode = btn.dataset.mode;
-      updateModeUI();
-      updateLastSelectionText();
-    });
-  });
-
-const forecastToggleBtn = document.getElementById("forecastToggleBtn");
+  const forecastToggleBtn = document.getElementById("forecastToggleBtn");
 if (forecastToggleBtn) {
   forecastToggleBtn.addEventListener("click", () => {
     if (!currentForecastDays.length) return;
