@@ -1190,6 +1190,19 @@
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 
+.time-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+#timeValueLabel {
+  font-size: 11px;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
 #timeSlider {
   width: 100%;
   margin-top: 8px;
@@ -1274,8 +1287,11 @@
     </div>
   </div>
 
-  <div id="timeControl">
-    <div class="layer-panel-title">Tid</div>
+   <div id="timeControl">
+    <div class="time-header">
+      <div class="layer-panel-title">Tid</div>
+      <div id="timeValueLabel">--</div>
+    </div>
     <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
   </div>
 </div>
@@ -1719,11 +1735,27 @@ maptilerMap.on("load", () => {
         });
       }
 
-           if (timeSlider && maptilerWindLayer) {
+                if (timeSlider && maptilerWindLayer) {
+        const timeValueLabel = document.getElementById("timeValueLabel");
+
+        function formatMapTime(date) {
+          if (!date) return "--";
+          return new Date(date).toLocaleString("sv-SE", {
+            weekday: "short",
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+
         function syncSliderFromWindLayer() {
           const currentDate = maptilerWindLayer.getAnimationTimeDate();
           if (currentDate) {
             timeSlider.value = String(+currentDate);
+            if (timeValueLabel) {
+              timeValueLabel.textContent = formatMapTime(currentDate);
+            }
           }
         }
 
@@ -1735,6 +1767,10 @@ maptilerMap.on("load", () => {
           timeSlider.min = String(+startDate);
           timeSlider.max = String(+endDate);
           timeSlider.value = String(+currentDate);
+
+          if (timeValueLabel) {
+            timeValueLabel.textContent = formatMapTime(currentDate);
+          }
         });
 
         maptilerWindLayer.on("animationTimeSet", () => {
