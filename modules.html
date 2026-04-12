@@ -2719,6 +2719,17 @@ function updateModeUI() {
     element.style.display = activeMode === "lighthouse" ? "block" : "none";
   });
 
+  if (activeMode !== "weather") {
+    if (weatherMarker && map.hasLayer(weatherMarker)) {
+      map.removeLayer(weatherMarker);
+    }
+
+    if (maptilerWeatherMarker) {
+      maptilerWeatherMarker.remove();
+      maptilerWeatherMarker = null;
+    }
+  }
+
   if (activeMode === "weather") {
     setText("activeModeText", "Väder");
     setText("pageStatus", "Vädermodul aktiv");
