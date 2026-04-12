@@ -1166,6 +1166,11 @@
   box-shadow: 0 0 10px rgba(123, 199, 255, 0.45);
 }
 
+.layer-dot.cloud {
+  background: #b7c5d9;
+  box-shadow: 0 0 10px rgba(183, 197, 217, 0.4);
+}
+
 .layer-row button {
   min-width: 42px;
   font-size: 11px;
@@ -1247,6 +1252,14 @@
       <span>Nederbörd</span>
     </div>
     <button id="togglePrecipLayerBtn">Av</button>
+  </div>
+
+  <div class="layer-row">
+    <div class="layer-row-left">
+      <span class="layer-dot cloud"></span>
+      <span>Moln</span>
+    </div>
+    <button id="toggleCloudLayerBtn">Av</button>
   </div>
 </div>
 </div>
@@ -1588,13 +1601,15 @@
     attribution: "&copy; OpenStreetMap"
   }).addTo(map);
 
-   const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
+  const MAPTILER_API_KEY = "72WUquDNJCLDzyB9DSky";
 let maptilerMap = null;
 let maptilerWeatherMarker = null;
 let maptilerWindLayer = null;
 let maptilerPrecipitationLayer = null;
+let maptilerCloudLayer = null;
 let windLayerVisible = true;
 let precipitationLayerVisible = false;
+let cloudLayerVisible = false;
   if (window.maptilersdk) {
     maptilersdk.config.apiKey = MAPTILER_API_KEY;
 
@@ -1627,10 +1642,18 @@ maptilerMap.on("load", () => {
         smooth: true
       });
 
+      maptilerCloudLayer = new maptilerweather.RadarLayer({
+        id: "main-cloud-layer",
+        colorramp: maptilerweather.ColorRamp.builtin.RADAR_CLOUD,
+        opacity: 0.65,
+        smooth: true
+      });
+
       maptilerMap.addLayer(maptilerWindLayer);
 
       const toggleWindBtn = document.getElementById("toggleWindLayerBtn");
       const togglePrecipBtn = document.getElementById("togglePrecipLayerBtn");
+      const toggleCloudBtn = document.getElementById("toggleCloudLayerBtn");
 
       if (toggleWindBtn) {
         toggleWindBtn.addEventListener("click", () => {
@@ -1661,6 +1684,22 @@ maptilerMap.on("load", () => {
           }
 
           precipitationLayerVisible = !precipitationLayerVisible;
+        });
+      }
+
+      if (toggleCloudBtn) {
+        toggleCloudBtn.addEventListener("click", () => {
+          if (!maptilerCloudLayer) return;
+
+          if (cloudLayerVisible) {
+            maptilerMap.removeLayer("main-cloud-layer");
+            toggleCloudBtn.textContent = "Av";
+          } else {
+            maptilerMap.addLayer(maptilerCloudLayer, "Water");
+            toggleCloudBtn.textContent = "På";
+          }
+
+          cloudLayerVisible = !cloudLayerVisible;
         });
       }
     } catch (error) {
