@@ -1067,7 +1067,7 @@
       .layer-control-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; }
       .layer-control-btn { width: 100%; }
     }
- #mapOverlayPanel {
+#mapOverlayPanel {
   position: absolute;
   top: 16px;
   left: 16px;
@@ -1083,6 +1083,12 @@
   min-width: 220px;
   max-width: 280px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  transition: all 0.25s ease;
+}
+
+#mapOverlayPanel.updated {
+  transform: scale(1.02);
+  box-shadow: 0 0 25px rgba(123,199,255,0.4);
 }
 
 #overlayTitle {
@@ -1963,13 +1969,35 @@ const lighthouseMaptilerMarkerMap = new Map();
     const el = document.getElementById(id);
     if (el) el.textContent = value;
   }
-    function updateMapOverlay(title, content) {
-    const titleEl = document.getElementById("overlayTitle");
-    const contentEl = document.getElementById("overlayContent");
+   function updateMapOverlay(title, content) {
+  const titleEl = document.getElementById("overlayTitle");
+  const contentEl = document.getElementById("overlayContent");
+  const panel = document.getElementById("mapOverlayPanel");
 
-    if (titleEl) titleEl.textContent = title;
-    if (contentEl) contentEl.innerHTML = content;
+  if (titleEl) titleEl.textContent = title;
+  if (contentEl) contentEl.innerHTML = content;
+
+  if (panel) {
+    let color = "rgba(7, 14, 26, 0.78)";
+
+    const lowerTitle = String(title).toLowerCase();
+
+    if (lowerTitle.includes("regn")) {
+      color = "rgba(40, 90, 160, 0.78)";
+    } else if (lowerTitle.includes("klart")) {
+      color = "rgba(160, 125, 55, 0.78)";
+    } else if (lowerTitle.includes("moln")) {
+      color = "rgba(90, 110, 140, 0.78)";
+    }
+
+    panel.style.background = color;
+
+    panel.classList.remove("updated");
+    setTimeout(() => {
+      panel.classList.add("updated");
+    }, 10);
   }
+}
 
   function formatCoord(v) {
     return Number(v).toFixed(4);
@@ -2502,10 +2530,16 @@ const lighthouseMaptilerMarkerMap = new Map();
       );
     }
 
-    function updateWeatherForSelectedTime() {
+       function updateWeatherForSelectedTime() {
       if (!weatherTimeseries.length || !selectedForecastTime) return;
 
       const targetTime = new Date(selectedForecastTime).getTime();
+      const now = Date.now();
+      const diffHours = Math.round((selectedForecastTime - now) / (1000 * 60 * 60));
+
+      let timeLabel = "Nu";
+      if (diffHours > 0) timeLabel = `+${diffHours}h`;
+      if (diffHours < 0) timeLabel = `${diffHours}h`;
 
       let closest = weatherTimeseries[0];
       let minDiff = Math.abs(new Date(closest.time).getTime() - targetTime);
@@ -2543,7 +2577,7 @@ const lighthouseMaptilerMarkerMap = new Map();
       setText("weatherPressureValue", formatPressure(selectedInstant.air_pressure_at_sea_level));
 
       updateMapOverlay(
-        weatherLabelFromSymbol(selectedSymbol),
+        `${weatherLabelFromSymbol(selectedSymbol)} • ${timeLabel}`,
         `
           <div>${formatCoord(lat)}, ${formatCoord(lon)}</div>
           <div>Temp: ${formatTemp(selectedInstant.air_temperature)}</div>
@@ -2554,7 +2588,6 @@ const lighthouseMaptilerMarkerMap = new Map();
         `
       );
     }
-
     window.updateWeatherForSelectedTime = updateWeatherForSelectedTime;
 
     if (selectedForecastTime) {
