@@ -1183,6 +1183,17 @@
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(0,0,0,0.18);
 }
+
+#timeControl {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+#timeSlider {
+  width: 100%;
+  margin-top: 8px;
+}
 }
   </style>
 </head>
@@ -1231,37 +1242,42 @@
   <div class="map-instance-wrap">
     <div id="maptilerMap"></div>
 
-  <div id="mapOverlayPanel">
+<div id="mapOverlayPanel">
   <div id="overlayTitle">Välj punkt</div>
   <div id="overlayContent">Klicka i kartan för väderdata</div>
 
- <div id="layerPanel">
-  <div class="layer-panel-title">Lager</div>
+  <div id="layerPanel">
+    <div class="layer-panel-title">Lager</div>
 
-  <div class="layer-row">
-    <div class="layer-row-left">
-      <span class="layer-dot wind"></span>
-      <span>Vind</span>
+    <div class="layer-row">
+      <div class="layer-row-left">
+        <span class="layer-dot wind"></span>
+        <span>Vind</span>
+      </div>
+      <button id="toggleWindLayerBtn">På</button>
     </div>
-    <button id="toggleWindLayerBtn">På</button>
+
+    <div class="layer-row">
+      <div class="layer-row-left">
+        <span class="layer-dot precip"></span>
+        <span>Nederbörd</span>
+      </div>
+      <button id="togglePrecipLayerBtn">Av</button>
+    </div>
+
+    <div class="layer-row">
+      <div class="layer-row-left">
+        <span class="layer-dot cloud"></span>
+        <span>Moln</span>
+      </div>
+      <button id="toggleCloudLayerBtn">Av</button>
+    </div>
   </div>
 
-  <div class="layer-row">
-    <div class="layer-row-left">
-      <span class="layer-dot precip"></span>
-      <span>Nederbörd</span>
-    </div>
-    <button id="togglePrecipLayerBtn">Av</button>
+  <div id="timeControl">
+    <div class="layer-panel-title">Tid</div>
+    <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
   </div>
-
-  <div class="layer-row">
-    <div class="layer-row-left">
-      <span class="layer-dot cloud"></span>
-      <span>Moln</span>
-    </div>
-    <button id="toggleCloudLayerBtn">Av</button>
-  </div>
-</div>
 </div>
 
     <div id="map" style="display:none;"></div>
@@ -1654,6 +1670,7 @@ maptilerMap.on("load", () => {
       const toggleWindBtn = document.getElementById("toggleWindLayerBtn");
       const togglePrecipBtn = document.getElementById("togglePrecipLayerBtn");
       const toggleCloudBtn = document.getElementById("toggleCloudLayerBtn");
+      const timeSlider = document.getElementById("timeSlider");
 
       if (toggleWindBtn) {
         toggleWindBtn.addEventListener("click", () => {
@@ -1700,6 +1717,35 @@ maptilerMap.on("load", () => {
           }
 
           cloudLayerVisible = !cloudLayerVisible;
+        });
+      }
+
+      if (timeSlider && maptilerWindLayer) {
+        maptilerWindLayer.on("sourceReady", () => {
+          const start = maptilerWindLayer.getAnimationStartDate();
+          const end = maptilerWindLayer.getAnimationEndDate();
+          const current = maptilerWindLayer.getAnimationTimeDate();
+
+          timeSlider.min = +start;
+          timeSlider.max = +end;
+          timeSlider.value = +current;
+        });
+
+        timeSlider.addEventListener("input", () => {
+          const selectedTime = parseInt(timeSlider.value, 10);
+          const selectedDate = new Date(selectedTime);
+
+          if (maptilerWindLayer) {
+            maptilerWindLayer.setAnimationTime(selectedDate);
+          }
+
+          if (maptilerPrecipitationLayer) {
+            maptilerPrecipitationLayer.setAnimationTime(selectedDate);
+          }
+
+          if (maptilerCloudLayer) {
+            maptilerCloudLayer.setAnimationTime(selectedDate);
+          }
         });
       }
     } catch (error) {
