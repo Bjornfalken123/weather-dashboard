@@ -3627,20 +3627,21 @@ syncFilterModeButtons();
     }
   }
 
-  map.on("click", (event) => {
-    handlePrimaryMapClick(event.latlng.lat, event.latlng.lng);
+map.on("click", (event) => {
+  handlePrimaryMapClick(event.latlng.lat, event.latlng.lng);
+});
+
+if (maptilerMap) {
+  maptilerMap.on("click", (event) => {
+    const lngLat = event.lngLat;
+
+    if (!lngLat) {
+      return;
+    }
+
+    handlePrimaryMapClick(lngLat.lat, lngLat.lng);
   });
-
-  if (maptilerMap) {
-    maptilerMap.on("click", (event) => {
-      console.log("MapTiler click:", event);
-
-      const lngLat = event.lngLat;
-      if (!lngLat) return;
-
-      handlePrimaryMapClick(lngLat.lat, lngLat.lng);
-    });
-  }
+}
 
   const layerTabs = Array.from(document.querySelectorAll(".layer-tab"));
   const layerView = document.getElementById("layerView");
