@@ -1362,7 +1362,7 @@
   left: 16px;
   right: 16px;
   bottom: 16px;
-  z-index: 1400;
+  z-index: 3000;
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.08);
@@ -1371,6 +1371,7 @@
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.28);
   pointer-events: auto;
+  touch-action: none;
 }
 
 .time-compact-top {
@@ -1406,13 +1407,14 @@
 
 #timePlayPauseBtn {
   min-width: 68px;
+  touch-action: manipulation;
 }
 
 #timeSlider {
   width: 100%;
   margin: 0;
   pointer-events: auto;
-  touch-action: pan-y;
+  touch-action: none;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -2288,16 +2290,51 @@ maptilerMap.on("load", () => {
         initializeForecastTimeFromWindLayer();
       }, 800);
 
-           if (timeSlider) {
+          if (timeSlider) {
         const handleTimeSliderChange = () => {
           stopTimePlayback();
           selectedForecastTime = parseInt(timeSlider.value, 10);
           applySelectedForecastTime();
         };
 
+        const stopMapTouch = (event) => {
+          event.stopPropagation();
+        };
+
+        const stopMapTouchHard = (event) => {
+          event.stopPropagation();
+          if (event.cancelable) {
+            event.preventDefault();
+          }
+        };
+
         timeSlider.addEventListener("input", handleTimeSliderChange);
         timeSlider.addEventListener("change", handleTimeSliderChange);
-        timeSlider.addEventListener("touchend", handleTimeSliderChange);
+
+        timeSlider.addEventListener("touchstart", stopMapTouchHard, { passive: false });
+        timeSlider.addEventListener("touchmove", stopMapTouchHard, { passive: false });
+        timeSlider.addEventListener("touchend", (event) => {
+          stopMapTouchHard(event);
+          handleTimeSliderChange();
+        }, { passive: false });
+
+        timeSlider.addEventListener("pointerdown", stopMapTouch);
+        timeSlider.addEventListener("pointermove", stopMapTouch);
+        timeSlider.addEventListener("pointerup", stopMapTouch);
+
+        if (timePlayPauseBtn) {
+          timePlayPauseBtn.addEventListener("touchstart", stopMapTouchHard, { passive: false });
+          timePlayPauseBtn.addEventListener("touchend", stopMapTouchHard, { passive: false });
+          timePlayPauseBtn.addEventListener("pointerdown", stopMapTouch);
+          timePlayPauseBtn.addEventListener("click", stopMapTouch);
+        }
+
+        const timeControl = document.getElementById("timeControl");
+        if (timeControl) {
+          timeControl.addEventListener("touchstart", stopMapTouchHard, { passive: false });
+          timeControl.addEventListener("touchmove", stopMapTouchHard, { passive: false });
+          timeControl.addEventListener("pointerdown", stopMapTouch);
+        }
       }
 
       if (timePlayPauseBtn) {
