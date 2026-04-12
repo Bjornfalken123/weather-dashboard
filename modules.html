@@ -1668,6 +1668,7 @@ let precipitationLayerVisible = false;
 let cloudLayerVisible = false;
 let selectedForecastTime = null;
 let timePlaybackTimer = null;
+let weatherTimeseries = [];
   if (window.maptilersdk) {
     maptilersdk.config.apiKey = MAPTILER_API_KEY;
 
@@ -1779,7 +1780,7 @@ maptilerMap.on("load", () => {
           });
         }
 
-        function applySelectedForecastTime() {
+         function applySelectedForecastTime() {
           if (!selectedForecastTime) return;
 
           const selectedTimeSeconds = selectedForecastTime / 1000;
@@ -1800,6 +1801,10 @@ maptilerMap.on("load", () => {
 
           if (timeValueLabel) {
             timeValueLabel.textContent = formatMapTime(selectedForecastTime);
+          }
+
+          if (window.updateWeatherForSelectedTime) {
+            window.updateWeatherForSelectedTime();
           }
         }
 
@@ -2432,69 +2437,129 @@ const lighthouseMaptilerMarkerMap = new Map();
   }
 }
 
-   async function loadWeatherForPoint(lat, lon) {
-    try {
-      setText("weatherStatusValue", "Hämtar prognos...");
-      setText("weatherGustSourceValue", "Hämtar...");
-      resetForecastDisplay();
+ async function loadWeatherForPoint(lat, lon) {
+  try {
+    setText("weatherStatusValue", "Hämtar prognos...");
+    setText("weatherGustSourceValue", "Hämtar...");
+    resetForecastDisplay();
 
-      updateMapOverlay(
-        "Laddar väder...",
-        `${formatCoord(lat)}, ${formatCoord(lon)}`
+    updateMapOverlay(
+      "Laddar väder...",
+      `${formatCoord(lat)}, ${formatCoord(lon)}`
+    );
+
+    const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
+    const gustUrl = `/api/openmeteo-gust?lat=${lat}&lon=${lon}`;
+
+    const [weatherRes, gustRes] = await Promise.all([fetch(weatherUrl), fetch(gustUrl)]);
+    const weatherText = await weatherRes.text();
+    const gustText = await gustRes.text();
+
+    if (!weatherRes.ok) throw new Error(weatherText);
+
+    const weatherData = JSON.parse(weatherText);
+    const timeseries = weatherData.properties?.timeseries || [];
+    if (!timeseries.length) throw new Error("Ingen väderdata hittades.");
+
+    weatherTimeseries = timeseries;
+
+    const current = timeseries[0];
+    const instant = current.data?.instant?.details || {};
+    const next1 = current.data?.next_1_hours || {};
+    const next6 = current.data?.next_6_hours || {};
+
+    const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
+    const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
+
+    setText("weatherTempValue", formatTemp(instant.air_temperature));
+    setText("weatherHumidityValue", formatHumidity(instant.relative_humidity));
+    setText("weatherRainValue", formatRain(precip));
+    setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
+    setText("weatherWindValue", formatWind(instant.wind_speed));
+    setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
+    setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
+
+    currentForecastDays = buildDailyForecast(timeseries);
+    renderForecast(currentForecastDays);
+
+    let gustFormatted = "--";
+
+    if (gustRes.ok) {
+      const gustData = JSON.parse(gustText);
+      gustFormatted = formatWind(gustData.value);
+      setText("weatherGustValue", gustFormatted);
+      setText("weatherGustSourceValue", "Open-Meteo • punktdata");
+      setText(
+        "weatherStatusValue",
+        currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad"
       );
+    } else {
+      setText("weatherGustValue", "--");
+      setText("weatherGustSourceValue", "Inga vindbyar tillgängliga");
+      setText(
+        "weatherStatusValue",
+        currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad"
+      );
+    }
 
-      const weatherUrl = `/api/weather?lat=${lat}&lon=${lon}`;
-      const gustUrl = `/api/openmeteo-gust?lat=${lat}&lon=${lon}`;
+    function updateWeatherForSelectedTime() {
+      if (!weatherTimeseries.length || !selectedForecastTime) return;
 
-      const [weatherRes, gustRes] = await Promise.all([fetch(weatherUrl), fetch(gustUrl)]);
-      const weatherText = await weatherRes.text();
-      const gustText = await gustRes.text();
+      const targetTime = new Date(selectedForecastTime).getTime();
 
-      if (!weatherRes.ok) throw new Error(weatherText);
+      let closest = weatherTimeseries[0];
+      let minDiff = Math.abs(new Date(closest.time).getTime() - targetTime);
 
-      const weatherData = JSON.parse(weatherText);
-      const timeseries = weatherData.properties?.timeseries || [];
-      if (!timeseries.length) throw new Error("Ingen väderdata hittades.");
+      for (const item of weatherTimeseries) {
+        const t = new Date(item.time).getTime();
+        const diff = Math.abs(t - targetTime);
 
-      const current = timeseries[0];
-      const instant = current.data?.instant?.details || {};
-      const next1 = current.data?.next_1_hours || {};
-      const next6 = current.data?.next_6_hours || {};
-
-      const symbol = next1.summary?.symbol_code || next6.summary?.symbol_code || null;
-      const precip = next1.details?.precipitation_amount ?? next6.details?.precipitation_amount ?? null;
-
-      setText("weatherTempValue", formatTemp(instant.air_temperature));
-      setText("weatherHumidityValue", formatHumidity(instant.relative_humidity));
-      setText("weatherRainValue", formatRain(precip));
-      setText("weatherTypeValue", weatherLabelFromSymbol(symbol));
-      setText("weatherWindValue", formatWind(instant.wind_speed));
-      setText("weatherDirectionValue", formatWindDirection(instant.wind_from_direction));
-      setText("weatherPressureValue", formatPressure(instant.air_pressure_at_sea_level));
-
-      currentForecastDays = buildDailyForecast(timeseries);
-      renderForecast(currentForecastDays);
-
-      let gustFormatted = "--";
-
-      if (gustRes.ok) {
-        const gustData = JSON.parse(gustText);
-        gustFormatted = formatWind(gustData.value);
-        setText("weatherGustValue", gustFormatted);
-        setText("weatherGustSourceValue", "Open-Meteo • punktdata");
-        setText(
-          "weatherStatusValue",
-          currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad"
-        );
-      } else {
-        setText("weatherGustValue", "--");
-        setText("weatherGustSourceValue", "Inga vindbyar tillgängliga");
-        setText(
-          "weatherStatusValue",
-          currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad"
-        );
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = item;
+        }
       }
 
+      const selectedInstant = closest.data?.instant?.details || {};
+      const selectedNext1 = closest.data?.next_1_hours || {};
+      const selectedNext6 = closest.data?.next_6_hours || {};
+
+      const selectedSymbol =
+        selectedNext1.summary?.symbol_code ||
+        selectedNext6.summary?.symbol_code ||
+        null;
+
+      const selectedPrecip =
+        selectedNext1.details?.precipitation_amount ??
+        selectedNext6.details?.precipitation_amount ??
+        null;
+
+      setText("weatherTempValue", formatTemp(selectedInstant.air_temperature));
+      setText("weatherHumidityValue", formatHumidity(selectedInstant.relative_humidity));
+      setText("weatherRainValue", formatRain(selectedPrecip));
+      setText("weatherTypeValue", weatherLabelFromSymbol(selectedSymbol));
+      setText("weatherWindValue", formatWind(selectedInstant.wind_speed));
+      setText("weatherDirectionValue", formatWindDirection(selectedInstant.wind_from_direction));
+      setText("weatherPressureValue", formatPressure(selectedInstant.air_pressure_at_sea_level));
+
+      updateMapOverlay(
+        weatherLabelFromSymbol(selectedSymbol),
+        `
+          <div>${formatCoord(lat)}, ${formatCoord(lon)}</div>
+          <div>Temp: ${formatTemp(selectedInstant.air_temperature)}</div>
+          <div>Vind: ${formatWind(selectedInstant.wind_speed)}</div>
+          <div>Byar: ${gustFormatted}</div>
+          <div>Regn: ${formatRain(selectedPrecip)}</div>
+          <div>Tryck: ${formatPressure(selectedInstant.air_pressure_at_sea_level)}</div>
+        `
+      );
+    }
+
+    window.updateWeatherForSelectedTime = updateWeatherForSelectedTime;
+
+    if (selectedForecastTime) {
+      updateWeatherForSelectedTime();
+    } else {
       updateMapOverlay(
         weatherLabelFromSymbol(symbol),
         `
@@ -2506,12 +2571,13 @@ const lighthouseMaptilerMarkerMap = new Map();
           <div>Tryck: ${formatPressure(instant.air_pressure_at_sea_level)}</div>
         `
       );
-    } catch (error) {
-      console.error(error);
-      setText("weatherStatusValue", "Det gick inte att hämta väderdata");
-      updateMapOverlay("Fel", "Det gick inte att hämta väderdata för vald punkt.");
     }
+  } catch (error) {
+    console.error(error);
+    setText("weatherStatusValue", "Det gick inte att hämta väderdata");
+    updateMapOverlay("Fel", "Det gick inte att hämta väderdata för vald punkt.");
   }
+}
 
 async function ensureWaveStationsLoaded() {
   if (waveStationsLoaded) return;
