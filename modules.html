@@ -1378,7 +1378,6 @@
   width: 100%;
   margin-top: 8px;
 }
-}
   </style>
 </head>
 <body>
@@ -3452,9 +3451,9 @@ async function ensureWaveStationsLoaded() {
   const precipitationImage = document.getElementById("precipitationImage");
 
   const layerMiniMap = L.map("layerMiniMap", {
-    zoomControl: true,
-    attributionControl: true
-  }).setView([58.6, 13.0], 5);
+  zoomControl: false,
+  attributionControl: true
+}).setView([58.6, 13.0], 5);
 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
