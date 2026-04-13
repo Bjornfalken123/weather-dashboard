@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       `&current=wind_gusts_10m` +
       `&hourly=wind_gusts_10m` +
       `&wind_speed_unit=ms` +
-      `&timezone=auto&forecast_days=1`;
+      `&timezone=auto&forecast_days=7`;
 
     const response = await fetch(url);
     const text = await response.text();
@@ -34,12 +34,17 @@ export default async function handler(req, res) {
     const currentValue = data?.current?.wind_gusts_10m ?? null;
     const currentTime = data?.current?.time ?? null;
 
-    return res.status(200).json({
-      value: currentValue,
-      time: currentTime,
-      source: "Open-Meteo",
-      unit: "m/s"
-    });
+const times = data?.hourly?.time ?? [];
+const gusts = data?.hourly?.wind_gusts_10m ?? [];
+const timeseries = times.map((t, i) => ({ time: t, value: gusts[i] ?? null }));
+
+return res.status(200).json({
+  value: currentValue,
+  time: currentTime,
+  timeseries,
+  source: "Open-Meteo",
+  unit: "m/s"
+});
   } catch (error) {
     return res.status(500).json({
       error: true,
