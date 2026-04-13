@@ -863,6 +863,7 @@
   box-shadow:
     0 12px 28px rgba(0,0,0,0.28),
     inset 0 1px 0 rgba(255,255,255,0.03);
+  pointer-events: none;
 }
 
 #objectOverlayPanel.is-hidden {
@@ -1453,6 +1454,8 @@
 
 <script>
   let activeMode = "weather";
+  let showWaveObjects = false;
+  let showLighthouseObjects = false;
   let forecastExpanded = false;
   let currentForecastDays = [];
 
@@ -2379,68 +2382,55 @@ function setLighthouseMarkerColorById(stationId, state, tooltipText) {
 }
 function updateModeUI() {
   waveMaptilerMarkerMap.forEach(({ element }) => {
-    element.style.display = activeMode === "wave" ? "block" : "none";
+    if (!element) return;
+    element.style.display = showWaveObjects ? "block" : "none";
   });
 
   lighthouseMaptilerMarkerMap.forEach(({ element }) => {
-    element.style.display = activeMode === "lighthouse" ? "block" : "none";
+    if (!element) return;
+    element.style.display = showLighthouseObjects ? "block" : "none";
   });
 
-  if (activeMode !== "weather") {
-    if (weatherMarker && map.hasLayer(weatherMarker)) {
-      map.removeLayer(weatherMarker);
-    }
-
-    if (maptilerWeatherMarker) {
-      maptilerWeatherMarker.remove();
-      maptilerWeatherMarker = null;
-    }
-  }
-
-  if (activeMode === "weather") {
-    hideObjectOverlay();
-    setText("activeModeText", "Väder");
-    setText("pageStatus", "Vädermodul aktiv");
-    setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
-    updateMapOverlay("Väderpunkt", "Klicka i kartan för att visa aktuell väderdata för en vald punkt.");
-
-    if (map.hasLayer(waveStationsLayer)) {
-      map.removeLayer(waveStationsLayer);
-    }
-
-    if (map.hasLayer(lighthouseStationsLayer)) {
-      map.removeLayer(lighthouseStationsLayer);
-    }
-  } else if (activeMode === "wave") {
-    setText("activeModeText", "Boj / våg");
-    setText("pageStatus", "Bojmodul aktiv");
-    setText("mapNote", "Bara bojar med faktisk data visas på kartan.");
-    updateMapOverlay("Boj / våg", "Välj en boj för att visa havsdata i den lilla objektrutan.");
-
+  if (showWaveObjects) {
     ensureWaveStationsLoaded();
 
     if (!map.hasLayer(waveStationsLayer)) {
       map.addLayer(waveStationsLayer);
     }
-
-    if (map.hasLayer(lighthouseStationsLayer)) {
-      map.removeLayer(lighthouseStationsLayer);
-    }
   } else {
-    setText("activeModeText", "Fyr / station");
-    setText("pageStatus", "Fyrmodul aktiv");
-    setText("mapNote", "Bara stationer med faktisk data visas på kartan.");
-    updateMapOverlay("Fyr / station", "Välj en station för att visa observationsdata i den lilla objektrutan.");
+    if (map.hasLayer(waveStationsLayer)) {
+      map.removeLayer(waveStationsLayer);
+    }
+  }
 
+  if (showLighthouseObjects) {
     ensureLighthouseStationsLoaded();
 
     if (!map.hasLayer(lighthouseStationsLayer)) {
       map.addLayer(lighthouseStationsLayer);
     }
-
-    if (map.hasLayer(waveStationsLayer)) {
-      map.removeLayer(waveStationsLayer);
+  } else {
+    if (map.hasLayer(lighthouseStationsLayer)) {
+      map.removeLayer(lighthouseStationsLayer);
     }
+  }
+
+  setText("activeModeText", "Väder");
+  setText("pageStatus", "Väder aktivt");
+
+  if (showWaveObjects && showLighthouseObjects) {
+    setText("mapNote", "Klicka i kartan för väderdata. Bojar och stationer visas samtidigt.");
+  } else if (showWaveObjects) {
+    setText("mapNote", "Klicka i kartan för väderdata. Bara bojar med faktisk data visas.");
+  } else if (showLighthouseObjects) {
+    setText("mapNote", "Klicka i kartan för väderdata. Bara stationer med faktisk data visas.");
+  } else {
+    setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
+    hideObjectOverlay();
+  }
+
+  if (!savedSelections.weather) {
+    updateMapOverlay("Väderpunkt", "Klicka i kartan för att visa aktuell väderdata för en vald punkt.");
   }
 
   syncFilterModeButtons();
@@ -3255,17 +3245,15 @@ const toggleLighthouseModeBtn = document.getElementById("toggleLighthouseModeBtn
 
 function syncFilterModeButtons() {
   if (toggleWaveModeBtn) {
-    const isWaveActive = activeMode === "wave";
-    toggleWaveModeBtn.textContent = isWaveActive ? "På" : "Av";
-    toggleWaveModeBtn.classList.toggle("is-on", isWaveActive);
-    toggleWaveModeBtn.classList.toggle("is-off", !isWaveActive);
+    toggleWaveModeBtn.textContent = showWaveObjects ? "På" : "Av";
+    toggleWaveModeBtn.classList.toggle("is-on", showWaveObjects);
+    toggleWaveModeBtn.classList.toggle("is-off", !showWaveObjects);
   }
 
   if (toggleLighthouseModeBtn) {
-    const isLighthouseActive = activeMode === "lighthouse";
-    toggleLighthouseModeBtn.textContent = isLighthouseActive ? "På" : "Av";
-    toggleLighthouseModeBtn.classList.toggle("is-on", isLighthouseActive);
-    toggleLighthouseModeBtn.classList.toggle("is-off", !isLighthouseActive);
+    toggleLighthouseModeBtn.textContent = showLighthouseObjects ? "På" : "Av";
+    toggleLighthouseModeBtn.classList.toggle("is-on", showLighthouseObjects);
+    toggleLighthouseModeBtn.classList.toggle("is-off", !showLighthouseObjects);
   }
 }
 
@@ -3318,21 +3306,19 @@ if (filterCloseBtn) {
 
 if (toggleWaveModeBtn) {
   toggleWaveModeBtn.addEventListener("click", () => {
-    activeMode = activeMode === "wave" ? "weather" : "wave";
+    showWaveObjects = !showWaveObjects;
     updateModeUI();
-    closeFilterDrawer();
   });
 }
 
 if (toggleLighthouseModeBtn) {
   toggleLighthouseModeBtn.addEventListener("click", () => {
-    activeMode = activeMode === "lighthouse" ? "weather" : "lighthouse";
+    showLighthouseObjects = !showLighthouseObjects;
     updateModeUI();
-    closeFilterDrawer();
   });
 }
 
-updateModeUI();
+syncFilterModeButtons();
 
   function setMaptilerWeatherMarker(lat, lon) {
     if (!maptilerMap || !window.maptilersdk) return;
@@ -3346,14 +3332,12 @@ updateModeUI();
       .addTo(maptilerMap);
   }
 
-  function handlePrimaryMapClick(lat, lon) {
-    if (activeMode === "weather") {
-      saveSelection("weather", { lat, lon });
-      setWeatherMarker(lat, lon);
-      setMaptilerWeatherMarker(lat, lon);
-      loadWeatherForPoint(lat, lon);
-    }
-  }
+function handlePrimaryMapClick(lat, lon) {
+  saveSelection("weather", { lat, lon });
+  setWeatherMarker(lat, lon);
+  setMaptilerWeatherMarker(lat, lon);
+  loadWeatherForPoint(lat, lon);
+}
 
 map.on("click", (event) => {
   handlePrimaryMapClick(event.latlng.lat, event.latlng.lng);
