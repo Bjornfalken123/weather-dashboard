@@ -2322,7 +2322,7 @@ function updateModeUI() {
   updateLastSelectionText();
 }
 
- async function loadWeatherForPoint(lat, lon) {
+async function loadWeatherForPoint(lat, lon) {
   try {
     setText("weatherStatusValue", "Hämtar prognos...");
     setText("weatherGustSourceValue", "Hämtar...");
@@ -2369,6 +2369,19 @@ function updateModeUI() {
 
     let gustFormatted = "--";
 
+    function buildWeatherOverlayContent(pointTime, temperature, windSpeed, windDirection, gust, rainAmount, pressure) {
+      return `
+        <div>${formatCoord(lat)}, ${formatCoord(lon)}</div>
+        <div>Tid: ${formatObsTime(pointTime)}</div>
+        <div>Temp: ${formatTemp(temperature)}</div>
+        <div>Vind: ${formatWind(windSpeed)}</div>
+        <div>Riktning: ${formatWindDirection(windDirection)}</div>
+        <div>Byar: ${gust}</div>
+        <div>Regn: ${formatRain(rainAmount)}</div>
+        <div>Tryck: ${formatPressure(pressure)}</div>
+      `;
+    }
+
     if (gustRes.ok) {
       const gustData = JSON.parse(gustText);
       gustFormatted = formatWind(gustData.value);
@@ -2387,7 +2400,7 @@ function updateModeUI() {
       );
     }
 
-          function updateWeatherForSelectedTime() {
+    function updateWeatherForSelectedTime() {
       if (!weatherTimeseries.length || !selectedForecastTime) return;
 
       const targetTime = new Date(selectedForecastTime).getTime();
@@ -2429,16 +2442,18 @@ function updateModeUI() {
 
       updateMapOverlay(
         weatherLabelFromSymbol(selectedSymbol),
-        `
-          <div>${formatCoord(lat)}, ${formatCoord(lon)}</div>
-          <div>Temp: ${formatTemp(selectedInstant.air_temperature)}</div>
-          <div>Vind: ${formatWind(selectedInstant.wind_speed)}</div>
-          <div>Byar: ${gustFormatted}</div>
-          <div>Regn: ${formatRain(selectedPrecip)}</div>
-          <div>Tryck: ${formatPressure(selectedInstant.air_pressure_at_sea_level)}</div>
-        `
+        buildWeatherOverlayContent(
+          closest.time,
+          selectedInstant.air_temperature,
+          selectedInstant.wind_speed,
+          selectedInstant.wind_from_direction,
+          gustFormatted,
+          selectedPrecip,
+          selectedInstant.air_pressure_at_sea_level
+        )
       );
     }
+
     window.updateWeatherForSelectedTime = updateWeatherForSelectedTime;
 
     if (selectedForecastTime) {
@@ -2446,14 +2461,15 @@ function updateModeUI() {
     } else {
       updateMapOverlay(
         weatherLabelFromSymbol(symbol),
-        `
-          <div>${formatCoord(lat)}, ${formatCoord(lon)}</div>
-          <div>Temp: ${formatTemp(instant.air_temperature)}</div>
-          <div>Vind: ${formatWind(instant.wind_speed)}</div>
-          <div>Byar: ${gustFormatted}</div>
-          <div>Regn: ${formatRain(precip)}</div>
-          <div>Tryck: ${formatPressure(instant.air_pressure_at_sea_level)}</div>
-        `
+        buildWeatherOverlayContent(
+          current.time,
+          instant.air_temperature,
+          instant.wind_speed,
+          instant.wind_from_direction,
+          gustFormatted,
+          precip,
+          instant.air_pressure_at_sea_level
+        )
       );
     }
   } catch (error) {
