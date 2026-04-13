@@ -740,12 +740,25 @@
     z-index: 4100;
   }
 
+  #objectOverlayPanel {
+    top: auto;
+    left: 12px;
+    right: 12px;
+    bottom: 92px;
+    min-width: 0;
+    max-width: none;
+    padding: 11px 12px;
+    border-radius: 14px;
+    z-index: 4150;
+  }
+
   #overlayTitle {
     font-size: 14px;
     margin-bottom: 6px;
   }
 
-  #overlayContent {
+  #overlayContent,
+  #objectOverlayContent {
     font-size: 12px;
     line-height: 1.5;
   }
@@ -831,6 +844,43 @@
   color: var(--muted-soft);
   font-size: 12px;
   line-height: 1.6;
+}
+
+#objectOverlayPanel {
+  position: absolute;
+  top: 74px;
+  right: 16px;
+  z-index: 1150;
+  padding: 11px 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(7, 14, 26, 0.84);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text);
+  min-width: 210px;
+  max-width: 260px;
+  box-shadow:
+    0 12px 28px rgba(0,0,0,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+#objectOverlayPanel.is-hidden {
+  display: none;
+}
+
+#objectOverlayTitle {
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+#objectOverlayContent {
+  color: var(--muted-soft);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .map-topbar {
@@ -1110,9 +1160,14 @@
         <button id="filterToggleBtn" type="button">Filter</button>
       </div>
 
-      <div id="mapOverlayPanel">
+         <div id="mapOverlayPanel">
         <div id="overlayTitle">Välj punkt</div>
         <div id="overlayContent">Klicka i kartan för väderdata</div>
+      </div>
+
+      <div id="objectOverlayPanel" class="is-hidden">
+        <div id="objectOverlayTitle">Objektdata</div>
+        <div id="objectOverlayContent">Välj en boj eller station.</div>
       </div>
 
       <div id="filterDrawer" class="is-hidden">
@@ -1800,12 +1855,30 @@ const lighthouseMaptilerMarkerMap = new Map();
     const el = document.getElementById(id);
     if (el) el.textContent = value;
   }
-  function updateMapOverlay(title, content) {
+function updateMapOverlay(title, content) {
   const titleEl = document.getElementById("overlayTitle");
   const contentEl = document.getElementById("overlayContent");
 
   if (titleEl) titleEl.textContent = title;
   if (contentEl) contentEl.innerHTML = content;
+}
+
+function updateObjectOverlay(title, content) {
+  const panelEl = document.getElementById("objectOverlayPanel");
+  const titleEl = document.getElementById("objectOverlayTitle");
+  const contentEl = document.getElementById("objectOverlayContent");
+
+  if (!panelEl || !titleEl || !contentEl) return;
+
+  titleEl.textContent = title;
+  contentEl.innerHTML = content;
+  panelEl.classList.remove("is-hidden");
+}
+
+function hideObjectOverlay() {
+  const panelEl = document.getElementById("objectOverlayPanel");
+  if (!panelEl) return;
+  panelEl.classList.add("is-hidden");
 }
 
   function formatCoord(v) {
@@ -2325,6 +2398,7 @@ function updateModeUI() {
   }
 
   if (activeMode === "weather") {
+    hideObjectOverlay();
     setText("activeModeText", "Väder");
     setText("pageStatus", "Vädermodul aktiv");
     setText("mapNote", "Klicka på kartan för att välja en punkt för vädermodulen.");
@@ -2340,8 +2414,8 @@ function updateModeUI() {
   } else if (activeMode === "wave") {
     setText("activeModeText", "Boj / våg");
     setText("pageStatus", "Bojmodul aktiv");
-    setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
-    updateMapOverlay("Boj / våg", "Välj en boj eller vågstation för att visa havsdata.");
+    setText("mapNote", "Bara bojar med faktisk data visas på kartan.");
+    updateMapOverlay("Boj / våg", "Välj en boj för att visa havsdata i den lilla objektrutan.");
 
     ensureWaveStationsLoaded();
 
@@ -2355,8 +2429,8 @@ function updateModeUI() {
   } else {
     setText("activeModeText", "Fyr / station");
     setText("pageStatus", "Fyrmodul aktiv");
-    setText("mapNote", "Bakgrundskontroll pågår. Blå = ännu inte kontrollerad, röd = data tillgänglig, grå = ingen data.");
-    updateMapOverlay("Fyr / station", "Välj en station för att visa observationsdata i nästa steg.");
+    setText("mapNote", "Bara stationer med faktisk data visas på kartan.");
+    updateMapOverlay("Fyr / station", "Välj en station för att visa observationsdata i den lilla objektrutan.");
 
     ensureLighthouseStationsLoaded();
 
@@ -2821,7 +2895,7 @@ async function ensureWaveStationsLoaded() {
     }
   }
 
- async function selectWaveStation(station) {
+async function selectWaveStation(station) {
   saveSelection("wave", {
     id: station.id,
     name: station.name,
@@ -2831,7 +2905,7 @@ async function ensureWaveStationsLoaded() {
 
   setWaveSelectionMarker(station.latitude, station.longitude, station.name);
 
-  updateMapOverlay(
+  updateObjectOverlay(
     station.name || "Boj / våg",
     `Laddar havsdata...<br>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}`
   );
@@ -2876,18 +2950,19 @@ async function ensureWaveStationsLoaded() {
 
     let statusText = "Ingen havsdata tillgänglig";
     if (hasAnySeaData) {
-      if (usesViva && usesSmhi) statusText = "Havsdata hämtad • VIVA + SMHI";
-      else if (usesViva) statusText = "Havsdata hämtad • VIVA";
-      else statusText = "Havsdata hämtad • SMHI";
+      if (usesViva && usesSmhi) statusText = "Havsdata • VIVA + SMHI";
+      else if (usesViva) statusText = "Havsdata • VIVA";
+      else statusText = "Havsdata • SMHI";
     }
 
     setText("waveStatusValue", statusText);
 
-    updateMapOverlay(
+    updateObjectOverlay(
       station.name || "Boj / våg",
       `
         <div>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}</div>
         <div>Våghöjd: ${waveValue}</div>
+        <div>Obs: ${waveObsValue}</div>
         <div>Vattenstånd: ${waterLevelValue}</div>
         <div>Vattentemp: ${waterTempValue}</div>
         <div>Status: ${statusText}</div>
@@ -2902,7 +2977,7 @@ async function ensureWaveStationsLoaded() {
   } catch (error) {
     console.error(error);
     setText("waveStatusValue", "Det gick inte att hämta havsdata");
-    updateMapOverlay(
+    updateObjectOverlay(
       station.name || "Boj / våg",
       "Det gick inte att hämta havsdata för vald station."
     );
@@ -3055,7 +3130,7 @@ async function ensureWaveStationsLoaded() {
     }
   }
 
- async function selectLighthouseStation(station) {
+async function selectLighthouseStation(station) {
   saveSelection("lighthouse", {
     id: station.id,
     name: station.name,
@@ -3065,7 +3140,7 @@ async function ensureWaveStationsLoaded() {
 
   setLighthouseSelectionMarker(station.latitude, station.longitude, station.name);
 
-  updateMapOverlay(
+  updateObjectOverlay(
     station.name || "Fyr / station",
     `Laddar data...<br>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}`
   );
@@ -3086,7 +3161,7 @@ async function ensureWaveStationsLoaded() {
     setText("lhPressureValue", pressureValue);
     setText("lighthouseStatusValue", hasAnyData ? "Stationsdata hämtad" : "Ingen aktuell data tillgänglig");
 
-    updateMapOverlay(
+    updateObjectOverlay(
       station.name || "Fyr / station",
       `
         <div>${formatCoord(station.latitude)}, ${formatCoord(station.longitude)}</div>
@@ -3107,7 +3182,7 @@ async function ensureWaveStationsLoaded() {
     console.error(error);
     setText("lighthouseStatusValue", "Det gick inte att hämta stationsdata");
 
-    updateMapOverlay(
+    updateObjectOverlay(
       station.name || "Fyr / station",
       "Det gick inte att hämta data för vald station."
     );
