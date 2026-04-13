@@ -2246,17 +2246,36 @@ const lighthouseMaptilerMarkerMap = new Map();
   }
 }
 
- function setLighthouseMarkerColorById(stationId, state, tooltipText) {
+function setLighthouseMarkerColorById(stationId, state, tooltipText) {
   const marker = lighthouseMarkerMap.get(stationId);
 
   if (marker) {
     const styles = {
-      unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8 },
-      active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95 },
-      inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7 }
+      unknown: { radius: 5, color: "#69b7ff", fillColor: "#69b7ff", fillOpacity: 0.8, opacity: 0, stroke: false },
+      active: { radius: 7, color: "#ff8b8b", fillColor: "#ff8b8b", fillOpacity: 0.95, opacity: 1, stroke: true },
+      inactive: { radius: 5, color: "#8b95a7", fillColor: "#8b95a7", fillOpacity: 0.7, opacity: 0, stroke: false }
     };
 
-    marker.setStyle(styles[state] || styles.unknown);
+    const style = styles[state] || styles.unknown;
+    marker.setStyle(style);
+
+    if (state === "active") {
+      marker.setRadius(7);
+      marker.setStyle({
+        color: "#ff8b8b",
+        fillColor: "#ff8b8b",
+        fillOpacity: 0.95,
+        opacity: 1,
+        stroke: true
+      });
+    } else {
+      marker.setRadius(5);
+      marker.setStyle({
+        opacity: 0,
+        fillOpacity: 0,
+        stroke: false
+      });
+    }
 
     if (tooltipText) {
       marker.bindTooltip(tooltipText, { direction: "top" });
@@ -2266,19 +2285,25 @@ const lighthouseMaptilerMarkerMap = new Map();
   const maptilerMarkerData = lighthouseMaptilerMarkerMap.get(stationId);
 
   if (maptilerMarkerData && maptilerMarkerData.element) {
-    const colors = {
-      unknown: "#69b7ff",
-      active: "#ff8b8b",
-      inactive: "#8b95a7"
-    };
+    const element = maptilerMarkerData.element;
 
-    maptilerMarkerData.element.style.background = colors[state] || colors.unknown;
-    maptilerMarkerData.element.style.width = state === "active" ? "14px" : "10px";
-    maptilerMarkerData.element.style.height = state === "active" ? "14px" : "10px";
-    maptilerMarkerData.element.title = tooltipText || "";
+    if (state === "active") {
+      element.style.display = activeMode === "lighthouse" ? "block" : "none";
+      element.style.background = "#ff8b8b";
+      element.style.width = "14px";
+      element.style.height = "14px";
+      element.style.boxShadow = "0 0 0 4px rgba(255,139,139,0.18)";
+    } else {
+      element.style.display = "none";
+      element.style.background = "#8b95a7";
+      element.style.width = "10px";
+      element.style.height = "10px";
+      element.style.boxShadow = "0 0 0 4px rgba(139,149,167,0.10)";
+    }
+
+    element.title = tooltipText || "";
   }
 }
-
 function updateModeUI() {
   waveMaptilerMarkerMap.forEach(({ element }) => {
     element.style.display = activeMode === "wave" ? "block" : "none";
@@ -2919,7 +2944,7 @@ async function ensureWaveStationsLoaded() {
     if (activeMode === "wave") setText("waveStatusValue", "Bakgrundskontroll av bojar slutförd");
   }
 
-  async function ensureLighthouseStationsLoaded() {
+ async function ensureLighthouseStationsLoaded() {
   if (lighthouseStationsLoaded) return;
   if (lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
 
@@ -2942,7 +2967,9 @@ async function ensureWaveStationsLoaded() {
           weight: 2,
           color: "#9bffb0",
           fillColor: "#9bffb0",
-          fillOpacity: 0.8
+          fillOpacity: 0,
+          opacity: 0,
+          stroke: false
         });
 
         leafletMarker.bindTooltip(`${station.name} • ännu inte kontrollerad`, { direction: "top" });
@@ -2964,7 +2991,7 @@ async function ensureWaveStationsLoaded() {
           el.style.border = "2px solid rgba(255,255,255,0.75)";
           el.style.boxShadow = "0 0 0 4px rgba(155,255,176,0.12)";
           el.style.cursor = "pointer";
-          el.style.display = activeMode === "lighthouse" ? "block" : "none";
+          el.style.display = "none";
           el.title = `${station.name} • ännu inte kontrollerad`;
 
           el.addEventListener("click", (event) => {
@@ -2984,7 +3011,7 @@ async function ensureWaveStationsLoaded() {
       });
 
       lighthouseStationsLoaded = true;
-      if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Bakgrundskontrollerar stationer...");
+      if (activeMode === "lighthouse") setText("lighthouseStatusValue", "Kontrollerar vilka stationer som har data...");
       startLighthouseBackgroundCheck();
     } catch (error) {
       console.error(error);
