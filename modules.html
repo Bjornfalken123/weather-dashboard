@@ -203,8 +203,9 @@
       #filterToggleBtn,#activeLayersBadge{display:none!important;}
       #mapOverlayPanel{top:12px;left:12px;right:12px;transform:none;width:auto;max-width:none;border-radius:16px;z-index:4100;}
       #filterDrawer{display:none!important;}
-      #timeControl{left:12px;right:12px;bottom:calc(var(--tab-bar-height) + var(--safe-bottom) + 10px);
+      #timeControl{left:12px;right:12px;bottom:calc(var(--tab-bar-height) + var(--safe-bottom) + 12px);
         padding:12px 13px;border-radius:16px;z-index:4200;}
+      #maptilerMap{padding-bottom:calc(var(--tab-bar-height) + var(--safe-bottom));}
       #timeTickRow{display:none;}
       .time-compact-bottom{grid-template-columns:72px 1fr;gap:8px;}
       #timePlayPauseBtn{min-width:72px;min-height:42px;font-size:11px;}
@@ -507,15 +508,15 @@
     if(mode==="wave"){setText("waveStationValue",payload.name||"Okänd station");setText("waveCoordsValue",formatCoord(payload.lat)+", "+formatCoord(payload.lon));setText("waveStatusValue","Hämtar havsdata...");}
     if(mode==="lighthouse"){setText("lighthouseStationValue",payload.name||"Okänd station");setText("lhCoordsValue",formatCoord(payload.lat)+", "+formatCoord(payload.lon));setText("lighthouseStatusValue","Hämtar stationsdata...");}
   }
-  function setWaveMarkerColorById(id,state,tip){
+function setWaveMarkerColorById(id,state,tip){
     var m=waveMarkerMap.get(id);
     if(m){if(state==="active"){m.setRadius(7);m.setStyle({color:"#ff8b8b",fillColor:"#ff8b8b",fillOpacity:0.95,opacity:1,stroke:true});}else{m.setRadius(5);m.setStyle({opacity:0,fillOpacity:0,stroke:false});}if(tip)m.bindTooltip(tip,{direction:"top"});}
-    var md=waveMaptilerMarkerMap.get(id);if(md&&md.element){var el=md.element;if(state==="active"){el.style.display=showWaveObjects?"block":"none";el.style.background="#ff8b8b";el.style.width="14px";el.style.height="14px";el.style.boxShadow="0 0 0 4px rgba(255,139,139,0.18)";}else{el.style.display="none";el.style.background="#8b95a7";el.style.width="10px";el.style.height="10px";el.style.boxShadow="none";}el.title=tip||"";}
+    var md=waveMaptilerMarkerMap.get(id);if(md&&md.element){var el=md.element;if(state==="active"){el.style.display="block";el.style.background="#ff8b8b";el.style.width="14px";el.style.height="14px";el.style.boxShadow="0 0 0 4px rgba(255,139,139,0.18)";}else{el.style.display="none";el.style.background="#8b95a7";el.style.width="10px";el.style.height="10px";el.style.boxShadow="none";}el.title=tip||"";}
   }
   function setLighthouseMarkerColorById(id,state,tip){
     var m=lighthouseMarkerMap.get(id);
     if(m){if(state==="active"){m.setRadius(7);m.setStyle({color:"#ff8b8b",fillColor:"#ff8b8b",fillOpacity:0.95,opacity:1,stroke:true});}else{m.setRadius(5);m.setStyle({opacity:0,fillOpacity:0,stroke:false});}if(tip)m.bindTooltip(tip,{direction:"top"});}
-    var md=lighthouseMaptilerMarkerMap.get(id);if(md&&md.element){var el=md.element;if(state==="active"){el.style.display=showLighthouseObjects?"block":"none";el.style.background="#ff8b8b";el.style.width="14px";el.style.height="14px";el.style.boxShadow="0 0 0 4px rgba(255,139,139,0.18)";}else{el.style.display="none";el.style.background="#8b95a7";el.style.width="10px";el.style.height="10px";el.style.boxShadow="none";}el.title=tip||"";}
+    var md=lighthouseMaptilerMarkerMap.get(id);if(md&&md.element){var el=md.element;if(state==="active"){el.style.display="block";el.style.background="#ff8b8b";el.style.width="14px";el.style.height="14px";el.style.boxShadow="0 0 0 4px rgba(255,139,139,0.18)";}else{el.style.display="none";el.style.background="#8b95a7";el.style.width="10px";el.style.height="10px";el.style.boxShadow="none";}el.title=tip||"";}
   }
   function updateModeUI(){
     waveMaptilerMarkerMap.forEach(function(d){if(d.element)d.element.style.display=showWaveObjects?"block":"none";});
