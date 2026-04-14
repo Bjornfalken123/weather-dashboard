@@ -1790,16 +1790,16 @@ function formatWeatherDateTime(v){
         }
 
         try{
-maptilerWindLayer=new maptilerweather.WindLayer({
-  id:"main-wind-layer",
-  colorramp:maptilerweather.ColorRamp.builtin.NULL,
-  speed:0.001,
-  fadeFactor:0.03,
-  maxAmount:256,
-  density:100,
-  color:[255,255,255,35],
-  fastColor:[255,255,255,120]
-});
+       maptilerWindLayer=new maptilerweather.WindLayer({
+            id:"main-wind-layer",
+            colorramp:maptilerweather.ColorRamp.builtin.NULL,
+            speed:0.001,
+            fadeFactor:0.03,
+            maxAmount:256,
+            density:200,
+            color:[255,255,255,35],
+            fastColor:[255,255,255,120]
+          });
 
           maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({
             id:"main-precipitation-layer",
