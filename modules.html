@@ -191,43 +191,42 @@
 
     @media(min-width:701px){#bottomTabBar,#mobileFilterSheet{display:none!important;}}
 
- @media(max-width:700px){
+@media(max-width:700px){
       html,body{height:100%;overflow:hidden;}
       .container{max-width:none;padding:0;height:100vh;}
-      .map-panel{padding:0;border:none;border-radius:0;background:transparent;box-shadow:none;min-height:100vh;}
+      .map-panel{padding:0;border:none;border-radius:0;background:transparent;box-shadow:none;min-height:100vh;overflow:visible;}
       .map-panel::before,.map-panel::after{display:none;}
       .map-note{display:none;}
-      .map-stack,.map-instance-wrap{height:100vh;}
+      .map-stack{overflow:visible;}
+      .map-instance-wrap{height:100vh;overflow:visible;}
       #map,#maptilerMap{height:100vh;min-height:100vh;border:none;border-radius:0;box-shadow:none;}
       .map-topbar{display:none;}
       #filterToggleBtn,#activeLayersBadge{display:none!important;}
       #filterDrawer{display:none!important;}
 
-      /* Overlay – fixed, centrerad uppe, scrollbar om innehållet är långt */
       #mapOverlayPanel{
-        position:fixed;
-        top:12px;
-        left:12px;
-        right:12px;
-        transform:none;
-        width:auto;
-        max-width:none;
+        position:fixed !important;
+        top:12px !important;
+        left:12px !important;
+        right:12px !important;
+        transform:none !important;
+        width:auto !important;
+        max-width:none !important;
         border-radius:16px;
-        z-index:4100;
-        max-height:calc(100vh - var(--tab-bar-height) - var(--safe-bottom) - 100px);
+        z-index:9000 !important;
+        max-height:calc(50vh - 12px);
         overflow-y:auto;
         -webkit-overflow-scrolling:touch;
       }
 
-      /* Tidsreglage – fixed precis ovanför tab-baren */
       #timeControl{
-        position:fixed;
-        left:12px;
-        right:12px;
-        bottom:calc(var(--tab-bar-height) + var(--safe-bottom) + 10px);
+        position:fixed !important;
+        left:12px !important;
+        right:12px !important;
+        bottom:calc(var(--tab-bar-height) + var(--safe-bottom) + 10px) !important;
+        z-index:9000 !important;
         padding:12px 13px;
         border-radius:16px;
-        z-index:4200;
       }
 
       #timeTickRow{display:none;}
@@ -235,8 +234,6 @@
       #timePlayPauseBtn{min-width:72px;min-height:42px;font-size:11px;}
       #timeValueLabel{min-width:0;font-size:11px;}
       #bottomTabBar{display:flex;}
-
-      /* Overlay-data kompakt på mobil */
       .overlay-data-grid{grid-template-columns:1fr 1fr;gap:5px;}
       .overlay-data-cell{padding:6px 8px;}
       .overlay-data-label{font-size:9px;}
