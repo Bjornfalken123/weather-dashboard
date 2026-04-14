@@ -137,7 +137,7 @@
     .time-tick{font-size:9px;color:var(--muted);font-weight:600;opacity:0.7;}
 
     /* ── BOTTOM TAB BAR ── */
-    #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:5000;
+    #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:10000;
       height:calc(var(--tab-bar-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);
       background:rgba(5,11,22,0.94);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
       border-top:1px solid rgba(255,255,255,0.09);box-shadow:0 -8px 32px rgba(0,0,0,0.32);flex-direction:row;align-items:stretch;}
@@ -154,7 +154,7 @@
     .tab-btn-badge.visible{display:block;}
 
     /* ── MOBILE FILTER SHEET ── */
-    #mobileFilterSheet{display:none;position:fixed;bottom:0;left:0;right:0;z-index:4500;
+    #mobileFilterSheet{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9500;
       background:rgba(5,11,22,0.96);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
       border-top:1px solid rgba(255,255,255,0.1);border-radius:22px 22px 0 0;
       padding:0 0 calc(var(--tab-bar-height) + var(--safe-bottom) + 8px);
