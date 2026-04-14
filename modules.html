@@ -1459,10 +1459,12 @@ var maptilerMap=null,
     var waveBackgroundCheckStarted=false,
         lighthouseBackgroundCheckStarted=false;
 
-    var waveMarkerMap=new Map(),
-        lighthouseMarkerMap=new Map(),
-        waveMaptilerMarkerMap=new Map(),
-        lighthouseMaptilerMarkerMap=new Map();
+   var waveMarkerMap=new Map(),
+    lighthouseMarkerMap=new Map(),
+    waveMaptilerMarkerMap=new Map(),
+    lighthouseMaptilerMarkerMap=new Map(),
+    selectedWaveStationId=null,
+    selectedLighthouseStationId=null;
 
     var waveStationsCache=new Map(),
         lighthouseStationsCache=new Map();
@@ -2214,71 +2216,101 @@ function onCloudToggle(){
       }
     }
 
-    function setWaveMarkerColorById(id,state,tip){
-      var m=waveMarkerMap.get(id);
-      if(m){
-        if(state==="active"){
-          m.setRadius(7);
-          m.setStyle({color:"#ff8b8b",fillColor:"#ff8b8b",fillOpacity:0.95,opacity:1,stroke:true});
-        }else{
-          m.setRadius(5);
-          m.setStyle({opacity:0,fillOpacity:0,stroke:false});
-        }
-        if(tip) m.bindTooltip(tip,{direction:"top"});
-      }
+   function setWaveMarkerColorById(id,state,tip){
+  var isSelected = selectedWaveStationId === id;
+  var baseColor = isSelected ? "#ffd24d" : "#ff8b8b";
 
-      var md=waveMaptilerMarkerMap.get(id);
-      if(md && md.element){
-        var el=md.element;
-        if(state==="active"){
-          el.style.display=showWaveObjects ? "block" : "none";
-          el.style.background="#ff8b8b";
-          el.style.width="14px";
-          el.style.height="14px";
-          el.style.boxShadow="0 0 0 4px rgba(255,139,139,0.18)";
-        }else{
-          el.style.display="none";
-          el.style.background="#8b95a7";
-          el.style.width="10px";
-          el.style.height="10px";
-          el.style.boxShadow="none";
-        }
-        el.title=tip || "";
-      }
+  var m=waveMarkerMap.get(id);
+  if(m){
+    if(state==="active"){
+      m.setRadius(isSelected ? 9 : 7);
+      m.setStyle({
+        color:baseColor,
+        fillColor:baseColor,
+        fillOpacity:0.98,
+        opacity:1,
+        stroke:true,
+        weight:isSelected ? 3 : 2
+      });
+    }else{
+      m.setRadius(5);
+      m.setStyle({opacity:0,fillOpacity:0,stroke:false});
     }
+    if(tip) m.bindTooltip(tip,{direction:"top"});
+  }
 
-    function setLighthouseMarkerColorById(id,state,tip){
-      var m=lighthouseMarkerMap.get(id);
-      if(m){
-        if(state==="active"){
-          m.setRadius(7);
-          m.setStyle({color:"#ff8b8b",fillColor:"#ff8b8b",fillOpacity:0.95,opacity:1,stroke:true});
-        }else{
-          m.setRadius(5);
-          m.setStyle({opacity:0,fillOpacity:0,stroke:false});
-        }
-        if(tip) m.bindTooltip(tip,{direction:"top"});
-      }
-
-      var md=lighthouseMaptilerMarkerMap.get(id);
-      if(md && md.element){
-        var el=md.element;
-        if(state==="active"){
-          el.style.display=showLighthouseObjects ? "block" : "none";
-          el.style.background="#ff8b8b";
-          el.style.width="14px";
-          el.style.height="14px";
-          el.style.boxShadow="0 0 0 4px rgba(255,139,139,0.18)";
-        }else{
-          el.style.display="none";
-          el.style.background="#8b95a7";
-          el.style.width="10px";
-          el.style.height="10px";
-          el.style.boxShadow="none";
-        }
-        el.title=tip || "";
-      }
+  var md=waveMaptilerMarkerMap.get(id);
+  if(md && md.element){
+    var el=md.element;
+    if(state==="active"){
+      el.style.display=showWaveObjects ? "block" : "none";
+      el.style.background=baseColor;
+      el.style.width=isSelected ? "18px" : "14px";
+      el.style.height=isSelected ? "18px" : "14px";
+      el.style.boxShadow=isSelected
+        ? "0 0 0 5px rgba(255,210,77,0.28)"
+        : "0 0 0 4px rgba(255,139,139,0.18)";
+      el.style.border=isSelected
+        ? "2px solid rgba(255,255,255,0.95)"
+        : "2px solid rgba(255,255,255,0.75)";
+    }else{
+      el.style.display="none";
+      el.style.background="#8b95a7";
+      el.style.width="10px";
+      el.style.height="10px";
+      el.style.boxShadow="none";
     }
+    el.title=tip || "";
+  }
+}
+
+   function setLighthouseMarkerColorById(id,state,tip){
+  var isSelected = selectedLighthouseStationId === id;
+  var baseColor = isSelected ? "#ffd24d" : "#ff8b8b";
+
+  var m=lighthouseMarkerMap.get(id);
+  if(m){
+    if(state==="active"){
+      m.setRadius(isSelected ? 9 : 7);
+      m.setStyle({
+        color:baseColor,
+        fillColor:baseColor,
+        fillOpacity:0.98,
+        opacity:1,
+        stroke:true,
+        weight:isSelected ? 3 : 2
+      });
+    }else{
+      m.setRadius(5);
+      m.setStyle({opacity:0,fillOpacity:0,stroke:false});
+    }
+    if(tip) m.bindTooltip(tip,{direction:"top"});
+  }
+
+  var md=lighthouseMaptilerMarkerMap.get(id);
+  if(md && md.element){
+    var el=md.element;
+    if(state==="active"){
+      el.style.display=showLighthouseObjects ? "block" : "none";
+      el.style.background=baseColor;
+      el.style.width=isSelected ? "18px" : "14px";
+      el.style.height=isSelected ? "18px" : "14px";
+      el.style.boxShadow=isSelected
+        ? "0 0 0 5px rgba(255,210,77,0.28)"
+        : "0 0 0 4px rgba(255,139,139,0.18)";
+      el.style.border=isSelected
+        ? "2px solid rgba(255,255,255,0.95)"
+        : "2px solid rgba(255,255,255,0.75)";
+    }else{
+      el.style.display="none";
+      el.style.background="#8b95a7";
+      el.style.width="10px";
+      el.style.height="10px";
+      el.style.boxShadow="none";
+    }
+    el.title=tip || "";
+  }
+}
 
     function setActiveTab(id){
       document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
@@ -2926,63 +2958,82 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       }
     }
 
-    async function selectWaveStation(s){
-      markObjectInteraction();
-      saveSelection("wave",{id:s.id,name:s.name,lat:s.latitude,lon:s.longitude});
-      setWaveSelectionMarker(s.latitude,s.longitude,s.name);
-      updateObjectOverlay(s.name || "Boj / våg","Laddar havsdata...");
+async function selectWaveStation(s){
+  markObjectInteraction();
+  selectedWaveStationId=s.id;
+  saveSelection("wave",{id:s.id,name:s.name,lat:s.latitude,lon:s.longitude});
+  setWaveSelectionMarker(s.latitude,s.longitude,s.name);
+  updateObjectOverlay(s.name || "Boj / våg","Laddar havsdata...");
 
-      try{
-        var result=await evaluateWaveStation(s,false),
-            wr=result.waveResult,
-            wtr=result.waterResult,
-            wtrp=result.waterTempResult,
-            has=result.hasAnySeaData;
+  try{
+    var result=await evaluateWaveStation(s,false),
+        wr=result.waveResult,
+        wtr=result.waterResult,
+        wtrp=result.waterTempResult,
+        has=result.hasAnySeaData;
 
-        var wv=wr ? formatObservedValue(formatWave(wr.latest.value),wr.latest) : "--";
-        var wo=wr ? formatObsTime(wr.latest.date || wr.latest.time)+" ("+formatWaveSourceLabel(wr)+")" : "--";
-        var wlv=wtr ? formatObservedValue(formatWaterLevel(wtr.latest.value),wtr.latest) : "--";
-        var wtv=wtrp ? formatObservedValue(formatTemp(wtrp.latest.value),wtrp.latest) : "--";
+    var wv=wr ? formatObservedValue(formatWave(wr.latest.value),wr.latest) : "--";
+    var wo=wr ? formatObsTime(wr.latest.date || wr.latest.time)+" ("+formatWaveSourceLabel(wr)+")" : "--";
+    var wlv=wtr ? formatObservedValue(formatWaterLevel(wtr.latest.value),wtr.latest) : "--";
+    var wtv=wtrp ? formatObservedValue(formatTemp(wtrp.latest.value),wtrp.latest) : "--";
 
-        setText("waveHeightValue",wv);
-        setText("waveObsTimeValue",wo);
-        setText("waterLevelValue",wlv);
-        setText("waterLevelStationValue",wtr ? formatWaterStationLabel(wtr) : "Ingen station hittades");
-        setText("waterTempValue",wtv);
+    setText("waveHeightValue",wv);
+    setText("waveObsTimeValue",wo);
+    setText("waterLevelValue",wlv);
+    setText("waterLevelStationValue",wtr ? formatWaterStationLabel(wtr) : "Ingen station hittades");
+    setText("waterTempValue",wtv);
 
-        var uv=Boolean(wr && wr.source==="VIVA") || Boolean(wtr && wtr.source==="VIVA") || Boolean(wtrp && wtrp.source==="VIVA");
-        var us=Boolean(wr && wr.source!=="VIVA") || Boolean(wtr && wtr.source!=="VIVA");
+    var uv=Boolean(wr && wr.source==="VIVA") || Boolean(wtr && wtr.source==="VIVA") || Boolean(wtrp && wtrp.source==="VIVA");
+    var us=Boolean(wr && wr.source!=="VIVA") || Boolean(wtr && wtr.source!=="VIVA");
 
-        var st="Ingen havsdata tillgänglig";
-        if(has){
-          if(uv && us) st="Havsdata • VIVA + SMHI";
-          else if(uv) st="Havsdata • VIVA";
-          else st="Havsdata • SMHI";
-        }
-
-        setText("waveStatusValue",st);
-
-        updateObjectOverlay(
-          s.name || "Boj / våg",
-          buildOverlayDataGrid([
-            {label:"Våghöjd",value:wv,highlight:true},
-            {label:"Vattentemp",value:wtv},
-            {label:"Vattenst.",value:wlv},
-            {label:"Obs",value:wo}
-          ])
-        );
-
-        setWaveMarkerColorById(s.id,has ? "active" : "inactive",s.name+" • "+(has ? "data tillgänglig" : "ingen data"));
-        refreshMapSizeSoon();
-      }catch(e){
-        console.error(e);
-        setText("waveStatusValue","Det gick inte att hämta havsdata");
-        updateObjectOverlay(s.name || "Boj / våg","Det gick inte att hämta havsdata.");
-        setWaveMarkerColorById(s.id,"inactive",s.name+" • kunde inte hämtas");
-      }
+    var st="Ingen havsdata tillgänglig";
+    if(has){
+      if(uv && us) st="Havsdata • VIVA + SMHI";
+      else if(uv) st="Havsdata • VIVA";
+      else st="Havsdata • SMHI";
     }
 
-   async function startWaveBackgroundCheck(){
+    setText("waveStatusValue",st);
+
+    updateObjectOverlay(
+      s.name || "Boj / våg",
+      buildOverlayDataGrid([
+        {label:"Våghöjd",value:wv,highlight:true},
+        {label:"Vattentemp",value:wtv},
+        {label:"Vattenst.",value:wlv},
+        {label:"Obs",value:wo}
+      ])
+    );
+
+    setWaveMarkerColorById(
+      s.id,
+      has ? "active" : "inactive",
+      s.name+" • "+(has ? "data tillgänglig" : "ingen data")
+    );
+
+    waveMarkerMap.forEach(function(_, otherId){
+      if(otherId!==s.id){
+        var otherStation=waveStationsCache.get(otherId);
+        if(otherStation){
+          setWaveMarkerColorById(
+            otherId,
+            "active",
+            otherStation.name+" • data tillgänglig"
+          );
+        }
+      }
+    });
+
+    refreshMapSizeSoon();
+  }catch(e){
+    console.error(e);
+    setText("waveStatusValue","Det gick inte att hämta havsdata");
+    updateObjectOverlay(s.name || "Boj / våg","Det gick inte att hämta havsdata.");
+    setWaveMarkerColorById(s.id,"inactive",s.name+" • kunde inte hämtas");
+  }
+}
+
+async function startWaveBackgroundCheck(){
   if(waveBackgroundCheckStarted) return;
   waveBackgroundCheckStarted=true;
 
@@ -3004,6 +3055,12 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       checked++;
       if(activeMode==="wave") setText("waveStatusValue","Bakgrundskontroll bojar: "+checked+"/"+stations.length);
     }
+  }
+
+  await Promise.all(Array.from({length:3},function(){ return worker(); }));
+
+  if(activeMode==="wave") setText("waveStatusValue","Bojar med data laddade");
+}
   }
 
   await Promise.all(Array.from({length:3},function(){ return worker(); }));
@@ -3119,52 +3176,72 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       }
     }
 
-    async function selectLighthouseStation(s){
-      markObjectInteraction();
-      saveSelection("lighthouse",{id:s.id,name:s.name,lat:s.latitude,lon:s.longitude});
-      setLighthouseSelectionMarker(s.latitude,s.longitude,s.name);
-      updateObjectOverlay(s.name || "Fyr / station","Laddar data...");
+  async function selectLighthouseStation(s){
+  markObjectInteraction();
+  selectedLighthouseStationId=s.id;
+  saveSelection("lighthouse",{id:s.id,name:s.name,lat:s.latitude,lon:s.longitude});
+  setLighthouseSelectionMarker(s.latitude,s.longitude,s.name);
+  updateObjectOverlay(s.name || "Fyr / station","Laddar data...");
 
-      try{
-        var result=await fetchLighthouseObservations(s.id),
-            obs=result.obs,
-            has=result.hasAnyData;
+  try{
+    var result=await fetchLighthouseObservations(s.id),
+        obs=result.obs,
+        has=result.hasAnyData;
 
-        var tv=formatObservedValue(formatTemp(obs.temp && obs.temp.value),obs.temp);
-        var wv=formatObservedValue(formatWind(obs.windSpeed && obs.windSpeed.value),obs.windSpeed);
-        var dv=formatObservedValue(formatWindDirection(obs.windDir && obs.windDir.value),obs.windDir);
-        var gv=formatObservedValue(formatWind(obs.gust && obs.gust.value),obs.gust);
-        var pv=formatObservedValue(formatPressure(obs.pressure && obs.pressure.value),obs.pressure);
+    var tv=formatObservedValue(formatTemp(obs.temp && obs.temp.value),obs.temp);
+    var wv=formatObservedValue(formatWind(obs.windSpeed && obs.windSpeed.value),obs.windSpeed);
+    var dv=formatObservedValue(formatWindDirection(obs.windDir && obs.windDir.value),obs.windDir);
+    var gv=formatObservedValue(formatWind(obs.gust && obs.gust.value),obs.gust);
+    var pv=formatObservedValue(formatPressure(obs.pressure && obs.pressure.value),obs.pressure);
 
-        setText("lhTempValue",tv);
-        setText("lhWindValue",wv);
-        setText("lhWindDirValue",dv);
-        setText("lhGustValue",gv);
-        setText("lhPressureValue",pv);
-        setText("lighthouseStatusValue",has ? "Stationsdata hämtad" : "Ingen aktuell data tillgänglig");
+    setText("lhTempValue",tv);
+    setText("lhWindValue",wv);
+    setText("lhWindDirValue",dv);
+    setText("lhGustValue",gv);
+    setText("lhPressureValue",pv);
+    setText("lighthouseStatusValue",has ? "Stationsdata hämtad" : "Ingen aktuell data tillgänglig");
 
-        updateObjectOverlay(
-          s.name || "Fyr / station",
-          buildOverlayDataGrid([
-            {label:"Temp",value:tv,highlight:true},
-            {label:"Vind",value:wv},
-            {label:"Byar",value:gv},
-            {label:"Riktning",value:dv},
-            {label:"Tryck",value:pv}
-          ])
-        );
+    updateObjectOverlay(
+      s.name || "Fyr / station",
+      buildOverlayDataGrid([
+        {label:"Temp",value:tv,highlight:true},
+        {label:"Vind",value:wv},
+        {label:"Byar",value:gv},
+        {label:"Riktning",value:dv},
+        {label:"Tryck",value:pv}
+      ])
+    );
 
-        setLighthouseMarkerColorById(s.id,has ? "active" : "inactive",s.name+" • "+(has ? "data tillgänglig" : "ingen data"));
-        refreshMapSizeSoon();
-      }catch(e){
-        console.error(e);
-        setText("lighthouseStatusValue","Det gick inte att hämta stationsdata");
-        updateObjectOverlay(s.name || "Fyr / station","Det gick inte att hämta data.");
-        setLighthouseMarkerColorById(s.id,"inactive",s.name+" • kunde inte hämtas");
+    setLighthouseMarkerColorById(
+      s.id,
+      has ? "active" : "inactive",
+      s.name+" • "+(has ? "data tillgänglig" : "ingen data")
+    );
+
+    // 🔥 markera vald + återställ övriga
+    lighthouseMarkerMap.forEach(function(_, otherId){
+      if(otherId!==s.id){
+        var otherStation=lighthouseStationsCache.get(otherId);
+        if(otherStation){
+          setLighthouseMarkerColorById(
+            otherId,
+            "active",
+            otherStation.name+" • data tillgänglig"
+          );
+        }
       }
-    }
+    });
 
-   async function startLighthouseBackgroundCheck(){
+    refreshMapSizeSoon();
+  }catch(e){
+    console.error(e);
+    setText("lighthouseStatusValue","Det gick inte att hämta stationsdata");
+    updateObjectOverlay(s.name || "Fyr / station","Det gick inte att hämta data.");
+    setLighthouseMarkerColorById(s.id,"inactive",s.name+" • kunde inte hämtas");
+  }
+}
+
+ async function startLighthouseBackgroundCheck(){
   if(lighthouseBackgroundCheckStarted) return;
   lighthouseBackgroundCheckStarted=true;
 
@@ -3186,6 +3263,12 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       checked++;
       if(activeMode==="lighthouse") setText("lighthouseStatusValue","Bakgrundskontroll stationer: "+checked+"/"+stations.length);
     }
+  }
+
+  await Promise.all(Array.from({length:5},function(){ return worker(); }));
+
+  if(activeMode==="lighthouse") setText("lighthouseStatusValue","Fyrar med data laddade");
+}
       }
 
       await Promise.all(Array.from({length:5},function(){ return worker(); }));
