@@ -1778,7 +1778,9 @@ function formatWeatherDateTime(v){
             smooth:true
           });
 
-          maptilerMap.addLayer(maptilerWindLayer);
+          if(windLayerVisible){
+  maptilerMap.addLayer(maptilerWindLayer);
+}
 
           var timeSlider=document.getElementById("timeSlider"),
               timeValueLabel=document.getElementById("timeValueLabel"),
