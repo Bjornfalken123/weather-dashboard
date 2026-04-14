@@ -1411,12 +1411,13 @@
         selectedForecastTime=null,
         timePlaybackTimer=null;
 
-    var savedSelections={weather:null,wave:null,lighthouse:null};
-    var maptilerMap=null,
-        maptilerWeatherMarker=null,
-        maptilerWindLayer=null,
-        maptilerPrecipitationLayer=null,
-        maptilerCloudLayer=null;
+   var savedSelections={weather:null,wave:null,lighthouse:null};
+var maptilerMap=null,
+    maptilerWeatherMarker=null,
+    maptilerWindLayer=null,
+    maptilerPrecipitationLayer=null,
+    maptilerCloudLayer=null,
+    maptilerTimelineLayer=null;
 
    var windLayerVisible=false,
     precipitationLayerVisible=false,
@@ -1754,7 +1755,7 @@ function formatWeatherDateTime(v){
         }
 
         try{
-          maptilerWindLayer=new maptilerweather.WindLayer({
+              maptilerWindLayer=new maptilerweather.WindLayer({
             id:"main-wind-layer",
             colorramp:maptilerweather.ColorRamp.builtin.NULL,
             speed:0.001,
@@ -1778,9 +1779,17 @@ function formatWeatherDateTime(v){
             smooth:true
           });
 
+          /* Osynligt tidslager – används bara för att tidsreglaget ska fungera direkt */
+          maptilerTimelineLayer=new maptilerweather.PrecipitationLayer({
+            id:"timeline-controller-layer",
+            opacity:0,
+            smooth:true
+          });
+          maptilerMap.addLayer(maptilerTimelineLayer);
+
           if(windLayerVisible){
-  maptilerMap.addLayer(maptilerWindLayer);
-}
+            maptilerMap.addLayer(maptilerWindLayer);
+          }
 
           var timeSlider=document.getElementById("timeSlider"),
               timeValueLabel=document.getElementById("timeValueLabel"),
@@ -1872,9 +1881,13 @@ function formatWeatherDateTime(v){
             });
           }
 
-                  function applySelectedForecastTime(){
+                    function applySelectedForecastTime(){
             if(!selectedForecastTime) return;
             var s=selectedForecastTime/1000;
+
+            try{
+              if(maptilerTimelineLayer) maptilerTimelineLayer.setAnimationTime(s);
+            }catch(e){}
 
             try{
               if(maptilerWindLayer) maptilerWindLayer.setAnimationTime(s);
@@ -1904,8 +1917,9 @@ function formatWeatherDateTime(v){
             if(playBtnText) playBtnText.textContent="Spela";
           }
 
-                 function getFirstReadyTimelineLayer(){
+                       function getFirstReadyTimelineLayer(){
             var candidates=[
+              maptilerTimelineLayer,
               maptilerPrecipitationLayer,
               maptilerCloudLayer,
               maptilerWindLayer
@@ -2028,7 +2042,7 @@ function formatWeatherDateTime(v){
             });
           }
 
-                  [maptilerPrecipitationLayer, maptilerCloudLayer, maptilerWindLayer].forEach(function(layer){
+                       [maptilerTimelineLayer, maptilerPrecipitationLayer, maptilerCloudLayer, maptilerWindLayer].forEach(function(layer){
             if(!layer || !layer.on) return;
             layer.on("sourceReady",function(){
               initializeForecastTimeline();
