@@ -1793,22 +1793,12 @@ function formatWeatherDateTime(v){
 maptilerWindLayer=new maptilerweather.WindLayer({
   id:"main-wind-layer",
   colorramp:maptilerweather.ColorRamp.builtin.NULL,
-  opacity:1,
-  smooth:true,
-
-  /* Lugnare och lättare */
-  density:0.12,
-  maxAmount:100,
-  drawAsLines:true,
-  size:6,
-  speed:0.00022,
-  fadeFactor:0.0,
-
-  /* Färg */
-  color:[170,210,255,170],
-  fastColor:[255,120,80,220],
-  fastSpeed:0.9,
-  fastIsLarger:true
+  speed:0.001,
+  fadeFactor:0.03,
+  maxAmount:256,
+  density:100,
+  color:[255,255,255,35],
+  fastColor:[255,255,255,120]
 });
 
           maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({
