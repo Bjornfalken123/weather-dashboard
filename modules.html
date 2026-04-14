@@ -1803,11 +1803,12 @@ maptilerWindLayer=new maptilerweather.WindLayer({
   fastSpeed:0.9
 });
 
-          maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({
-            id:"main-precipitation-layer",
-            opacity:0.88,
-            smooth:true
-          });
+         maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({
+  id:"main-precipitation-layer",
+  colorramp:maptilerweather.ColorRamp.builtin.PRECIPITATION,
+  opacity:0.95,
+  smooth:false
+});
 
           maptilerCloudLayer=new maptilerweather.RadarLayer({
             id:"main-cloud-layer",
