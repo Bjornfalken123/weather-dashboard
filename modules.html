@@ -350,6 +350,60 @@
       line-height:1.65;
     }
 
+    .weather-overview{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.weather-icon{
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+  font-size:22px;
+  flex-shrink:0;
+}
+
+.weather-main{
+  min-width:0;
+  flex:1;
+}
+
+.weather-main-title{
+  font-size:14px;
+  font-weight:800;
+  color:var(--text);
+  line-height:1.2;
+}
+
+.weather-main-time{
+  margin-top:3px;
+  font-size:11px;
+  color:var(--muted-soft);
+  line-height:1.3;
+}
+
+.weather-temp-big{
+  margin:8px 0 10px;
+  font-size:28px;
+  font-weight:900;
+  letter-spacing:-0.03em;
+  color:var(--text);
+  line-height:1;
+}
+
+.weather-point-line{
+  margin-bottom:10px;
+  font-size:11px;
+  color:var(--muted);
+}
+
     .overlay-data-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -1364,9 +1418,9 @@
         maptilerPrecipitationLayer=null,
         maptilerCloudLayer=null;
 
-    var windLayerVisible=true,
-        precipitationLayerVisible=false,
-        cloudLayerVisible=false;
+   var windLayerVisible=false,
+    precipitationLayerVisible=false,
+    cloudLayerVisible=false;
 
     var waveStationsLayer=L.layerGroup(),
         lighthouseStationsLayer=L.layerGroup();
@@ -1537,6 +1591,46 @@
       };
       return L[k] || k;
     }
+
+    function weatherIconFromSymbol(sc){
+  if(!sc) return "•";
+  var k=sc.replace(/_(day|night|polartwilight)$/,"");
+
+  var icons={
+    clearsky:"☀️",
+    fair:"🌤️",
+    partlycloudy:"⛅",
+    cloudy:"☁️",
+    lightrainshowers:"🌦️",
+    rainshowers:"🌦️",
+    heavyrainshowers:"⛈️",
+    lightrain:"🌦️",
+    rain:"🌧️",
+    heavyrain:"🌧️",
+    lightsleet:"🌨️",
+    sleet:"🌨️",
+    heavysleet:"🌨️",
+    lightsnow:"🌨️",
+    snow:"❄️",
+    heavysnow:"❄️",
+    fog:"🌫️"
+  };
+
+  return icons[k] || "•";
+}
+
+function formatWeatherDateTime(v){
+  if(!v) return "--";
+  var d=new Date(v);
+  if(isNaN(d.getTime())) return "--";
+  return d.toLocaleString("sv-SE",{
+    weekday:"short",
+    day:"2-digit",
+    month:"short",
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+}
 
     function degreesToCompass(deg){
       if(deg==null || isNaN(Number(deg))) return "--";
@@ -2354,16 +2448,26 @@
           return formatWind(cl.value);
         }
 
-        function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres){
-          return buildOverlayDataGrid([
-            {label:"Temp",value:formatTemp(temp),highlight:true},
-            {label:"Vind",value:formatWind(ws)},
-            {label:"Byar",value:gust},
-            {label:"Riktning",value:formatWindDirection(wd)},
-            {label:"Regn",value:formatRain(rain)},
-            {label:"Tryck",value:formatPressure(pres)}
-          ]);
-        }
+       function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
+  return ''
+    + '<div class="weather-overview">'
+    +   '<div class="weather-icon">'+weatherIconFromSymbol(symbol)+'</div>'
+    +   '<div class="weather-main">'
+    +     '<div class="weather-main-title">'+weatherLabelFromSymbol(symbol)+'</div>'
+    +     '<div class="weather-main-time">'+formatWeatherDateTime(pt)+'</div>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="weather-temp-big">'+formatTemp(temp)+'</div>'
+    + '<div class="weather-point-line">Punkt: '+formatCoord(lat)+', '+formatCoord(lon)+'</div>'
+    + buildOverlayDataGrid([
+        {label:"Vind",value:formatWind(ws)},
+        {label:"Riktning",value:formatWindDirection(wd)},
+        {label:"Byar",value:gust},
+        {label:"Regn",value:formatRain(rain)},
+        {label:"Tryck",value:formatPressure(pres)},
+        {label:"Fuktighet",value:formatHumidity(humidity)}
+      ]);
+}
 
         function updateWeatherForSelectedTime(){
           if(!weatherTimeseries.length || !selectedForecastTime) return;
@@ -2411,18 +2515,22 @@
           setText("weatherPressureValue",formatPressure(si.air_pressure_at_sea_level));
           setText("weatherGustValue",gft);
 
-          updateMapOverlay(
-            weatherLabelFromSymbol(ss),
-            buildWeatherOverlay(
-              cl.time,
-              si.air_temperature,
-              si.wind_speed,
-              si.wind_from_direction,
-              gft,
-              sp,
-              si.air_pressure_at_sea_level
-            )
-          );
+       updateMapOverlay(
+  weatherLabelFromSymbol(ss),
+  buildWeatherOverlay(
+    cl.time,
+    si.air_temperature,
+    si.wind_speed,
+    si.wind_from_direction,
+    gft,
+    sp,
+    si.air_pressure_at_sea_level,
+    si.relative_humidity,
+    ss,
+    lat,
+    lon
+  )
+);
         }
 
         window.updateWeatherForSelectedTime = updateWeatherForSelectedTime;
@@ -2430,18 +2538,22 @@
         if(selectedForecastTime){
           updateWeatherForSelectedTime();
         }else{
-          updateMapOverlay(
-            weatherLabelFromSymbol(sym),
-            buildWeatherOverlay(
-              cur.time,
-              inst.air_temperature,
-              inst.wind_speed,
-              inst.wind_from_direction,
-              gustFormatted,
-              prec,
-              inst.air_pressure_at_sea_level
-            )
-          );
+       updateMapOverlay(
+  weatherLabelFromSymbol(sym),
+  buildWeatherOverlay(
+    cur.time,
+    inst.air_temperature,
+    inst.wind_speed,
+    inst.wind_from_direction,
+    gustFormatted,
+    prec,
+    inst.air_pressure_at_sea_level,
+    inst.relative_humidity,
+    sym,
+    lat,
+    lon
+  )
+);
         }
       }catch(err){
         console.error(err);
