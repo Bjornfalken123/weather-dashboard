@@ -1790,17 +1790,17 @@ function formatWeatherDateTime(v){
         }
 
         try{
-      maptilerWindLayer=new maptilerweather.WindLayer({
+maptilerWindLayer=new maptilerweather.WindLayer({
   id:"main-wind-layer",
   colorramp:maptilerweather.ColorRamp.builtin.NULL,
   speed:0.001,
-  fadeFactor:0.03,
-  maxAmount:200,
-  density:150,
+  fadeFactor:0.05,
+  maxAmount:32,
+  density:6,
 
-  color:[80,220,120,90],      // grön för lugnare vind
-  fastColor:[255,70,70,180],  // röd för snabbare vind
-  fastSpeed:0.9
+  color:[80,220,120,90],
+  fastColor:[255,70,70,180],
+  fastSpeed:0.7
 });
 
           maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({
