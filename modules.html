@@ -3061,12 +3061,6 @@ async function startWaveBackgroundCheck(){
 
   if(activeMode==="wave") setText("waveStatusValue","Bojar med data laddade");
 }
-  }
-
-  await Promise.all(Array.from({length:3},function(){ return worker(); }));
-
-  if(activeMode==="wave") setText("waveStatusValue","Bojar med data laddade");
-}
 
    async function ensureLighthouseStationsLoaded(){
   if(lighthouseStationsLoaded) return;
@@ -3241,7 +3235,7 @@ async function startWaveBackgroundCheck(){
   }
 }
 
- async function startLighthouseBackgroundCheck(){
+async function startLighthouseBackgroundCheck(){
   if(lighthouseBackgroundCheckStarted) return;
   lighthouseBackgroundCheckStarted=true;
 
@@ -3269,12 +3263,7 @@ async function startWaveBackgroundCheck(){
 
   if(activeMode==="lighthouse") setText("lighthouseStatusValue","Fyrar med data laddade");
 }
-      }
-
-      await Promise.all(Array.from({length:5},function(){ return worker(); }));
-
-      if(activeMode==="lighthouse") setText("lighthouseStatusValue","Bakgrundskontroll av stationer slutförd");
-    }
+   
 
     var overlayCollapseBtn=document.getElementById("overlayCollapseBtn");
     var mapOverlayPanel=document.getElementById("mapOverlayPanel");
