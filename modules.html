@@ -30,7 +30,7 @@
       --radius-md:18px;
       --transition:260ms cubic-bezier(0.22,1,0.36,1);
       --transition-fast:180ms ease;
-      --tab-bar-height:66px;
+      --tab-bar-height:74px;
       --safe-bottom:env(safe-area-inset-bottom,0px);
       --safe-top:env(safe-area-inset-top,0px);
       --overlay-top:16px;
@@ -914,149 +914,159 @@
 
     /* ── MOBILE ── */
     @media (max-width:700px){
-      html,body{
-        height:100%;
-        overflow:hidden;
-      }
+  html,body{
+    height:100%;
+    overflow:hidden;
+  }
 
-      .container{
-        max-width:none;
-        padding:0;
-        height:100vh;
-      }
+  .container{
+    max-width:none;
+    padding:0;
+    height:100vh;
+  }
 
-      .map-panel{
-        padding:0;
-        border:none;
-        border-radius:0;
-        background:transparent;
-        box-shadow:none;
-        min-height:100vh;
-        overflow:visible;
-      }
+  .map-panel{
+    padding:0;
+    border:none;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    min-height:100vh;
+    overflow:visible;
+  }
 
-      .map-panel::before,
-      .map-panel::after{ display:none; }
+  .map-panel::before,
+  .map-panel::after{ display:none; }
 
-      .map-note{ display:none; }
+  .map-note{ display:none; }
 
-      .map-stack{ overflow:visible; }
+  .map-stack{ overflow:visible; }
 
-      .map-instance-wrap{
-        height:100vh;
-        overflow:visible;
-      }
+  .map-instance-wrap{
+    height:100vh;
+    overflow:visible;
+  }
 
-      #map,
-      #maptilerMap{
-        height:100vh;
-        min-height:100vh;
-        border:none;
-        border-radius:0;
-        box-shadow:none;
-      }
+  #map,
+  #maptilerMap{
+    height:100vh;
+    min-height:100vh;
+    border:none;
+    border-radius:0;
+    box-shadow:none;
+  }
 
-      /* Dölj desktop-UI */
-      .map-topbar,
-      #filterToggleBtn,
-      #activeLayersBadge,
-      #filterDrawer{
-        display:none !important;
-      }
+  /* Dölj desktop-UI */
+  .map-topbar,
+  #filterToggleBtn,
+  #activeLayersBadge,
+  #filterDrawer{
+    display:none !important;
+  }
 
-      #timeTickRow{ display:none; }
+  #timeTickRow{ display:none; }
 
-      /* Overlay */
-      #mapOverlayPanel{
-        position:fixed !important;
-        top:calc(var(--safe-top) + 10px) !important;
-        left:var(--mobile-side-gap) !important;
-        right:var(--mobile-side-gap) !important;
-        transform:none !important;
-        width:auto !important;
-        min-width:0 !important;
-        max-width:none !important;
-        border-radius:16px;
-        z-index:3000;
-      }
+  /* Overlay: lämna fri yta uppe till höger för zoom + min plats */
+  #mapOverlayPanel{
+    position:fixed !important;
+    top:calc(var(--safe-top) + 10px) !important;
+    left:12px !important;
+    right:auto !important;
+    transform:none !important;
+    width:min(280px, calc(100vw - 92px)) !important;
+    min-width:0 !important;
+    max-width:none !important;
+    border-radius:16px;
+    z-index:3000;
+  }
 
-      #overlayHeader{
-        padding:10px 12px;
-      }
+  #overlayHeader{
+    padding:10px 12px;
+  }
 
-      #overlayBody{
-        padding:9px 12px 11px;
-        max-height:min(30vh, 220px);
-      }
+  #overlayBody{
+    padding:9px 12px 11px;
+    max-height:min(28vh, 200px);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
 
-      #mapOverlayPanel.is-collapsed #overlayBody{
-        display:none;
-      }
+  #mapOverlayPanel.is-collapsed #overlayBody{
+    display:none;
+  }
 
-      /* Tidsreglage */
-      #timeControl{
-        position:fixed !important;
-        left:var(--mobile-side-gap) !important;
-        right:var(--mobile-side-gap) !important;
-        bottom:calc(var(--tab-bar-height) + var(--safe-bottom) + 10px) !important;
-        transform:none !important;
-        width:auto !important;
-        z-index:3000;
-        padding:12px 13px;
-        border-radius:16px;
-      }
+  /* Flytta kartans kontroller ned lite och håll dem fria från overlayn */
+  .maplibregl-ctrl-top-right,
+  .maptiler-ctrl-top-right,
+  .leaflet-top.leaflet-right{
+    top:calc(var(--safe-top) + 10px) !important;
+    right:12px !important;
+  }
 
-      .time-compact-top{
-        margin-bottom:10px;
-      }
+  /* Tidsreglage: högre upp så det inte blockas av bottom-menyn */
+  #timeControl{
+    position:fixed !important;
+    left:12px !important;
+    right:12px !important;
+    bottom:calc(var(--tab-bar-height) + var(--safe-bottom) + 20px) !important;
+    transform:none !important;
+    width:auto !important;
+    z-index:3000;
+    padding:12px 13px;
+    border-radius:16px;
+  }
 
-      .time-compact-label{
-        font-size:9px;
-      }
+  .time-compact-top{
+    margin-bottom:10px;
+  }
 
-      #timeValueLabel{
-        min-width:0;
-        font-size:11px;
-      }
+  .time-compact-label{
+    font-size:9px;
+  }
 
-      .time-compact-bottom{
-        grid-template-columns:74px 1fr;
-        gap:8px;
-      }
+  #timeValueLabel{
+    min-width:0;
+    font-size:11px;
+  }
 
-      #timePlayPauseBtn{
-        min-width:72px;
-        min-height:42px;
-        font-size:11px;
-        padding:10px 10px;
-      }
+  .time-compact-bottom{
+    grid-template-columns:74px 1fr;
+    gap:8px;
+  }
 
-      #timeSlider{
-        height:8px;
-      }
+  #timePlayPauseBtn{
+    min-width:72px;
+    min-height:42px;
+    font-size:11px;
+    padding:10px 10px;
+  }
 
-      .overlay-data-grid{
-        grid-template-columns:1fr 1fr;
-        gap:5px;
-      }
+  #timeSlider{
+    height:8px;
+  }
 
-      .overlay-data-cell{
-        padding:6px 8px;
-      }
+  .overlay-data-grid{
+    grid-template-columns:1fr 1fr;
+    gap:5px;
+  }
 
-      .overlay-data-label{
-        font-size:9px;
-      }
+  .overlay-data-cell{
+    padding:6px 8px;
+  }
 
-      .overlay-data-value{
-        font-size:12px;
-      }
+  .overlay-data-label{
+    font-size:9px;
+  }
 
-      #bottomTabBar{
-        display:flex;
-        z-index:5000;
-      }
-    }
+  .overlay-data-value{
+    font-size:12px;
+  }
+
+  #bottomTabBar{
+    display:flex;
+    z-index:5000;
+  }
+}
 
     /* ── EXTRA SMALL ── */
     @media (max-width:420px){
