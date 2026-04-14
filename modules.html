@@ -2244,175 +2244,196 @@ html, body {
     }
   }
 
-  async function loadWeatherForPoint(lat,lon){
-    try{
-      setText("weatherStatusValue","Hämtar prognos...");
-      setText("weatherGustSourceValue","Hämtar...");
-      resetForecastDisplay();
-      setOverlayHeaderDot("loading");
-      updateMapOverlay("Laddar väder...",formatCoord(lat)+", "+formatCoord(lon));
+async function loadWeatherForPoint(lat,lon){
+  try{
+    setText("weatherStatusValue","Hämtar prognos...");
+    setText("weatherGustSourceValue","Hämtar...");
+    resetForecastDisplay();
+    setOverlayHeaderDot("loading");
+    updateMapOverlay("Laddar väder...",formatCoord(lat)+", "+formatCoord(lon));
 
-      var responses=await Promise.all([
-        fetch("/api/weather?lat="+lat+"&lon="+lon),
-        fetch("/api/openmeteo-gust?lat="+lat+"&lon="+lon)
-      ]);
+    var responses = await Promise.all([
+      fetch("/api/weather?lat=" + lat + "&lon=" + lon),
+      fetch("/api/openmeteo-gust?lat=" + lat + "&lon=" + lon)
+    ]);
 
-      var weatherRes=responses[0],
-          gustRes=responses[1];
+    var weatherRes = responses[0];
+    var gustRes = responses[1];
 
-      var weatherText=await weatherRes.text(),
-          gustText=await gustRes.text();
+    var weatherText = await weatherRes.text();
+    var gustText = await gustRes.text();
 
-      if(!weatherRes.ok) throw new Error(weatherText);
+    if(!weatherRes.ok) throw new Error(weatherText);
 
-      var weatherData=JSON.parse(weatherText),
-          ts=weatherData.properties && weatherData.properties.timeseries || [];
+    var weatherData = JSON.parse(weatherText);
+    var ts = (weatherData.properties && weatherData.properties.timeseries) || [];
 
-      if(!ts.length) throw new Error("Ingen väderdata hittades.");
+    if(!ts.length) throw new Error("Ingen väderdata hittades.");
 
-      weatherTimeseries=ts;
+    weatherTimeseries = ts;
 
-            var cur=ts[0],
-          inst=(cur.data&&cur.data.instant&&cur.data.instant.details)||{},
-          n1=cur.data&&cur.data.next_1_hours||{},
-          n6=cur.data&&cur.data.next_6_hours||{},
-          n12=cur.data&&cur.data.next_12_hours||{};
+    var cur = ts[0];
+    var inst = (cur.data && cur.data.instant && cur.data.instant.details) || {};
+    var n1 = (cur.data && cur.data.next_1_hours) || {};
+    var n6 = (cur.data && cur.data.next_6_hours) || {};
+    var n12 = (cur.data && cur.data.next_12_hours) || {};
 
-      var sym=(n1.summary&&n1.summary.symbol_code)||
-              (n6.summary&&n6.summary.symbol_code)||
-              (n12.summary&&n12.summary.symbol_code)||
-              null;
+    var sym =
+      (n1.summary && n1.summary.symbol_code) ||
+      (n6.summary && n6.summary.symbol_code) ||
+      (n12.summary && n12.summary.symbol_code) ||
+      null;
 
-      var prec=(n1.details&&n1.details.precipitation_amount)!=null
-        ? n1.details.precipitation_amount
-        : (n6.details&&n6.details.precipitation_amount)!=null
-          ? n6.details.precipitation_amount
-          : (n12.details&&n12.details.precipitation_amount)!=null
-            ? n12.details.precipitation_amount
-            : null;
-
-      setText("weatherTempValue",formatTemp(inst.air_temperature));
-      setText("weatherHumidityValue",formatHumidity(inst.relative_humidity));
-      setText("weatherRainValue",formatRain(prec));
-      setText("weatherTypeValue",weatherLabelFromSymbol(sym));
-      setText("weatherWindValue",formatWind(inst.wind_speed));
-      setText("weatherDirectionValue",formatWindDirection(inst.wind_from_direction));
-      setText("weatherPressureValue",formatPressure(inst.air_pressure_at_sea_level));
-
-      currentForecastDays=buildDailyForecast(ts);
-      renderForecast(currentForecastDays);
-
-      var gustFormatted="--",
-          gustTimeseries=[];
-
-      if(gustRes.ok){
-        var gd=JSON.parse(gustText);
-        gustFormatted=formatWind(gd.value);
-        gustTimeseries=gd.timeseries || [];
-        setText("weatherGustValue",gustFormatted);
-        setText("weatherGustSourceValue","Open-Meteo • punktdata");
-        setText("weatherStatusValue",currentForecastDays.length>0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
-      }else{
-        setText("weatherGustValue","--");
-        setText("weatherGustSourceValue","Inga vindbyar tillgängliga");
-        setText("weatherStatusValue",currentForecastDays.length>0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
-      }
-
-      setOverlayHeaderDot("ready");
-
-      function getGustForTime(tms){
-        if(!gustTimeseries.length) return gustFormatted;
-        var cl=gustTimeseries[0],
-            md=Math.abs(new Date(cl.time).getTime()-tms);
-
-        for(var i=0;i<gustTimeseries.length;i++){
-          var df=Math.abs(new Date(gustTimeseries[i].time).getTime()-tms);
-          if(df<md){
-            md=df;
-            cl=gustTimeseries[i];
-          }
-        }
-        return formatWind(cl.value);
-      }
-
-      function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres){
-        return buildOverlayDataGrid([
-          {label:"Temp",value:formatTemp(temp),highlight:true},
-          {label:"Vind",value:formatWind(ws)},
-          {label:"Byar",value:gust},
-          {label:"Riktning",value:formatWindDirection(wd)},
-          {label:"Regn",value:formatRain(rain)},
-          {label:"Tryck",value:formatPressure(pres)}
-        ]);
-      }
-
-      function updateWeatherForSelectedTime(){
-        if(!weatherTimeseries.length || !selectedForecastTime) return;
-
-        var tms=new Date(selectedForecastTime).getTime(),
-            cl=weatherTimeseries[0],
-            md=Math.abs(new Date(cl.time).getTime()-tms);
-
-        for(var i=0;i<weatherTimeseries.length;i++){
-          var df=Math.abs(new Date(weatherTimeseries[i].time).getTime()-tms);
-          if(df<md){
-            md=df;
-            cl=weatherTimeseries[i];
-          }
-        }
-
-               var si=(cl.data&&cl.data.instant&&cl.data.instant.details)||{},
-            sn1=cl.data&&cl.data.next_1_hours||{},
-            sn6=cl.data&&cl.data.next_6_hours||{},
-            sn12=cl.data&&cl.data.next_12_hours||{};
-
-        var ss=(sn1.summary&&sn1.summary.symbol_code)||
-               (sn6.summary&&sn6.summary.symbol_code)||
-               (sn12.summary&&sn12.summary.symbol_code)||
-               null;
-
-        var sp=(sn1.details&&sn1.details.precipitation_amount)!=null
-          ? sn1.details.precipitation_amount
-          : (sn6.details&&sn6.details.precipitation_amount)!=null
-            ? sn6.details.precipitation_amount
-            : (sn12.details&&sn12.details.precipitation_amount)!=null
-              ? sn12.details.precipitation_amount
-              : null;
-
-        setText("weatherTempValue",formatTemp(si.air_temperature));
-        setText("weatherHumidityValue",formatHumidity(si.relative_humidity));
-        setText("weatherRainValue",formatRain(sp));
-        setText("weatherTypeValue",weatherLabelFromSymbol(ss));
-        setText("weatherWindValue",formatWind(si.wind_speed));
-        setText("weatherDirectionValue",formatWindDirection(si.wind_from_direction));
-        setText("weatherPressureValue",formatPressure(si.air_pressure_at_sea_level));
-        setText("weatherGustValue",gft);
-
-        updateMapOverlay(
-          weatherLabelFromSymbol(ss),
-          buildWeatherOverlay(cl.time,si.air_temperature,si.wind_speed,si.wind_from_direction,gft,sp,si.air_pressure_at_sea_level)
-        );
-      }
-
-      window.updateWeatherForSelectedTime=updateWeatherForSelectedTime;
-
-      if(selectedForecastTime){
-        updateWeatherForSelectedTime();
-      }else{
-        updateMapOverlay(
-          weatherLabelFromSymbol(sym),
-          buildWeatherOverlay(cur.time,inst.air_temperature,inst.wind_speed,inst.wind_from_direction,gustFormatted,prec,inst.air_pressure_at_sea_level)
-        );
-      }
-
-      refreshMapSizeSoon();
-    }catch(err){
-      console.error(err);
-      setOverlayHeaderDot("ready");
-      setText("weatherStatusValue","Det gick inte att hämta väderdata");
-      updateMapOverlay("Fel","Det gick inte att hämta väderdata för vald punkt.");
+    var prec = null;
+    if(n1.details && n1.details.precipitation_amount != null){
+      prec = n1.details.precipitation_amount;
+    }else if(n6.details && n6.details.precipitation_amount != null){
+      prec = n6.details.precipitation_amount;
+    }else if(n12.details && n12.details.precipitation_amount != null){
+      prec = n12.details.precipitation_amount;
     }
+
+    setText("weatherTempValue",formatTemp(inst.air_temperature));
+    setText("weatherHumidityValue",formatHumidity(inst.relative_humidity));
+    setText("weatherRainValue",formatRain(prec));
+    setText("weatherTypeValue",weatherLabelFromSymbol(sym));
+    setText("weatherWindValue",formatWind(inst.wind_speed));
+    setText("weatherDirectionValue",formatWindDirection(inst.wind_from_direction));
+    setText("weatherPressureValue",formatPressure(inst.air_pressure_at_sea_level));
+
+    currentForecastDays = buildDailyForecast(ts);
+    renderForecast(currentForecastDays);
+
+    var gustFormatted = "--";
+    var gustTimeseries = [];
+
+    if(gustRes.ok){
+      var gd = JSON.parse(gustText);
+      gustFormatted = formatWind(gd.value);
+      gustTimeseries = gd.timeseries || [];
+      setText("weatherGustValue",gustFormatted);
+      setText("weatherGustSourceValue","Open-Meteo • punktdata");
+      setText("weatherStatusValue",currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
+    }else{
+      setText("weatherGustValue","--");
+      setText("weatherGustSourceValue","Inga vindbyar tillgängliga");
+      setText("weatherStatusValue",currentForecastDays.length > 0 ? "Väderdata och dagsprognos hämtad" : "Väderdata hämtad");
+    }
+
+    setOverlayHeaderDot("ready");
+
+    function getGustForTime(tms){
+      if(!gustTimeseries.length) return gustFormatted;
+
+      var cl = gustTimeseries[0];
+      var md = Math.abs(new Date(cl.time).getTime() - tms);
+
+      for(var i=0;i<gustTimeseries.length;i++){
+        var df = Math.abs(new Date(gustTimeseries[i].time).getTime() - tms);
+        if(df < md){
+          md = df;
+          cl = gustTimeseries[i];
+        }
+      }
+      return formatWind(cl.value);
+    }
+
+    function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres){
+      return buildOverlayDataGrid([
+        {label:"Temp",value:formatTemp(temp),highlight:true},
+        {label:"Vind",value:formatWind(ws)},
+        {label:"Byar",value:gust},
+        {label:"Riktning",value:formatWindDirection(wd)},
+        {label:"Regn",value:formatRain(rain)},
+        {label:"Tryck",value:formatPressure(pres)}
+      ]);
+    }
+
+    function updateWeatherForSelectedTime(){
+      if(!weatherTimeseries.length || !selectedForecastTime) return;
+
+      var tms = new Date(selectedForecastTime).getTime();
+      var cl = weatherTimeseries[0];
+      var md = Math.abs(new Date(cl.time).getTime() - tms);
+
+      for(var i=0;i<weatherTimeseries.length;i++){
+        var df = Math.abs(new Date(weatherTimeseries[i].time).getTime() - tms);
+        if(df < md){
+          md = df;
+          cl = weatherTimeseries[i];
+        }
+      }
+
+      var si = (cl.data && cl.data.instant && cl.data.instant.details) || {};
+      var sn1 = (cl.data && cl.data.next_1_hours) || {};
+      var sn6 = (cl.data && cl.data.next_6_hours) || {};
+      var sn12 = (cl.data && cl.data.next_12_hours) || {};
+
+      var ss =
+        (sn1.summary && sn1.summary.symbol_code) ||
+        (sn6.summary && sn6.summary.symbol_code) ||
+        (sn12.summary && sn12.summary.symbol_code) ||
+        null;
+
+      var sp = null;
+      if(sn1.details && sn1.details.precipitation_amount != null){
+        sp = sn1.details.precipitation_amount;
+      }else if(sn6.details && sn6.details.precipitation_amount != null){
+        sp = sn6.details.precipitation_amount;
+      }else if(sn12.details && sn12.details.precipitation_amount != null){
+        sp = sn12.details.precipitation_amount;
+      }
+
+      var gft = getGustForTime(tms);
+
+      setText("weatherTempValue",formatTemp(si.air_temperature));
+      setText("weatherHumidityValue",formatHumidity(si.relative_humidity));
+      setText("weatherRainValue",formatRain(sp));
+      setText("weatherTypeValue",weatherLabelFromSymbol(ss));
+      setText("weatherWindValue",formatWind(si.wind_speed));
+      setText("weatherDirectionValue",formatWindDirection(si.wind_from_direction));
+      setText("weatherPressureValue",formatPressure(si.air_pressure_at_sea_level));
+      setText("weatherGustValue",gft);
+
+      updateMapOverlay(
+        weatherLabelFromSymbol(ss),
+        buildWeatherOverlay(
+          cl.time,
+          si.air_temperature,
+          si.wind_speed,
+          si.wind_from_direction,
+          gft,
+          sp,
+          si.air_pressure_at_sea_level
+        )
+      );
+    }
+
+    window.updateWeatherForSelectedTime = updateWeatherForSelectedTime;
+
+    if(selectedForecastTime){
+      updateWeatherForSelectedTime();
+    }else{
+      updateMapOverlay(
+        weatherLabelFromSymbol(sym),
+        buildWeatherOverlay(
+          cur.time,
+          inst.air_temperature,
+          inst.wind_speed,
+          inst.wind_from_direction,
+          gustFormatted,
+          prec,
+          inst.air_pressure_at_sea_level
+        )
+      );
+    }
+  }catch(err){
+    console.error(err);
+    setOverlayHeaderDot("ready");
+    setText("weatherStatusValue","Det gick inte att hämta väderdata");
+    updateMapOverlay("Fel","Det gick inte att hämta väderdata för vald punkt.");
   }
+}
 
   async function ensureWaveStationsLoaded(){
     if(waveStationsLoaded) return;
