@@ -57,7 +57,7 @@
       background:rgba(123,199,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
     #activeLayersBadge.visible{display:flex;}
     .badge-dot{width:6px;height:6px;border-radius:999px;background:var(--accent);box-shadow:0 0 6px rgba(123,199,255,0.6);}
-    #mapOverlayPanel{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1100;
+   #mapOverlayPanel{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1100;
       padding:0;border-radius:20px;border:1px solid rgba(255,255,255,0.11);
       background:rgba(5,11,22,0.84);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
       color:var(--text);font-size:13px;width:340px;max-width:calc(100vw - 32px);
@@ -109,7 +109,7 @@
     .layer-dot.wind{background:#dfe8f7;box-shadow:0 0 10px rgba(223,232,247,0.35);}
     .layer-dot.precip{background:#7bc7ff;box-shadow:0 0 10px rgba(123,199,255,0.45);}
     .layer-dot.cloud{background:#b7c5d9;box-shadow:0 0 10px rgba(183,197,217,0.4);}
-    #timeControl{position:absolute;left:16px;right:16px;bottom:16px;z-index:3000;padding:14px 16px;border-radius:20px;
+    #timeControl{position:fixed;left:16px;right:16px;bottom:16px;z-index:3000;
       border:1px solid rgba(255,255,255,0.09);background:rgba(5,11,22,0.86);
       backdrop-filter:blur(18px) saturate(155%);-webkit-backdrop-filter:blur(18px) saturate(155%);
       box-shadow:0 12px 36px rgba(0,0,0,0.34),inset 0 1px 0 rgba(255,255,255,0.04);pointer-events:auto;touch-action:none;}
@@ -242,6 +242,7 @@
   </style>
 </head>
 <body>
+ <body>
   <div class="container">
     <section class="map-panel">
       <div class="map-note" id="mapNote">Klicka på kartan för att välja en punkt för vädermodulen.</div>
@@ -256,10 +257,6 @@
               Filter
             </button>
             <div id="activeLayersBadge"><span class="badge-dot"></span><span id="activeLayersText">1 lager</span></div>
-          </div>
-          <div id="mapOverlayPanel">
-            <div id="overlayHeader"><div id="overlayHeaderDot"></div><div id="overlayTitle">Välj punkt</div></div>
-            <div id="overlayBody"><div id="overlayContent">Klicka i kartan för väderdata</div></div>
           </div>
           <div id="filterDrawer" class="is-hidden">
             <div class="filter-drawer-header">
@@ -278,68 +275,44 @@
               <div class="filter-row"><div class="filter-row-left"><span class="layer-dot cloud"></span><span>Fyr / station</span></div><button id="toggleLighthouseModeBtn" type="button">Av</button></div>
             </div>
           </div>
-          <div id="timeControl">
-            <div class="time-compact-top">
-              <div class="time-compact-label">Tid</div>
-              <div id="timeValueLabel">Laddar tid...</div>
-            </div>
-            <div class="time-compact-bottom">
-              <button id="timePlayPauseBtn" type="button">
-                <svg id="playIcon" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
-                <span id="playBtnText">Spela</span>
-              </button>
-              <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-            </div>
-            <div id="timeTickRow">
-              <span class="time-tick" id="tick0">–</span><span class="time-tick" id="tick1">–</span>
-              <span class="time-tick" id="tick2">–</span><span class="time-tick" id="tick3">–</span>
-              <span class="time-tick" id="tick4">–</span>
-            </div>
-          </div>
           <div id="map" style="display:none;"></div>
         </div>
       </div>
     </section>
   </div>
 
+  <!-- Dessa ligger nu direkt i body, utanför MapTilers transform-kontext -->
+  <div id="mapOverlayPanel">
+    <div id="overlayHeader"><div id="overlayHeaderDot"></div><div id="overlayTitle">Välj punkt</div></div>
+    <div id="overlayBody"><div id="overlayContent">Klicka i kartan för väderdata</div></div>
+  </div>
+
+  <div id="timeControl">
+    <div class="time-compact-top">
+      <div class="time-compact-label">Tid</div>
+      <div id="timeValueLabel">Laddar tid...</div>
+    </div>
+    <div class="time-compact-bottom">
+      <button id="timePlayPauseBtn" type="button">
+        <svg id="playIcon" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
+        <span id="playBtnText">Spela</span>
+      </button>
+      <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
+    </div>
+    <div id="timeTickRow">
+      <span class="time-tick" id="tick0">–</span><span class="time-tick" id="tick1">–</span>
+      <span class="time-tick" id="tick2">–</span><span class="time-tick" id="tick3">–</span>
+      <span class="time-tick" id="tick4">–</span>
+    </div>
+  </div>
+
   <nav id="bottomTabBar">
-    <button class="tab-btn active" id="tabWeather" type="button">
-      <svg viewBox="0 0 24 24"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/><circle cx="12" cy="12" r="4"/></svg>
-      Väder
-    </button>
-    <button class="tab-btn" id="tabWave" type="button">
-      <svg viewBox="0 0 24 24"><path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/><path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/></svg>
-      Boj / hav
-      <span class="tab-btn-badge" id="waveBadge"></span>
-    </button>
-    <button class="tab-btn" id="tabLighthouse" type="button">
-      <svg viewBox="0 0 24 24"><path d="M12 2L9 8h6L12 2z"/><rect x="10" y="8" width="4" height="10" rx="1"/><path d="M8 18h8M6 21h12"/></svg>
-      Fyr
-      <span class="tab-btn-badge" id="lighthouseBadge"></span>
-    </button>
-    <button class="tab-btn" id="tabFilter" type="button">
-      <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-      Filter
-      <span class="tab-btn-badge" id="filterBadge"></span>
-    </button>
+    ...
   </nav>
 
   <div id="mobileFilterSheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Visa på kartan</div>
-    <div class="sheet-body">
-      <div class="sheet-group">
-        <div class="sheet-group-title">Kartlager</div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>Vind</span></div><button class="sheet-toggle is-on" id="mobileToggleWindBtn" type="button"></button></div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Nederbörd</span></div><button class="sheet-toggle" id="mobileTogglePrecipBtn" type="button"></button></div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot cloud"></span><span>Moln</span></div><button class="sheet-toggle" id="mobileToggleCloudBtn" type="button"></button></div>
-      </div>
-      <div class="sheet-group">
-        <div class="sheet-group-title">Objekt</div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Boj / våg</span></div><button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button></div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot cloud"></span><span>Fyr / station</span></div><button class="sheet-toggle" id="mobileToggleLighthouseBtn" type="button"></button></div>
-      </div>
-    </div>
+    ...
+  </div>
   </div>
 
 <script>
