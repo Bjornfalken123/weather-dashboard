@@ -2023,29 +2023,29 @@ maptilerWindLayer=new maptilerweather.WindLayer({
             syncAllLayerButtons();
           }
 
-          function onPrecipToggle(){
-            if(!maptilerPrecipitationLayer) return;
-            if(precipitationLayerVisible){
-              maptilerMap.removeLayer("main-precipitation-layer");
-            }else{
-              maptilerMap.addLayer(maptilerPrecipitationLayer,"Water");
-              if(selectedForecastTime) maptilerPrecipitationLayer.setAnimationTime(selectedForecastTime/1000);
-            }
-            precipitationLayerVisible=!precipitationLayerVisible;
-            syncAllLayerButtons();
-          }
+        function onPrecipToggle(){
+  if(!maptilerPrecipitationLayer) return;
+  if(precipitationLayerVisible){
+    maptilerMap.removeLayer("main-precipitation-layer");
+  }else{
+    maptilerMap.addLayer(maptilerPrecipitationLayer);
+    if(selectedForecastTime) maptilerPrecipitationLayer.setAnimationTime(selectedForecastTime/1000);
+  }
+  precipitationLayerVisible=!precipitationLayerVisible;
+  syncAllLayerButtons();
+}
 
-          function onCloudToggle(){
-            if(!maptilerCloudLayer) return;
-            if(cloudLayerVisible){
-              maptilerMap.removeLayer("main-cloud-layer");
-            }else{
-              maptilerMap.addLayer(maptilerCloudLayer,"Water");
-              if(selectedForecastTime) maptilerCloudLayer.setAnimationTime(selectedForecastTime/1000);
-            }
-            cloudLayerVisible=!cloudLayerVisible;
-            syncAllLayerButtons();
-          }
+function onCloudToggle(){
+  if(!maptilerCloudLayer) return;
+  if(cloudLayerVisible){
+    maptilerMap.removeLayer("main-cloud-layer");
+  }else{
+    maptilerMap.addLayer(maptilerCloudLayer);
+    if(selectedForecastTime) maptilerCloudLayer.setAnimationTime(selectedForecastTime/1000);
+  }
+  cloudLayerVisible=!cloudLayerVisible;
+  syncAllLayerButtons();
+}
 
           ["toggleWindLayerBtn","mobileToggleWindBtn"].forEach(function(id){
             var el=document.getElementById(id);
