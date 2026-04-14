@@ -2272,13 +2272,24 @@ html, body {
 
       weatherTimeseries=ts;
 
-      var cur=ts[0],
-          inst=(cur.data && cur.data.instant && cur.data.instant.details) || {},
-          n1=cur.data && cur.data.next_1_hours || {},
-          n6=cur.data && cur.data.next_6_hours || {};
+            var cur=ts[0],
+          inst=(cur.data&&cur.data.instant&&cur.data.instant.details)||{},
+          n1=cur.data&&cur.data.next_1_hours||{},
+          n6=cur.data&&cur.data.next_6_hours||{},
+          n12=cur.data&&cur.data.next_12_hours||{};
 
-      var sym=(n1.summary && n1.summary.symbol_code) || (n6.summary && n6.summary.symbol_code) || null;
-      var prec=(n1.details && n1.details.precipitation_amount)!=null ? n1.details.precipitation_amount : (n6.details && n6.details.precipitation_amount) || null;
+      var sym=(n1.summary&&n1.summary.symbol_code)||
+              (n6.summary&&n6.summary.symbol_code)||
+              (n12.summary&&n12.summary.symbol_code)||
+              null;
+
+      var prec=(n1.details&&n1.details.precipitation_amount)!=null
+        ? n1.details.precipitation_amount
+        : (n6.details&&n6.details.precipitation_amount)!=null
+          ? n6.details.precipitation_amount
+          : (n12.details&&n12.details.precipitation_amount)!=null
+            ? n12.details.precipitation_amount
+            : null;
 
       setText("weatherTempValue",formatTemp(inst.air_temperature));
       setText("weatherHumidityValue",formatHumidity(inst.relative_humidity));
@@ -2350,13 +2361,23 @@ html, body {
           }
         }
 
-        var si=(cl.data && cl.data.instant && cl.data.instant.details) || {},
-            sn1=cl.data && cl.data.next_1_hours || {},
-            sn6=cl.data && cl.data.next_6_hours || {};
+               var si=(cl.data&&cl.data.instant&&cl.data.instant.details)||{},
+            sn1=cl.data&&cl.data.next_1_hours||{},
+            sn6=cl.data&&cl.data.next_6_hours||{},
+            sn12=cl.data&&cl.data.next_12_hours||{};
 
-        var ss=(sn1.summary && sn1.summary.symbol_code) || (sn6.summary && sn6.summary.symbol_code) || null;
-        var sp=(sn1.details && sn1.details.precipitation_amount)!=null ? sn1.details.precipitation_amount : (sn6.details && sn6.details.precipitation_amount) || null;
-        var gft=getGustForTime(tms);
+        var ss=(sn1.summary&&sn1.summary.symbol_code)||
+               (sn6.summary&&sn6.summary.symbol_code)||
+               (sn12.summary&&sn12.summary.symbol_code)||
+               null;
+
+        var sp=(sn1.details&&sn1.details.precipitation_amount)!=null
+          ? sn1.details.precipitation_amount
+          : (sn6.details&&sn6.details.precipitation_amount)!=null
+            ? sn6.details.precipitation_amount
+            : (sn12.details&&sn12.details.precipitation_amount)!=null
+              ? sn12.details.precipitation_amount
+              : null;
 
         setText("weatherTempValue",formatTemp(si.air_temperature));
         setText("weatherHumidityValue",formatHumidity(si.relative_humidity));
