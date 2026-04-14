@@ -403,6 +403,30 @@
   font-size:11px;
   color:var(--muted);
 }
+.weather-details-toggle{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.04);
+  color:var(--text-soft);
+  border-radius:10px;
+  padding:8px 10px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:2px;
+  margin-bottom:10px;
+  transition:background 160ms ease,border-color 160ms ease,transform 160ms ease;
+}
+
+.weather-details-toggle:hover{
+  background:rgba(255,255,255,0.08);
+  border-color:rgba(255,255,255,0.16);
+  transform:translateY(-1px);
+}
+
+.weather-extra-details{
+  margin-top:2px;
+}
 
     .overlay-data-grid{
       display:grid;
@@ -1401,15 +1425,16 @@
   </div>
 
   <script>
-    var activeMode="weather",
-        showWaveObjects=false,
-        showLighthouseObjects=false,
-        lastObjectInteractionAt=0,
-        forecastExpanded=false,
-        currentForecastDays=[],
-        weatherTimeseries=[],
-        selectedForecastTime=null,
-        timePlaybackTimer=null;
+   var activeMode="weather",
+    showWaveObjects=false,
+    showLighthouseObjects=false,
+    lastObjectInteractionAt=0,
+    forecastExpanded=false,
+    currentForecastDays=[],
+    weatherTimeseries=[],
+    selectedForecastTime=null,
+    timePlaybackTimer=null,
+    weatherDetailsExpanded=false;
 
    var savedSelections={weather:null,wave:null,lighthouse:null};
 var maptilerMap=null,
@@ -1642,6 +1667,16 @@ function formatWeatherDateTime(v){
       if(deg==null || isNaN(Number(deg))) return "--";
       return Math.round(Number(deg))+"° "+degreesToCompass(Number(deg));
     }
+    function formatWindWithDirection(speed,deg){
+  var wind=formatWind(speed);
+  var dir=formatWindDirection(deg);
+
+  if(wind==="--" && dir==="--") return "--";
+  if(wind==="--") return dir;
+  if(dir==="--") return wind;
+
+  return wind+" • "+dir;
+}
 
     function extractLatestValue(data){
       if(Array.isArray(data && data.value) && data.value.length) return data.value[data.value.length-1];
@@ -2504,7 +2539,23 @@ function formatWeatherDateTime(v){
           return formatWind(cl.value);
         }
 
-       function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
+function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
+  var detailsButtonText=weatherDetailsExpanded ? "Visa mindre" : "Se mer";
+
+  var detailsHtml="";
+  if(weatherDetailsExpanded){
+    detailsHtml=
+      '<div class="weather-extra-details">' +
+        buildOverlayDataGrid([
+          {label:"Vind",value:formatWindWithDirection(ws,wd)},
+          {label:"Vindbyar",value:gust},
+          {label:"Nederbörd",value:formatRain(rain)},
+          {label:"Lufttryck",value:formatPressure(pres)},
+          {label:"Luftfuktighet",value:formatHumidity(humidity)}
+        ]) +
+      '</div>';
+  }
+
   return ''
     + '<div class="weather-overview">'
     +   '<div class="weather-icon">'+weatherIconFromSymbol(symbol)+'</div>'
@@ -2515,14 +2566,8 @@ function formatWeatherDateTime(v){
     + '</div>'
     + '<div class="weather-temp-big">'+formatTemp(temp)+'</div>'
     + '<div class="weather-point-line">Punkt: '+formatCoord(lat)+', '+formatCoord(lon)+'</div>'
-    + buildOverlayDataGrid([
-        {label:"Vind",value:formatWind(ws)},
-        {label:"Riktning",value:formatWindDirection(wd)},
-        {label:"Byar",value:gust},
-        {label:"Regn",value:formatRain(rain)},
-        {label:"Tryck",value:formatPressure(pres)},
-        {label:"Fuktighet",value:formatHumidity(humidity)}
-      ]);
+    + '<button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">'+detailsButtonText+'</button>'
+    + detailsHtml;
 }
 
         function updateWeatherForSelectedTime(){
@@ -3133,6 +3178,7 @@ function formatWeatherDateTime(v){
 
     var overlayCollapseBtn=document.getElementById("overlayCollapseBtn");
     var mapOverlayPanel=document.getElementById("mapOverlayPanel");
+    var overlayContentEl=document.getElementById("overlayContent");
 
     function updateOverlayCollapseButtonText(){
       if(!overlayCollapseBtn || !mapOverlayPanel) return;
@@ -3158,6 +3204,17 @@ function formatWeatherDateTime(v){
         toggleOverlayCollapsed();
       });
     }
+    if(overlayContentEl){
+  overlayContentEl.addEventListener("click",function(e){
+    if(e.target && e.target.id==="weatherDetailsToggleBtn"){
+      e.stopPropagation();
+      weatherDetailsExpanded=!weatherDetailsExpanded;
+      if(window.updateWeatherForSelectedTime){
+        window.updateWeatherForSelectedTime();
+      }
+    }
+  });
+}
 
     if(isMobileView()){
       toggleOverlayCollapsed(false);
@@ -3295,13 +3352,14 @@ function formatWeatherDateTime(v){
       maptilerWeatherMarker=new maptilersdk.Marker().setLngLat([lon,lat]).addTo(maptilerMap);
     }
 
-    function handlePrimaryMapClick(lat,lon){
-      if(Date.now()-lastObjectInteractionAt<500) return;
-      saveSelection("weather",{lat:lat,lon:lon});
-      setWeatherMarker(lat,lon);
-      setMaptilerWeatherMarker(lat,lon);
-      loadWeatherForPoint(lat,lon);
-    }
+function handlePrimaryMapClick(lat,lon){
+  if(Date.now()-lastObjectInteractionAt<500) return;
+  weatherDetailsExpanded=false;
+  saveSelection("weather",{lat:lat,lon:lon});
+  setWeatherMarker(lat,lon);
+  setMaptilerWeatherMarker(lat,lon);
+  loadWeatherForPoint(lat,lon);
+}
 
     map.on("click",function(e){
       handlePrimaryMapClick(e.latlng.lat,e.latlng.lng);
