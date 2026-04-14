@@ -1212,6 +1212,46 @@
         padding:11px 12px;
       }
     }
+    /* ===== SÖK ===== */
+
+#mobileSearchSheet{
+  display:none;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:6500;
+  background:rgba(5,11,22,0.96);
+  backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,0.1);
+  border-radius:22px 22px 0 0;
+  padding-bottom:100px;
+  max-height:80vh;
+  overflow:auto;
+}
+
+#mobileSearchSheet.is-open{
+  display:block;
+}
+
+.search-input-wrap{
+  padding:14px;
+}
+
+#mobileSearchInput{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  background:rgba(255,255,255,0.06);
+  color:white;
+}
+
+.search-result-item{
+  padding:12px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  cursor:pointer;
+}
   </style>
 </head>
 <body>
@@ -1365,6 +1405,10 @@
       Filter
       <span class="tab-btn-badge" id="filterBadge"></span>
     </button>
+    <button class="tab-btn" id="tabSearch" type="button">
+  🔍
+  Sök
+</button>
   </nav>
 
   <div id="mobileFilterSheet">
@@ -1372,6 +1416,18 @@
       <button id="mobileFilterCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
       <div class="sheet-title">Visa på kartan</div>
     </div>
+    <div id="mobileSearchSheet">
+  <div class="sheet-header">
+    <button id="mobileSearchCloseBtn" class="sheet-close-btn">Stäng</button>
+    <div class="sheet-title">Sök stad</div>
+  </div>
+
+  <div class="search-input-wrap">
+    <input id="mobileSearchInput" placeholder="Sök stad..." />
+  </div>
+
+  <div id="mobileSearchResults"></div>
+</div>
 
     <div class="sheet-body">
       <div class="sheet-group">
@@ -1899,6 +1955,13 @@ maptilerWindLayer=new maptilerweather.WindLayer({
             var tabWave=document.getElementById("tabWave");
             var tabLighthouse=document.getElementById("tabLighthouse");
             var tabFilter=document.getElementById("tabFilter");
+            var tabSearch=document.getElementById("tabSearch");
+
+if(tabSearch){
+  tabSearch.onclick=function(){
+    openSearch();
+  };
+}
             var filterOpen=mobileFilterSheet && mobileFilterSheet.classList.contains("is-open");
 
             [tabWeather,tabWave,tabLighthouse,tabFilter].forEach(function(btn){
@@ -3474,6 +3537,22 @@ async function startLighthouseBackgroundCheck(){
     }
 
     var mobileFilterSheet=document.getElementById("mobileFilterSheet");
+    var mobileSearchSheet=document.getElementById("mobileSearchSheet");
+var mobileSearchInput=document.getElementById("mobileSearchInput");
+var mobileSearchResults=document.getElementById("mobileSearchResults");
+var mobileSearchCloseBtn=document.getElementById("mobileSearchCloseBtn");
+
+function openSearch(){
+  mobileSearchSheet.classList.add("is-open");
+}
+
+function closeSearch(){
+  mobileSearchSheet.classList.remove("is-open");
+}
+
+if(mobileSearchCloseBtn){
+  mobileSearchCloseBtn.onclick=closeSearch;
+}
     var mobileFilterCloseBtn=document.getElementById("mobileFilterCloseBtn");
 
     function openMobileFilterSheet(){
@@ -3578,7 +3657,46 @@ function handlePrimaryMapClick(lat,lon){
 
     window.addEventListener("resize",refreshMapSizeSoon);
     window.addEventListener("orientationchange",refreshMapSizeSoon);
+mobileSearchInput.addEventListener("input", async function(){
+  var q = mobileSearchInput.value;
 
+  if(q.length < 2){
+    mobileSearchResults.innerHTML="";
+    return;
+  }
+
+  var res = await fetch(
+    "https://api.maptiler.com/geocoding/" +
+    encodeURIComponent(q) +
+    ".json?key=" + MAPTILER_API_KEY
+  );
+
+  var data = await res.json();
+
+  mobileSearchResults.innerHTML="";
+
+  (data.features || []).forEach(function(f){
+    var div=document.createElement("div");
+    div.className="search-result-item";
+    div.textContent=f.place_name;
+
+    div.onclick=function(){
+      var lon=f.center[0];
+      var lat=f.center[1];
+
+      closeSearch();
+
+      map.setView([lat,lon],9);
+      if(maptilerMap){
+        maptilerMap.flyTo({center:[lon,lat],zoom:9});
+      }
+
+      handlePrimaryMapClick(lat,lon);
+    };
+
+    mobileSearchResults.appendChild(div);
+  });
+});
     updateModeUI();
     updateActiveLayersBadge();
 
