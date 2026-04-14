@@ -2667,78 +2667,83 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       }
     }
 
-    async function ensureWaveStationsLoaded(){
-      if(waveStationsLoaded) return;
-      if(waveStationsLoadingPromise) return waveStationsLoadingPromise;
+   async function ensureWaveStationsLoaded(){
+  if(waveStationsLoaded) return;
+  if(waveStationsLoadingPromise) return waveStationsLoadingPromise;
 
-      waveStationsLoadingPromise=(async function(){
-        try{
-          var res=await fetch("/api/ocean-wave-stations"),
-              data=await res.json(),
-              stations=Array.isArray(data && data.stations) ? data.stations : [];
+  waveStationsLoadingPromise=(async function(){
+    try{
+      var res=await fetch("/api/ocean-wave-stations"),
+          data=await res.json(),
+          stations=Array.isArray(data && data.stations) ? data.stations : [];
 
-          if(!stations.length){
-            if(activeMode==="wave") setText("waveStatusValue","Inga stationer hittades");
-            return;
-          }
+      if(!stations.length){
+        if(activeMode==="wave") setText("waveStatusValue","Inga stationer hittades");
+        return;
+      }
 
-          stations.forEach(function(s){
-            waveStationsCache.set(s.id,s);
+      stations.forEach(function(s){
+        waveStationsCache.set(s.id,s);
+      });
 
-            var lm=L.circleMarker([s.latitude,s.longitude],{
-              radius:5,
-              weight:2,
-              color:"#69b7ff",
-              fillColor:"#69b7ff",
-              fillOpacity:0,
-              opacity:0,
-              stroke:false
-            });
-
-            lm.bindTooltip(s.name+" • ännu inte kontrollerad",{direction:"top"});
-            lm.on("click",function(e){
-              L.DomEvent.stopPropagation(e);
-              selectWaveStation(s);
-            });
-
-            waveMarkerMap.set(s.id,lm);
-            waveStationsLayer.addLayer(lm);
-
-            if(maptilerMap && window.maptilersdk){
-              var el=document.createElement("div");
-              Object.assign(el.style,{
-                width:"10px",
-                height:"10px",
-                borderRadius:"999px",
-                background:"#69b7ff",
-                border:"2px solid rgba(255,255,255,0.75)",
-                boxShadow:"0 0 0 4px rgba(105,183,255,0.12)",
-                cursor:"pointer",
-                display:"none"
-              });
-              el.title=s.name+" • ännu inte kontrollerad";
-              el.addEventListener("click",function(e){
-                e.stopPropagation();
-                selectWaveStation(s);
-              });
-              var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
-              waveMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
-            }
-          });
-
-          waveStationsLoaded=true;
-          if(activeMode==="wave") setText("waveStatusValue","Kontrollerar vilka bojar som har data...");
-          startWaveBackgroundCheck();
-        }catch(e){
-          console.error(e);
-          if(activeMode==="wave") setText("waveStatusValue","Det gick inte att hämta stationer");
-        }finally{
-          waveStationsLoadingPromise=null;
-        }
-      })();
-
-      return waveStationsLoadingPromise;
+      waveStationsLoaded=true;
+      if(activeMode==="wave") setText("waveStatusValue","Kontrollerar vilka bojar som har data...");
+      startWaveBackgroundCheck();
+    }catch(e){
+      console.error(e);
+      if(activeMode==="wave") setText("waveStatusValue","Det gick inte att hämta stationer");
+    }finally{
+      waveStationsLoadingPromise=null;
     }
+  })();
+
+  return waveStationsLoadingPromise;
+}
+    function createWaveStationMarkers(s){
+  if(waveMarkerMap.has(s.id) || waveMaptilerMarkerMap.has(s.id)) return;
+
+  var lm=L.circleMarker([s.latitude,s.longitude],{
+    radius:7,
+    weight:2,
+    color:"#ff8b8b",
+    fillColor:"#ff8b8b",
+    fillOpacity:0.95,
+    opacity:1,
+    stroke:true
+  });
+
+  lm.bindTooltip(s.name+" • data tillgänglig",{direction:"top"});
+  lm.on("click",function(e){
+    L.DomEvent.stopPropagation(e);
+    selectWaveStation(s);
+  });
+
+  waveMarkerMap.set(s.id,lm);
+  waveStationsLayer.addLayer(lm);
+
+  if(maptilerMap && window.maptilersdk){
+    var el=document.createElement("div");
+    Object.assign(el.style,{
+      width:"14px",
+      height:"14px",
+      borderRadius:"999px",
+      background:"#ff8b8b",
+      border:"2px solid rgba(255,255,255,0.75)",
+      boxShadow:"0 0 0 4px rgba(255,139,139,0.18)",
+      cursor:"pointer",
+      display:showWaveObjects ? "block" : "none"
+    });
+
+    el.title=s.name+" • data tillgänglig";
+    el.addEventListener("click",function(e){
+      e.stopPropagation();
+      selectWaveStation(s);
+    });
+
+    var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
+    waveMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
+  }
+}
 
     async function fetchWaveDataForStation(id){
       for(var p of ["latest-hour","latest-day","latest-months"]){
@@ -2977,105 +2982,112 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       }
     }
 
-    async function startWaveBackgroundCheck(){
-      if(waveBackgroundCheckStarted) return;
-      waveBackgroundCheckStarted=true;
+   async function startWaveBackgroundCheck(){
+  if(waveBackgroundCheckStarted) return;
+  waveBackgroundCheckStarted=true;
 
-      var stations=Array.from(waveStationsCache.values()),
-          checked=0,
-          index=0;
+  var stations=Array.from(waveStationsCache.values()),
+      checked=0,
+      index=0;
 
-      async function worker(){
-        while(index<stations.length){
-          var s=stations[index++];
-          try{
-            var r=await evaluateWaveStation(s,true);
-            setWaveMarkerColorById(s.id,r.hasAnySeaData ? "active" : "inactive",s.name+" • "+(r.hasAnySeaData ? "data tillgänglig" : "ingen data"));
-          }catch(e){
-            setWaveMarkerColorById(s.id,"inactive",s.name+" • kunde inte hämtas");
-          }
-          checked++;
-          if(activeMode==="wave") setText("waveStatusValue","Bakgrundskontroll bojar: "+checked+"/"+stations.length);
+  async function worker(){
+    while(index<stations.length){
+      var s=stations[index++];
+      try{
+        var r=await evaluateWaveStation(s,true);
+        if(r.hasAnySeaData){
+          createWaveStationMarkers(s);
         }
+      }catch(e){
+        console.warn("Boj kunde inte verifieras",s.id,e);
+      }
+      checked++;
+      if(activeMode==="wave") setText("waveStatusValue","Bakgrundskontroll bojar: "+checked+"/"+stations.length);
+    }
+  }
+
+  await Promise.all(Array.from({length:3},function(){ return worker(); }));
+
+  if(activeMode==="wave") setText("waveStatusValue","Bojar med data laddade");
+}
+
+   async function ensureLighthouseStationsLoaded(){
+  if(lighthouseStationsLoaded) return;
+  if(lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
+
+  lighthouseStationsLoadingPromise=(async function(){
+    try{
+      var res=await fetch("/api/lighthouse-stations"),
+          data=await res.json(),
+          stations=Array.isArray(data && data.stations) ? data.stations : [];
+
+      if(!stations.length){
+        if(activeMode==="lighthouse") setText("lighthouseStatusValue","Inga stationer hittades");
+        return;
       }
 
-      await Promise.all(Array.from({length:3},function(){ return worker(); }));
+      stations.forEach(function(s){
+        lighthouseStationsCache.set(s.id,s);
+      });
 
-      if(activeMode==="wave") setText("waveStatusValue","Bakgrundskontroll av bojar slutförd");
+      lighthouseStationsLoaded=true;
+      if(activeMode==="lighthouse") setText("lighthouseStatusValue","Kontrollerar vilka stationer som har data...");
+      startLighthouseBackgroundCheck();
+    }catch(e){
+      console.error(e);
+      if(activeMode==="lighthouse") setText("lighthouseStatusValue","Det gick inte att hämta stationer");
+    }finally{
+      lighthouseStationsLoadingPromise=null;
     }
+  })();
 
-    async function ensureLighthouseStationsLoaded(){
-      if(lighthouseStationsLoaded) return;
-      if(lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
+  return lighthouseStationsLoadingPromise;
+}
+    function createLighthouseStationMarkers(s){
+  if(lighthouseMarkerMap.has(s.id) || lighthouseMaptilerMarkerMap.has(s.id)) return;
 
-      lighthouseStationsLoadingPromise=(async function(){
-        try{
-          var res=await fetch("/api/lighthouse-stations"),
-              data=await res.json(),
-              stations=Array.isArray(data && data.stations) ? data.stations : [];
+  var lm=L.circleMarker([s.latitude,s.longitude],{
+    radius:7,
+    weight:2,
+    color:"#ff8b8b",
+    fillColor:"#ff8b8b",
+    fillOpacity:0.95,
+    opacity:1,
+    stroke:true
+  });
 
-          if(!stations.length){
-            if(activeMode==="lighthouse") setText("lighthouseStatusValue","Inga stationer hittades");
-            return;
-          }
+  lm.bindTooltip(s.name+" • data tillgänglig",{direction:"top"});
+  lm.on("click",function(e){
+    L.DomEvent.stopPropagation(e);
+    selectLighthouseStation(s);
+  });
 
-          stations.forEach(function(s){
-            lighthouseStationsCache.set(s.id,s);
+  lighthouseMarkerMap.set(s.id,lm);
+  lighthouseStationsLayer.addLayer(lm);
 
-            var lm=L.circleMarker([s.latitude,s.longitude],{
-              radius:5,
-              weight:2,
-              color:"#9bffb0",
-              fillColor:"#9bffb0",
-              fillOpacity:0,
-              opacity:0,
-              stroke:false
-            });
+  if(maptilerMap && window.maptilersdk){
+    var el=document.createElement("div");
+    Object.assign(el.style,{
+      width:"14px",
+      height:"14px",
+      borderRadius:"999px",
+      background:"#ff8b8b",
+      border:"2px solid rgba(255,255,255,0.75)",
+      boxShadow:"0 0 0 4px rgba(255,139,139,0.18)",
+      cursor:"pointer",
+      display:showLighthouseObjects ? "block" : "none"
+    });
 
-            lm.bindTooltip(s.name+" • ännu inte kontrollerad",{direction:"top"});
-            lm.on("click",function(e){
-              L.DomEvent.stopPropagation(e);
-              selectLighthouseStation(s);
-            });
+    el.title=s.name+" • data tillgänglig";
+    el.addEventListener("click",function(e){
+      e.stopPropagation();
+      selectLighthouseStation(s);
+    });
 
-            lighthouseMarkerMap.set(s.id,lm);
-            lighthouseStationsLayer.addLayer(lm);
-
-            if(maptilerMap && window.maptilersdk){
-              var el=document.createElement("div");
-              Object.assign(el.style,{
-                width:"10px",
-                height:"10px",
-                borderRadius:"999px",
-                background:"#9bffb0",
-                border:"2px solid rgba(255,255,255,0.75)",
-                boxShadow:"0 0 0 4px rgba(155,255,176,0.12)",
-                cursor:"pointer",
-                display:"none"
-              });
-              el.title=s.name+" • ännu inte kontrollerad";
-              el.addEventListener("click",function(e){
-                e.stopPropagation();
-                selectLighthouseStation(s);
-              });
-              var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
-              lighthouseMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
-            }
-          });
-
-          lighthouseStationsLoaded=true;
-          if(activeMode==="lighthouse") setText("lighthouseStatusValue","Kontrollerar vilka stationer som har data...");
-          startLighthouseBackgroundCheck();
-        }catch(e){
-          console.error(e);
-          if(activeMode==="lighthouse") setText("lighthouseStatusValue","Det gick inte att hämta stationer");
-        }finally{
-          lighthouseStationsLoadingPromise=null;
-        }
-      })();
-
-      return lighthouseStationsLoadingPromise;
-    }
+    var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
+    lighthouseMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
+  }
+}
 
     async function fetchLighthouseObservations(id){
       if(lighthouseObservationCache.has(id)) return lighthouseObservationCache.get(id);
@@ -3152,26 +3164,34 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       }
     }
 
-    async function startLighthouseBackgroundCheck(){
-      if(lighthouseBackgroundCheckStarted) return;
-      lighthouseBackgroundCheckStarted=true;
+   async function startLighthouseBackgroundCheck(){
+  if(lighthouseBackgroundCheckStarted) return;
+  lighthouseBackgroundCheckStarted=true;
 
-      var stations=Array.from(lighthouseStationsCache.values()),
-          checked=0,
-          index=0;
+  var stations=Array.from(lighthouseStationsCache.values()),
+      checked=0,
+      index=0;
 
-      async function worker(){
-        while(index<stations.length){
-          var s=stations[index++];
-          try{
-            var result=await fetchLighthouseObservations(s.id);
-            setLighthouseMarkerColorById(s.id,result.hasAnyData ? "active" : "inactive",s.name+" • "+(result.hasAnyData ? "data tillgänglig" : "ingen data"));
-          }catch(e){
-            setLighthouseMarkerColorById(s.id,"inactive",s.name+" • kunde inte hämtas");
-          }
-          checked++;
-          if(activeMode==="lighthouse") setText("lighthouseStatusValue","Bakgrundskontroll stationer: "+checked+"/"+stations.length);
+  async function worker(){
+    while(index<stations.length){
+      var s=stations[index++];
+      try{
+        var result=await fetchLighthouseObservations(s.id);
+        if(result.hasAnyData){
+          createLighthouseStationMarkers(s);
         }
+      }catch(e){
+        console.warn("Fyr kunde inte verifieras",s.id,e);
+      }
+      checked++;
+      if(activeMode==="lighthouse") setText("lighthouseStatusValue","Bakgrundskontroll stationer: "+checked+"/"+stations.length);
+    }
+  }
+
+  await Promise.all(Array.from({length:5},function(){ return worker(); }));
+
+  if(activeMode==="lighthouse") setText("lighthouseStatusValue","Fyrar med data laddade");
+}
       }
 
       await Promise.all(Array.from({length:5},function(){ return worker(); }));
