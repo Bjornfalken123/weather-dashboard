@@ -3186,12 +3186,6 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       checked++;
       if(activeMode==="lighthouse") setText("lighthouseStatusValue","Bakgrundskontroll stationer: "+checked+"/"+stations.length);
     }
-  }
-
-  await Promise.all(Array.from({length:5},function(){ return worker(); }));
-
-  if(activeMode==="lighthouse") setText("lighthouseStatusValue","Fyrar med data laddade");
-}
       }
 
       await Promise.all(Array.from({length:5},function(){ return worker(); }));
