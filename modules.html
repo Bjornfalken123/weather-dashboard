@@ -1872,13 +1872,21 @@ function formatWeatherDateTime(v){
             });
           }
 
-          function applySelectedForecastTime(){
+                  function applySelectedForecastTime(){
             if(!selectedForecastTime) return;
             var s=selectedForecastTime/1000;
 
-            if(maptilerWindLayer) maptilerWindLayer.setAnimationTime(s);
-            if(maptilerPrecipitationLayer) maptilerPrecipitationLayer.setAnimationTime(s);
-            if(maptilerCloudLayer) maptilerCloudLayer.setAnimationTime(s);
+            try{
+              if(maptilerWindLayer) maptilerWindLayer.setAnimationTime(s);
+            }catch(e){}
+
+            try{
+              if(maptilerPrecipitationLayer) maptilerPrecipitationLayer.setAnimationTime(s);
+            }catch(e){}
+
+            try{
+              if(maptilerCloudLayer) maptilerCloudLayer.setAnimationTime(s);
+            }catch(e){}
 
             if(timeSlider) timeSlider.value=String(selectedForecastTime);
             updateTimeLabel();
@@ -1896,18 +1904,48 @@ function formatWeatherDateTime(v){
             if(playBtnText) playBtnText.textContent="Spela";
           }
 
-          function initializeForecastTimeFromWindLayer(){
-            if(!maptilerWindLayer || !timeSlider) return false;
+                 function getFirstReadyTimelineLayer(){
+            var candidates=[
+              maptilerPrecipitationLayer,
+              maptilerCloudLayer,
+              maptilerWindLayer
+            ];
 
-            var sd=maptilerWindLayer.getAnimationStartDate && maptilerWindLayer.getAnimationStartDate();
-            var ed=maptilerWindLayer.getAnimationEndDate && maptilerWindLayer.getAnimationEndDate();
-            var cd=maptilerWindLayer.getAnimationTimeDate && maptilerWindLayer.getAnimationTimeDate();
+            for(var i=0;i<candidates.length;i++){
+              var layer=candidates[i];
+              if(!layer) continue;
 
-            if(!sd || !ed || !cd) return false;
+              var sd=layer.getAnimationStartDate && layer.getAnimationStartDate();
+              var ed=layer.getAnimationEndDate && layer.getAnimationEndDate();
+              var cd=layer.getAnimationTimeDate && layer.getAnimationTimeDate();
 
-            forecastStartTime=+sd;
-            forecastEndTime=+ed;
-            selectedForecastTime=+cd;
+              if(
+                sd && ed && cd &&
+                isFinite(+sd) &&
+                isFinite(+ed) &&
+                isFinite(+cd)
+              ){
+                return {
+                  layer:layer,
+                  start:+sd,
+                  end:+ed,
+                  current:+cd
+                };
+              }
+            }
+
+            return null;
+          }
+
+          function initializeForecastTimeline(){
+            if(!timeSlider) return false;
+
+            var timeline=getFirstReadyTimelineLayer();
+            if(!timeline) return false;
+
+            forecastStartTime=timeline.start;
+            forecastEndTime=timeline.end;
+            selectedForecastTime=timeline.current;
 
             timeSlider.min=String(forecastStartTime);
             timeSlider.max=String(forecastEndTime);
@@ -1990,13 +2028,15 @@ function formatWeatherDateTime(v){
             });
           }
 
-          if(maptilerWindLayer){
-            maptilerWindLayer.on("sourceReady",function(){
-              initializeForecastTimeFromWindLayer();
+                  [maptilerPrecipitationLayer, maptilerCloudLayer, maptilerWindLayer].forEach(function(layer){
+            if(!layer || !layer.on) return;
+            layer.on("sourceReady",function(){
+              initializeForecastTimeline();
             });
-          }
+          });
 
-          setTimeout(function(){ initializeForecastTimeFromWindLayer(); },800);
+          setTimeout(function(){ initializeForecastTimeline(); },800);
+          setTimeout(function(){ initializeForecastTimeline(); },1400);
           syncAllLayerButtons();
 
           if(timeSlider){
