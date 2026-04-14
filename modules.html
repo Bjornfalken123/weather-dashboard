@@ -1796,16 +1796,17 @@ maptilerWindLayer=new maptilerweather.WindLayer({
   opacity:1,
   smooth:true,
 
-  density:0.45,
-  maxAmount:64,
+  /* Lugnare och lättare */
+  density:0.12,
+  maxAmount:8,
+  drawAsLines:true,
+  size:4.2,
+  speed:0.00022,
+  fadeFactor:0.18,
 
-  /* Gör partiklar tydliga */
-  size:3.8,
-  speed:0.001,
-  fadeFactor:0.08,
-
-  color:[170,210,255,150],
-  fastColor:[255,120,80,230],
+  /* Färg */
+  color:[170,210,255,170],
+  fastColor:[255,120,80,220],
   fastSpeed:0.9,
   fastIsLarger:true
 });
