@@ -202,9 +202,32 @@
       #map,#maptilerMap{height:var(--app-height);min-height:var(--app-height);border:none;border-radius:0;box-shadow:none;}
       .map-topbar,#filterToggleBtn,#activeLayersBadge,#filterDrawer{display:none !important;}
       #timeTickRow{display:none;}
-      #mapOverlayPanel{position:fixed !important;top:calc(var(--safe-top) + 10px) !important;left:12px !important;right:auto !important;transform:none !important;width:min(300px, calc(100vw - 96px)) !important;min-width:0 !important;max-width:none !important;border-radius:16px;z-index:3000 !important;}
+      #mapOverlayPanel{
+  position:fixed !important;
+  top:calc(var(--safe-top) + 10px) !important;
+  left:12px !important;
+  right:auto !important;
+  transform:none !important;
+  width:min(300px, calc(100vw - 96px)) !important;
+  min-width:0 !important;
+  max-width:none !important;
+  border-radius:16px;
+  z-index:3000 !important;
+}
+      #mapOverlayPanel.weather-expanded{
+  width:min(340px, calc(100vw - 32px)) !important;
+}
       #overlayHeader{padding:10px 12px;}
-      #overlayBody{padding:9px 12px 11px;max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 170px);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+      #overlayBody{
+  padding:9px 12px 11px;
+  max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 170px);
+  overflow-y:auto;
+  transition:max-height 180ms ease;
+}
+
+#mapOverlayPanel.weather-expanded #overlayBody{
+  max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 100px);
+}
       #timeControl{position:fixed !important;left:12px !important;right:12px !important;bottom:var(--time-control-bottom) !important;transform:none !important;width:auto !important;z-index:7000 !important;padding:12px 13px;border-radius:16px;}
       .time-compact-top{margin-bottom:10px;}
       .time-compact-label{font-size:9px;}
@@ -369,9 +392,9 @@
         maptilerCloudLayer=null,
         maptilerTimelineLayer=null;
 
-    var windLayerVisible=false,
-        precipitationLayerVisible=false,
-        cloudLayerVisible=false;
+    var windLayerVisible=true,
+        precipitationLayerVisible=true,
+        cloudLayerVisible=true;
 
     var waveStationsLayer=L.layerGroup(),
         lighthouseStationsLayer=L.layerGroup();
@@ -810,9 +833,25 @@
     var overlayContentEl=document.getElementById('overlayContent');
 
     function updateOverlayCollapseButtonText(){ if(!overlayCollapseBtn || !mapOverlayPanel) return; overlayCollapseBtn.textContent=mapOverlayPanel.classList.contains('is-collapsed') ? 'Visa' : 'Dölj'; }
+   function syncWeatherOverlayExpandedState(){
+  if(!mapOverlayPanel) return;
+  mapOverlayPanel.classList.toggle("weather-expanded", !!weatherDetailsExpanded);
+  refreshMapSizeSoon();
+}
     function toggleOverlayCollapsed(forceState){ if(!mapOverlayPanel) return; if(typeof forceState==='boolean'){ mapOverlayPanel.classList.toggle('is-collapsed',forceState); } else { mapOverlayPanel.classList.toggle('is-collapsed'); } updateOverlayCollapseButtonText(); refreshMapSizeSoon(); }
     if(overlayCollapseBtn){ overlayCollapseBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleOverlayCollapsed(); }); }
-    if(overlayContentEl){ overlayContentEl.addEventListener('click',function(e){ if(e.target && e.target.id==='weatherDetailsToggleBtn'){ e.stopPropagation(); weatherDetailsExpanded=!weatherDetailsExpanded; if(window.updateWeatherForSelectedTime){ window.updateWeatherForSelectedTime(); } } }); }
+    if(overlayContentEl){
+  overlayContentEl.addEventListener("click",function(e){
+    if(e.target && e.target.id==="weatherDetailsToggleBtn"){
+      e.stopPropagation();
+      weatherDetailsExpanded=!weatherDetailsExpanded;
+      syncWeatherOverlayExpandedState();
+      if(window.updateWeatherForSelectedTime){
+        window.updateWeatherForSelectedTime();
+      }
+    }
+  });
+}
     if(isMobileView()){ toggleOverlayCollapsed(false); } else { updateOverlayCollapseButtonText(); }
 
     var filterDrawer=document.getElementById('filterDrawer'), filterToggleBtn=document.getElementById('filterToggleBtn'), filterCloseBtn=document.getElementById('filterCloseBtn');
@@ -843,7 +882,18 @@
     });
 
     function setMaptilerWeatherMarker(lat,lon){ if(!maptilerMap || !window.maptilersdk) return; if(maptilerWeatherMarker) maptilerWeatherMarker.remove(); maptilerWeatherMarker=new maptilersdk.Marker().setLngLat([lon,lat]).addTo(maptilerMap); }
-    function handlePrimaryMapClick(lat,lon){ if(Date.now()-lastObjectInteractionAt<500) return; weatherDetailsExpanded=false; saveSelection('weather',{lat:lat,lon:lon}); setWeatherMarker(lat,lon); setMaptilerWeatherMarker(lat,lon); loadWeatherForPoint(lat,lon); }
+   function handlePrimaryMapClick(lat,lon){
+  if(Date.now()-lastObjectInteractionAt<500) return;
+
+  // 🔹 RESET: stäng "Se mer" när ny punkt klickas
+  weatherDetailsExpanded = false;
+  syncWeatherOverlayExpandedState();
+
+  saveSelection('weather',{lat:lat,lon:lon});
+  setWeatherMarker(lat,lon);
+  setMaptilerWeatherMarker(lat,lon);
+  loadWeatherForPoint(lat,lon);
+}
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
     window.addEventListener('resize',refreshMapSizeSoon);
