@@ -34,9 +34,9 @@
       --safe-bottom:env(safe-area-inset-bottom,0px);
       --safe-top:env(safe-area-inset-top,0px);
 
-          --app-height:100dvh;
+             --app-height:100dvh;
       --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
-      --time-control-bottom:calc(var(--bottom-ui-offset) + 4px);
+      --time-control-bottom:var(--bottom-ui-offset);
     }
 
     *{box-sizing:border-box;}
@@ -228,7 +228,7 @@
 #mapOverlayPanel.weather-expanded #overlayBody{
   max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 100px);
 }
-         #timeControl{position:fixed !important;left:12px !important;right:12px !important;bottom:var(--time-control-bottom) !important;transform:none !important;width:auto !important;z-index:7000 !important;padding:9px 11px;border-radius:14px;}
+              #timeControl{position:fixed !important;left:12px !important;right:12px !important;bottom:var(--time-control-bottom) !important;transform:none !important;width:auto !important;z-index:7000 !important;padding:9px 11px;border-radius:14px 14px 0 0;}
       .time-compact-top{margin-bottom:7px;}
       .time-compact-label{font-size:9px;}
       #timeValueLabel{min-width:0;font-size:11px;}
