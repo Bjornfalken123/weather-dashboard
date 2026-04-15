@@ -294,11 +294,12 @@
               <button id="filterCloseBtn" type="button">Stäng</button>
             </div>
 
-            <div class="filter-group">
+                     <div class="filter-group">
               <div class="filter-group-title">Kartdata</div>
               <div class="filter-row"><div class="filter-row-left"><span class="layer-dot wind"></span><span>Vind</span></div><button id="toggleWindLayerBtn" type="button">På</button></div>
-              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot precip"></span><span>Nederbörd</span></div><button id="togglePrecipLayerBtn" type="button">Av</button></div>
-              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot cloud"></span><span>Moln</span></div><button id="toggleCloudLayerBtn" type="button">Av</button></div>
+              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot precip"></span><span>Nederbörd</span></div><button id="togglePrecipLayerBtn" type="button">På</button></div>
+              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot cloud"></span><span>Moln</span></div><button id="toggleCloudLayerBtn" type="button">På</button></div>
+              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot precip"></span><span>Radar</span></div><button id="toggleRadarLayerBtn" type="button">Av</button></div>
             </div>
 
             <div class="filter-group">
@@ -349,11 +350,12 @@
       <div class="sheet-title">Visa på kartan</div>
     </div>
     <div class="sheet-body">
-      <div class="sheet-group">
+         <div class="sheet-group">
         <div class="sheet-group-title">Kartlager</div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>Vind</span></div><button class="sheet-toggle is-on" id="mobileToggleWindBtn" type="button"></button></div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Nederbörd</span></div><button class="sheet-toggle" id="mobileTogglePrecipBtn" type="button"></button></div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot cloud"></span><span>Moln</span></div><button class="sheet-toggle" id="mobileToggleCloudBtn" type="button"></button></div>
+        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Nederbörd</span></div><button class="sheet-toggle is-on" id="mobileTogglePrecipBtn" type="button"></button></div>
+        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot cloud"></span><span>Moln</span></div><button class="sheet-toggle is-on" id="mobileToggleCloudBtn" type="button"></button></div>
+        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Radar</span></div><button class="sheet-toggle" id="mobileToggleRadarBtn" type="button"></button></div>
       </div>
       <div class="sheet-group">
         <div class="sheet-group-title">Objekt</div>
@@ -385,16 +387,18 @@
         weatherDetailsExpanded=false;
 
     var savedSelections={weather:null,wave:null,lighthouse:null};
-    var maptilerMap=null,
+        var maptilerMap=null,
         maptilerWeatherMarker=null,
         maptilerWindLayer=null,
         maptilerPrecipitationLayer=null,
         maptilerCloudLayer=null,
+        maptilerRadarLayer=null,
         maptilerTimelineLayer=null;
 
     var windLayerVisible=true,
         precipitationLayerVisible=true,
-        cloudLayerVisible=true;
+        cloudLayerVisible=true,
+        radarLayerVisible=false;
 
     var waveStationsLayer=L.layerGroup(),
         lighthouseStationsLayer=L.layerGroup();
@@ -434,8 +438,8 @@
     function isMobileView(){ return window.matchMedia("(max-width:700px)").matches; }
     function setOverlayHeaderDot(state){ var dot=document.getElementById("overlayHeaderDot"); if(dot) dot.classList.toggle("loading",state==="loading"); }
 
-    function updateActiveLayersBadge(){
-      var count=[windLayerVisible,precipitationLayerVisible,cloudLayerVisible].filter(Boolean).length;
+        function updateActiveLayersBadge(){
+      var count=[windLayerVisible,precipitationLayerVisible,cloudLayerVisible,radarLayerVisible].filter(Boolean).length;
       var badge=document.getElementById("activeLayersBadge"), text=document.getElementById("activeLayersText"), fb=document.getElementById("filterBadge");
       if(badge && text){ badge.classList.toggle("visible",count>0); if(count>0) text.textContent=count+" lager"; }
       if(fb) fb.classList.toggle("visible",count>0);
@@ -936,38 +940,42 @@
       maptilerMap.on('load',function(){
         if(!window.maptilerweather){ console.error('MapTiler Weather ej tillgänglig'); return; }
         try{
-          maptilerWindLayer=new maptilerweather.WindLayer({id:'main-wind-layer',colorramp:maptilerweather.ColorRamp.builtin.NULL,speed:0.001,fadeFactor:0.03,maxAmount:128,density:2,size:2.7,color:[80,220,120,90],fastColor:[255,70,70,180],fastSpeed:0.9});
+                   maptilerWindLayer=new maptilerweather.WindLayer({id:'main-wind-layer',colorramp:maptilerweather.ColorRamp.builtin.NULL,speed:0.001,fadeFactor:0.03,maxAmount:128,density:2,size:2.7,color:[80,220,120,90],fastColor:[255,70,70,180],fastSpeed:0.9});
           maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({id:'main-precipitation-layer',colorramp:maptilerweather.ColorRamp.builtin.PRECIPITATION,opacity:0.95,smooth:true});
           maptilerCloudLayer=new maptilerweather.RadarLayer({id:'main-cloud-layer',colorramp:maptilerweather.ColorRamp.builtin.RADAR_CLOUD,opacity:0.85,smooth:true});
-                  maptilerTimelineLayer=new maptilerweather.PrecipitationLayer({id:'timeline-controller-layer',opacity:0,smooth:true});
+          maptilerRadarLayer=new maptilerweather.RadarLayer({id:'main-radar-layer',colorramp:maptilerweather.ColorRamp.builtin.RADAR,opacity:0.92,smooth:true});
+          maptilerTimelineLayer=new maptilerweather.PrecipitationLayer({id:'timeline-controller-layer',opacity:0,smooth:true});
           maptilerMap.addLayer(maptilerTimelineLayer);
 
           if(windLayerVisible){ maptilerMap.addLayer(maptilerWindLayer); }
           if(precipitationLayerVisible){ maptilerMap.addLayer(maptilerPrecipitationLayer); }
           if(cloudLayerVisible){ maptilerMap.addLayer(maptilerCloudLayer); }
+          if(radarLayerVisible){ maptilerMap.addLayer(maptilerRadarLayer); }
 
           var timeSlider=document.getElementById('timeSlider'), timeValueLabel=document.getElementById('timeValueLabel'), timePlayPauseBtn=document.getElementById('timePlayPauseBtn'), playIcon=document.getElementById('playIcon'), playBtnText=document.getElementById('playBtnText');
           var forecastStartTime=null, forecastEndTime=null, isTimePlaying=false;
 
           function setDeskBtn(id,on){ var b=document.getElementById(id); if(!b) return; b.textContent=on ? 'På' : 'Av'; b.classList.toggle('is-on',on); b.classList.toggle('is-off',!on); }
           function setMobToggle(id,on){ var b=document.getElementById(id); if(b) b.classList.toggle('is-on',on); }
-          function syncAllLayerButtons(){ setDeskBtn('toggleWindLayerBtn',windLayerVisible); setDeskBtn('togglePrecipLayerBtn',precipitationLayerVisible); setDeskBtn('toggleCloudLayerBtn',cloudLayerVisible); setDeskBtn('toggleWaveModeBtn',showWaveObjects); setDeskBtn('toggleLighthouseModeBtn',showLighthouseObjects); setMobToggle('mobileToggleWindBtn',windLayerVisible); setMobToggle('mobileTogglePrecipBtn',precipitationLayerVisible); setMobToggle('mobileToggleCloudBtn',cloudLayerVisible); setMobToggle('mobileToggleWaveBtn',showWaveObjects); setMobToggle('mobileToggleLighthouseBtn',showLighthouseObjects); updateActiveLayersBadge(); refreshMobileNavState(); }
+                   function syncAllLayerButtons(){ setDeskBtn('toggleWindLayerBtn',windLayerVisible); setDeskBtn('togglePrecipLayerBtn',precipitationLayerVisible); setDeskBtn('toggleCloudLayerBtn',cloudLayerVisible); setDeskBtn('toggleRadarLayerBtn',radarLayerVisible); setDeskBtn('toggleWaveModeBtn',showWaveObjects); setDeskBtn('toggleLighthouseModeBtn',showLighthouseObjects); setMobToggle('mobileToggleWindBtn',windLayerVisible); setMobToggle('mobileTogglePrecipBtn',precipitationLayerVisible); setMobToggle('mobileToggleCloudBtn',cloudLayerVisible); setMobToggle('mobileToggleRadarBtn',radarLayerVisible); setMobToggle('mobileToggleWaveBtn',showWaveObjects); setMobToggle('mobileToggleLighthouseBtn',showLighthouseObjects); updateActiveLayersBadge(); refreshMobileNavState(); }
           function formatMapTime(v){ if(!v) return '--'; var d=new Date(v); if(isNaN(d.getTime())) return '--'; return d.toLocaleString('sv-SE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
           function updateTimeLabel(){ if(timeValueLabel) timeValueLabel.textContent=selectedForecastTime ? formatMapTime(selectedForecastTime) : '--'; }
           function updateTimeTicks(){ if(!forecastStartTime || !forecastEndTime) return; ['tick0','tick1','tick2','tick3','tick4'].forEach(function(id,i){ var el=document.getElementById(id); if(!el) return; var t=new Date(forecastStartTime+(forecastEndTime-forecastStartTime)*i/4); el.textContent=t.toLocaleString('sv-SE',{weekday:'short',hour:'2-digit',minute:'2-digit'}); }); }
-          function applySelectedForecastTime(){ if(!selectedForecastTime) return; var s=selectedForecastTime/1000; try{ if(maptilerTimelineLayer) maptilerTimelineLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerWindLayer) maptilerWindLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerPrecipitationLayer) maptilerPrecipitationLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerCloudLayer) maptilerCloudLayer.setAnimationTime(s); }catch(e){} if(timeSlider) timeSlider.value=String(selectedForecastTime); updateTimeLabel(); if(window.updateWeatherForSelectedTime) window.updateWeatherForSelectedTime(); }
+                    function applySelectedForecastTime(){ if(!selectedForecastTime) return; var s=selectedForecastTime/1000; try{ if(maptilerTimelineLayer) maptilerTimelineLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerWindLayer) maptilerWindLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerPrecipitationLayer) maptilerPrecipitationLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerCloudLayer) maptilerCloudLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerRadarLayer) maptilerRadarLayer.setAnimationTime(s); }catch(e){} if(timeSlider) timeSlider.value=String(selectedForecastTime); updateTimeLabel(); if(window.updateWeatherForSelectedTime) window.updateWeatherForSelectedTime(); }
           function stopTimePlayback(){ if(timePlaybackTimer){ clearInterval(timePlaybackTimer); timePlaybackTimer=null; } isTimePlaying=false; if(playIcon) playIcon.innerHTML='<polygon points="2,1 11,6 2,11"></polygon>'; if(playBtnText) playBtnText.textContent='Spela'; }
-          function getFirstReadyTimelineLayer(){ var candidates=[maptilerTimelineLayer,maptilerPrecipitationLayer,maptilerCloudLayer,maptilerWindLayer]; for(var i=0;i<candidates.length;i++){ var layer=candidates[i]; if(!layer) continue; var sd=layer.getAnimationStartDate && layer.getAnimationStartDate(), ed=layer.getAnimationEndDate && layer.getAnimationEndDate(), cd=layer.getAnimationTimeDate && layer.getAnimationTimeDate(); if(sd && ed && cd && isFinite(+sd) && isFinite(+ed) && isFinite(+cd)){ return {layer:layer,start:+sd,end:+ed,current:+cd}; } } return null; }
+                   function getFirstReadyTimelineLayer(){ var candidates=[maptilerTimelineLayer,maptilerPrecipitationLayer,maptilerCloudLayer,maptilerRadarLayer,maptilerWindLayer]; for(var i=0;i<candidates.length;i++){ var layer=candidates[i]; if(!layer) continue; var sd=layer.getAnimationStartDate && layer.getAnimationStartDate(), ed=layer.getAnimationEndDate && layer.getAnimationEndDate(), cd=layer.getAnimationTimeDate && layer.getAnimationTimeDate(); if(sd && ed && cd && isFinite(+sd) && isFinite(+ed) && isFinite(+cd)){ return {layer:layer,start:+sd,end:+ed,current:+cd}; } } return null; }
           function initializeForecastTimeline(){ if(!timeSlider) return false; var timeline=getFirstReadyTimelineLayer(); if(!timeline) return false; forecastStartTime=timeline.start; forecastEndTime=timeline.end; selectedForecastTime=timeline.current; timeSlider.min=String(forecastStartTime); timeSlider.max=String(forecastEndTime); timeSlider.step=String(60*60*1000); timeSlider.value=String(selectedForecastTime); updateTimeLabel(); applySelectedForecastTime(); updateTimeTicks(); refreshMapSizeSoon(); return true; }
-          function onWindToggle(){ if(!maptilerWindLayer) return; if(windLayerVisible){ maptilerMap.removeLayer('main-wind-layer'); } else { maptilerMap.addLayer(maptilerWindLayer); if(selectedForecastTime) maptilerWindLayer.setAnimationTime(selectedForecastTime/1000); } windLayerVisible=!windLayerVisible; syncAllLayerButtons(); }
+                  function onWindToggle(){ if(!maptilerWindLayer) return; if(windLayerVisible){ maptilerMap.removeLayer('main-wind-layer'); } else { maptilerMap.addLayer(maptilerWindLayer); if(selectedForecastTime) maptilerWindLayer.setAnimationTime(selectedForecastTime/1000); } windLayerVisible=!windLayerVisible; syncAllLayerButtons(); }
           function onPrecipToggle(){ if(!maptilerPrecipitationLayer) return; if(precipitationLayerVisible){ maptilerMap.removeLayer('main-precipitation-layer'); } else { maptilerMap.addLayer(maptilerPrecipitationLayer); if(selectedForecastTime) maptilerPrecipitationLayer.setAnimationTime(selectedForecastTime/1000); } precipitationLayerVisible=!precipitationLayerVisible; syncAllLayerButtons(); }
           function onCloudToggle(){ if(!maptilerCloudLayer) return; if(cloudLayerVisible){ maptilerMap.removeLayer('main-cloud-layer'); } else { maptilerMap.addLayer(maptilerCloudLayer); if(selectedForecastTime) maptilerCloudLayer.setAnimationTime(selectedForecastTime/1000); } cloudLayerVisible=!cloudLayerVisible; syncAllLayerButtons(); }
-          ['toggleWindLayerBtn','mobileToggleWindBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onWindToggle); });
+          function onRadarToggle(){ if(!maptilerRadarLayer) return; if(radarLayerVisible){ maptilerMap.removeLayer('main-radar-layer'); } else { maptilerMap.addLayer(maptilerRadarLayer); if(selectedForecastTime) maptilerRadarLayer.setAnimationTime(selectedForecastTime/1000); } radarLayerVisible=!radarLayerVisible; syncAllLayerButtons(); }
+                   ['toggleWindLayerBtn','mobileToggleWindBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onWindToggle); });
           ['togglePrecipLayerBtn','mobileTogglePrecipBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onPrecipToggle); });
           ['toggleCloudLayerBtn','mobileToggleCloudBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onCloudToggle); });
+          ['toggleRadarLayerBtn','mobileToggleRadarBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onRadarToggle); });
           var mobileToggleWaveBtn=document.getElementById('mobileToggleWaveBtn'); if(mobileToggleWaveBtn){ mobileToggleWaveBtn.addEventListener('click',function(){ showWaveObjects=!showWaveObjects; updateModeUI(); syncAllLayerButtons(); }); }
           var mobileToggleLighthouseBtn=document.getElementById('mobileToggleLighthouseBtn'); if(mobileToggleLighthouseBtn){ mobileToggleLighthouseBtn.addEventListener('click',function(){ showLighthouseObjects=!showLighthouseObjects; updateModeUI(); syncAllLayerButtons(); }); }
-          [maptilerTimelineLayer,maptilerPrecipitationLayer,maptilerCloudLayer,maptilerWindLayer].forEach(function(layer){ if(!layer || !layer.on) return; layer.on('sourceReady',function(){ initializeForecastTimeline(); }); });
+                   [maptilerTimelineLayer,maptilerPrecipitationLayer,maptilerCloudLayer,maptilerRadarLayer,maptilerWindLayer].forEach(function(layer){ if(!layer || !layer.on) return; layer.on('sourceReady',function(){ initializeForecastTimeline(); }); });
           setTimeout(function(){ initializeForecastTimeline(); },800);
           setTimeout(function(){ initializeForecastTimeline(); },1400);
           syncAllLayerButtons();
