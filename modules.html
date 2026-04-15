@@ -813,7 +813,7 @@ border-right:none;
         return;
       }
 
-      el.innerHTML =
+          el.innerHTML =
         '<div class="favorites-block">' +
           '<div class="favorites-title">Favoriter</div>' +
           favoritePlaces.map(function(place,idx){
@@ -822,7 +822,10 @@ border-right:none;
                 '<div class="favorite-item-name">' + (place.name || formatCoordsLabel(place.lat,place.lon)) + '</div>' +
                 '<div class="favorite-item-coords">' + formatCoordsLabel(place.lat,place.lon) + '</div>' +
               '</div>' +
-              '<button type="button" class="favorite-remove-btn" data-favorite-remove="' + idx + '">Ta bort</button>' +
+              '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">' +
+                '<button type="button" class="favorite-remove-btn" data-favorite-rename="' + idx + '">Döp om</button>' +
+                '<button type="button" class="favorite-remove-btn" data-favorite-remove="' + idx + '">Ta bort</button>' +
+              '</div>' +
             '</div>';
           }).join('') +
         '</div>';
@@ -852,7 +855,7 @@ border-right:none;
       updateFavoriteButtonState();
     }
 
-    function openFavoritePlace(index){
+      function openFavoritePlace(index){
       var place=favoritePlaces[index];
       if(!place) return;
       closeSearch();
@@ -862,6 +865,24 @@ border-right:none;
         handlePrimaryMapClick(place.lat,place.lon);
         refreshMapSizeSoon();
       },120);
+    }
+
+    function renameFavoritePlace(index){
+      var place=favoritePlaces[index];
+      if(!place) return;
+
+      var currentName=place.name || formatCoordsLabel(place.lat,place.lon);
+      var newName=window.prompt('Döp om favorit:', currentName);
+
+      if(newName==null) return;
+
+      newName=String(newName).trim();
+      if(!newName) return;
+
+      favoritePlaces[index].name=newName;
+      saveFavoritePlacesToStorage();
+      renderFavoritePlaces();
+      updateFavoriteButtonState();
     }
     function clearAisMarkers(){
       aisMarkerMap.forEach(function(marker){ try{ marker.remove(); }catch(e){} });
@@ -1240,10 +1261,19 @@ border-right:none;
 
     if(mobileSearchCloseBtn){ mobileSearchCloseBtn.addEventListener('click',function(e){ e.stopPropagation(); closeSearch(); }); }
     if(mobileFilterCloseBtn){ mobileFilterCloseBtn.addEventListener('click',function(e){ e.stopPropagation(); closeMobileFilterSheet(); }); }
-    if(favoritePlacesList){
+      if(favoritePlacesList){
       favoritePlacesList.addEventListener('click',function(e){
         var openTarget=e.target && e.target.closest ? e.target.closest('[data-favorite-index]') : null;
         var removeTarget=e.target && e.target.closest ? e.target.closest('[data-favorite-remove]') : null;
+        var renameTarget=e.target && e.target.closest ? e.target.closest('[data-favorite-rename]') : null;
+
+        if(renameTarget){
+          var renameIndex=parseInt(renameTarget.getAttribute('data-favorite-rename'),10);
+          if(!isNaN(renameIndex)){
+            renameFavoritePlace(renameIndex);
+          }
+          return;
+        }
 
         if(removeTarget){
           var removeIndex=parseInt(removeTarget.getAttribute('data-favorite-remove'),10);
