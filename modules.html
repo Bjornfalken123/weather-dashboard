@@ -2299,7 +2299,7 @@ function onCloudToggle(){
       console.error("MapTiler SDK ej tillgänglig");
     }
 
- var weatherMarker=null,
+var weatherMarker=null,
     waveSelectionMarker=null,
     lighthouseSelectionMarker=null;
 
@@ -2335,10 +2335,6 @@ function clearWaveSelection(){
     if(station){
       setWaveMarkerColorById(id,"active",station.name+" • data tillgänglig");
     }
-  });
-
-  refreshMapSizeSoon();
-}
   });
 
   refreshMapSizeSoon();
