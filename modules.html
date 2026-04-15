@@ -1267,6 +1267,20 @@
   cursor:pointer;
   color:var(--text-soft);
 }
+    @media (max-width:700px){
+  html, body, .container, .map-panel, .map-instance-wrap, #maptilerMap, #map{
+    height:var(--app-height) !important;
+    min-height:var(--app-height) !important;
+  }
+
+  #mapOverlayPanel{
+    top:calc(var(--safe-top) + 10px) !important;
+  }
+
+  #timeControl{
+    bottom:var(--time-control-bottom) !important;
+  }
+}
   </style>
 </head>
 <body>
@@ -2339,7 +2353,6 @@ function clearWaveSelection(){
 
   refreshMapSizeSoon();
 }
-
 function clearLighthouseSelection(){
   selectedLighthouseStationId=null;
 
@@ -3579,6 +3592,7 @@ function openSearch(){
 
 function closeSearch(){
   if(!mobileSearchSheet) return;
+
   mobileSearchSheet.classList.remove("is-open");
 
   if(mobileSearchInput){
@@ -3586,6 +3600,11 @@ function closeSearch(){
   }
 
   refreshMobileNavState();
+
+  setTimeout(function(){
+    resetAppHeightAfterKeyboard();
+  }, 60);
+}
 
   setTimeout(function(){
     stableAppHeight=window.innerHeight;
@@ -3747,7 +3766,7 @@ if(mobileSearchInput){
         div.className="search-result-item";
         div.textContent=f.place_name || f.text || "Okänd plats";
 
-      div.onclick=function(){
+ div.onclick=function(){
   var lon=f.center[0];
   var lat=f.center[1];
 
@@ -3763,21 +3782,15 @@ if(mobileSearchInput){
     if(maptilerMap){
       maptilerMap.flyTo({center:[lon,lat],zoom:9});
     }
-
-    handlePrimaryMapClick(lat,lon);
   },180);
 
   setTimeout(function(){
-    stableAppHeight=window.innerHeight;
-    updateAppHeightVars(true);
-    refreshMapSizeSoon();
+    handlePrimaryMapClick(lat,lon);
   },260);
 
   setTimeout(function(){
-    stableAppHeight=window.innerHeight;
-    updateAppHeightVars(true);
-    refreshMapSizeSoon();
-  },500);
+    resetAppHeightAfterKeyboard();
+  },320);
 };
 
         mobileSearchResults.appendChild(div);
@@ -3796,76 +3809,108 @@ if(mobileSearchInput){
       ensureLighthouseStationsLoaded().catch(function(e){console.error("Preload fyrar misslyckades",e);})
     ]);
 
-   var stableAppHeight=window.innerHeight;
+  var stableAppHeight = 0;
+
+function getLockedAppHeight(){
+  var mobile = isMobileView();
+
+  if(!mobile){
+    return window.innerHeight;
+  }
+
+  var screenHeight = window.screen && window.screen.height ? window.screen.height : window.innerHeight;
+  var viewportHeight = window.innerHeight;
+  var vvHeight = window.visualViewport ? window.visualViewport.height : viewportHeight;
+
+  return Math.max(screenHeight, viewportHeight, vvHeight);
+}
 
 function updateAppHeightVars(force){
-  var currentHeight=window.innerHeight;
-  var searchIsOpen=mobileSearchSheet && mobileSearchSheet.classList.contains("is-open");
+  var newHeight = getLockedAppHeight();
 
-  if(force){
-    stableAppHeight=currentHeight;
+  if(force || !stableAppHeight){
+    stableAppHeight = newHeight;
   }else{
-    if(!searchIsOpen){
-      stableAppHeight=Math.max(stableAppHeight,currentHeight);
-    }else{
-      if(currentHeight > stableAppHeight - 120){
-        stableAppHeight=currentHeight;
-      }
-    }
+    stableAppHeight = Math.max(stableAppHeight, newHeight);
   }
 
   document.documentElement.style.setProperty("--app-height", stableAppHeight + "px");
 
-  var bottomBar=document.getElementById("bottomTabBar");
-  var bottomBarHeight=0;
+  var bottomBar = document.getElementById("bottomTabBar");
+  var bottomBarHeight = 0;
 
-  if(bottomBar && window.getComputedStyle(bottomBar).display!=="none"){
-    bottomBarHeight=bottomBar.offsetHeight;
+  if(bottomBar && window.getComputedStyle(bottomBar).display !== "none"){
+    bottomBarHeight = bottomBar.offsetHeight;
   }
 
-  var extraGap=18;
+  var extraGap = 18;
   document.documentElement.style.setProperty("--bottom-ui-offset", bottomBarHeight + "px");
   document.documentElement.style.setProperty("--time-control-bottom", (bottomBarHeight + extraGap) + "px");
 }
 
+function resetAppHeightAfterKeyboard(){
+  stableAppHeight = getLockedAppHeight();
+  updateAppHeightVars(true);
+  refreshMapSizeSoon();
+
+  setTimeout(function(){
+    stableAppHeight = getLockedAppHeight();
+    updateAppHeightVars(true);
+    refreshMapSizeSoon();
+  }, 180);
+
+  setTimeout(function(){
+    stableAppHeight = getLockedAppHeight();
+    updateAppHeightVars(true);
+    refreshMapSizeSoon();
+  }, 420);
+}
+
 window.addEventListener("resize", function(){
-  updateAppHeightVars(false);
+  if(!mobileSearchSheet || !mobileSearchSheet.classList.contains("is-open")){
+    updateAppHeightVars(true);
+  }
 });
 
 window.addEventListener("orientationchange", function(){
   setTimeout(function(){
-    stableAppHeight=window.innerHeight;
+    stableAppHeight = getLockedAppHeight();
     updateAppHeightVars(true);
     refreshMapSizeSoon();
-  },250);
+  }, 300);
 });
 
 window.addEventListener("load", function(){
-  stableAppHeight=window.innerHeight;
+  stableAppHeight = getLockedAppHeight();
   updateAppHeightVars(true);
+  refreshMapSizeSoon();
 });
 
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize", function(){
+    if(!mobileSearchSheet || !mobileSearchSheet.classList.contains("is-open")){
+      updateAppHeightVars(true);
+    }
+  });
+}
+
 setTimeout(function(){
+  stableAppHeight = getLockedAppHeight();
   updateAppHeightVars(true);
+  refreshMapSizeSoon();
 },100);
 
 setTimeout(function(){
-  updateAppHeightVars(true);
-},500);
-
-setTimeout(function(){
-  updateAppHeightVars(true);
-},1000);
-
-setTimeout(function(){
+  stableAppHeight = getLockedAppHeight();
   updateAppHeightVars(true);
   refreshMapSizeSoon();
-},120);
+},400);
 
 setTimeout(function(){
+  stableAppHeight = getLockedAppHeight();
   updateAppHeightVars(true);
   refreshMapSizeSoon();
-},500);
+},900);
   </script>
 </body>
 </html>
