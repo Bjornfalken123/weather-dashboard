@@ -2537,26 +2537,32 @@ function clearLighthouseSelection(){
       if(t) t.classList.add("active");
     }
 
-    function refreshMobileNavState(){
-      var filterOpen=mobileFilterSheet && mobileFilterSheet.classList.contains("is-open");
+function refreshMobileNavState(){
+  var filterOpen=mobileFilterSheet && mobileFilterSheet.classList.contains("is-open");
+  var searchOpen=mobileSearchSheet && mobileSearchSheet.classList.contains("is-open");
 
-      if(filterOpen){
-        setActiveTab("tabFilter");
-        return;
-      }
+  if(searchOpen){
+    setActiveTab("tabSearch");
+    return;
+  }
 
-      if(showWaveObjects && !showLighthouseObjects){
-        setActiveTab("tabWave");
-        return;
-      }
+  if(filterOpen){
+    setActiveTab("tabFilter");
+    return;
+  }
 
-      if(showLighthouseObjects && !showWaveObjects){
-        setActiveTab("tabLighthouse");
-        return;
-      }
+  if(showWaveObjects && !showLighthouseObjects){
+    setActiveTab("tabWave");
+    return;
+  }
 
-      setActiveTab("tabWeather");
-    }
+  if(showLighthouseObjects && !showWaveObjects){
+    setActiveTab("tabLighthouse");
+    return;
+  }
+
+  setActiveTab("tabWeather");
+}
 
     function updateModeUI(){
       waveMaptilerMarkerMap.forEach(function(d){
@@ -3592,105 +3598,148 @@ async function startLighthouseBackgroundCheck(){
       });
     }
 
-    var mobileFilterSheet=document.getElementById("mobileFilterSheet");
-    var mobileSearchSheet=document.getElementById("mobileSearchSheet");
+ var mobileFilterSheet=document.getElementById("mobileFilterSheet");
+var mobileSearchSheet=document.getElementById("mobileSearchSheet");
 var mobileSearchInput=document.getElementById("mobileSearchInput");
 var mobileSearchResults=document.getElementById("mobileSearchResults");
 var mobileSearchCloseBtn=document.getElementById("mobileSearchCloseBtn");
+var mobileFilterCloseBtn=document.getElementById("mobileFilterCloseBtn");
+
+function openMobileFilterSheet(){
+  if(!mobileFilterSheet) return;
+  if(mobileSearchSheet) mobileSearchSheet.classList.remove("is-open");
+  mobileFilterSheet.classList.add("is-open");
+  refreshMobileNavState();
+  refreshMapSizeSoon();
+}
+
+function closeMobileFilterSheet(){
+  if(!mobileFilterSheet) return;
+  mobileFilterSheet.classList.remove("is-open");
+  refreshMobileNavState();
+  refreshMapSizeSoon();
+}
 
 function openSearch(){
+  if(mobileFilterSheet) mobileFilterSheet.classList.remove("is-open");
+  if(!mobileSearchSheet) return;
   mobileSearchSheet.classList.add("is-open");
+  refreshMobileNavState();
+  refreshMapSizeSoon();
+
+  if(mobileSearchInput){
+    setTimeout(function(){
+      mobileSearchInput.focus();
+    },80);
+  }
 }
 
 function closeSearch(){
+  if(!mobileSearchSheet) return;
   mobileSearchSheet.classList.remove("is-open");
+  refreshMobileNavState();
+  refreshMapSizeSoon();
 }
 
 if(mobileSearchCloseBtn){
-  mobileSearchCloseBtn.onclick=closeSearch;
+  mobileSearchCloseBtn.addEventListener("click",function(e){
+    e.stopPropagation();
+    closeSearch();
+  });
 }
-    var mobileFilterCloseBtn=document.getElementById("mobileFilterCloseBtn");
 
-    function openMobileFilterSheet(){
-      if(!mobileFilterSheet) return;
-      mobileFilterSheet.classList.add("is-open");
-      refreshMobileNavState();
-      refreshMapSizeSoon();
+if(mobileFilterCloseBtn){
+  mobileFilterCloseBtn.addEventListener("click",function(e){
+    e.stopPropagation();
+    closeMobileFilterSheet();
+  });
+}
+
+var tabWeather=document.getElementById("tabWeather");
+if(tabWeather){
+  tabWeather.addEventListener("click",function(){
+    closeMobileFilterSheet();
+    closeSearch();
+    refreshMobileNavState();
+    refreshMapSizeSoon();
+  });
+}
+
+var tabWave=document.getElementById("tabWave");
+if(tabWave){
+  tabWave.addEventListener("click",function(){
+    closeMobileFilterSheet();
+    closeSearch();
+    showWaveObjects=!showWaveObjects;
+    updateModeUI();
+    refreshMobileNavState();
+  });
+}
+
+var tabLighthouse=document.getElementById("tabLighthouse");
+if(tabLighthouse){
+  tabLighthouse.addEventListener("click",function(){
+    closeMobileFilterSheet();
+    closeSearch();
+    showLighthouseObjects=!showLighthouseObjects;
+    updateModeUI();
+    refreshMobileNavState();
+  });
+}
+
+var tabFilter=document.getElementById("tabFilter");
+if(tabFilter){
+  tabFilter.addEventListener("click",function(e){
+    e.stopPropagation();
+    if(!mobileFilterSheet) return;
+
+    if(mobileFilterSheet.classList.contains("is-open")){
+      closeMobileFilterSheet();
+    }else{
+      openMobileFilterSheet();
     }
+  });
+}
 
-    function closeMobileFilterSheet(){
-      if(!mobileFilterSheet) return;
-      mobileFilterSheet.classList.remove("is-open");
-      refreshMobileNavState();
-      refreshMapSizeSoon();
+var tabSearch=document.getElementById("tabSearch");
+if(tabSearch){
+  tabSearch.addEventListener("click",function(e){
+    e.stopPropagation();
+    if(!mobileSearchSheet) return;
+
+    if(mobileSearchSheet.classList.contains("is-open")){
+      closeSearch();
+    }else{
+      openSearch();
     }
+  });
+}
 
-    var tabWeather=document.getElementById("tabWeather");
-    if(tabWeather){
-      tabWeather.addEventListener("click",function(){
-        closeMobileFilterSheet();
-        refreshMobileNavState();
-        refreshMapSizeSoon();
-      });
-    }
+document.addEventListener("click",function(e){
+  if(
+    mobileFilterSheet &&
+    mobileFilterSheet.classList.contains("is-open") &&
+    !mobileFilterSheet.contains(e.target) &&
+    e.target.id!=="tabFilter"
+  ){
+    closeMobileFilterSheet();
+  }
 
-    var tabWave=document.getElementById("tabWave");
-    if(tabWave){
-      tabWave.addEventListener("click",function(){
-        closeMobileFilterSheet();
-        showWaveObjects=!showWaveObjects;
-        updateModeUI();
-        refreshMobileNavState();
-      });
-    }
+  if(
+    mobileSearchSheet &&
+    mobileSearchSheet.classList.contains("is-open") &&
+    !mobileSearchSheet.contains(e.target) &&
+    e.target.id!=="tabSearch"
+  ){
+    closeSearch();
+  }
+});
 
-    var tabLighthouse=document.getElementById("tabLighthouse");
-    if(tabLighthouse){
-      tabLighthouse.addEventListener("click",function(){
-        closeMobileFilterSheet();
-        showLighthouseObjects=!showLighthouseObjects;
-        updateModeUI();
-        refreshMobileNavState();
-      });
-    }
-
-    var tabFilter=document.getElementById("tabFilter");
-    if(tabFilter){
-      tabFilter.addEventListener("click",function(e){
-        e.stopPropagation();
-        if(!mobileFilterSheet) return;
-
-        if(mobileFilterSheet.classList.contains("is-open")){
-          closeMobileFilterSheet();
-        }else{
-          openMobileFilterSheet();
-        }
-      });
-    }
-
-    if(mobileFilterCloseBtn){
-      mobileFilterCloseBtn.addEventListener("click",function(e){
-        e.stopPropagation();
-        closeMobileFilterSheet();
-      });
-    }
-
-    document.addEventListener("click",function(e){
-      if(
-        mobileFilterSheet &&
-        mobileFilterSheet.classList.contains("is-open") &&
-        !mobileFilterSheet.contains(e.target) &&
-        e.target.id!=="tabFilter"
-      ){
-        closeMobileFilterSheet();
-      }
-    });
-
-    function setMaptilerWeatherMarker(lat,lon){
-      if(!maptilerMap || !window.maptilersdk) return;
-      if(maptilerWeatherMarker) maptilerWeatherMarker.remove();
-      maptilerWeatherMarker=new maptilersdk.Marker().setLngLat([lon,lat]).addTo(maptilerMap);
-    }
+function setMaptilerWeatherMarker(lat,lon){
+  if(!maptilerMap || !window.maptilersdk) return;
+  if(maptilerWeatherMarker) maptilerWeatherMarker.remove();
+  maptilerWeatherMarker=new maptilersdk.Marker().setLngLat([lon,lat]).addTo(maptilerMap);
+}
 
 function handlePrimaryMapClick(lat,lon){
   if(Date.now()-lastObjectInteractionAt<500) return;
@@ -3701,58 +3750,66 @@ function handlePrimaryMapClick(lat,lon){
   loadWeatherForPoint(lat,lon);
 }
 
-    map.on("click",function(e){
-      handlePrimaryMapClick(e.latlng.lat,e.latlng.lng);
-    });
+map.on("click",function(e){
+  handlePrimaryMapClick(e.latlng.lat,e.latlng.lng);
+});
 
-    if(maptilerMap){
-      maptilerMap.on("click",function(e){
-        if(e.lngLat) handlePrimaryMapClick(e.lngLat.lat,e.lngLat.lng);
-      });
+if(maptilerMap){
+  maptilerMap.on("click",function(e){
+    if(e.lngLat) handlePrimaryMapClick(e.lngLat.lat,e.lngLat.lng);
+  });
+}
+
+window.addEventListener("resize",refreshMapSizeSoon);
+window.addEventListener("orientationchange",refreshMapSizeSoon);
+
+if(mobileSearchInput){
+  mobileSearchInput.addEventListener("input", async function(){
+    var q=mobileSearchInput.value.trim();
+
+    if(q.length<2){
+      mobileSearchResults.innerHTML="";
+      return;
     }
 
-    window.addEventListener("resize",refreshMapSizeSoon);
-    window.addEventListener("orientationchange",refreshMapSizeSoon);
-mobileSearchInput.addEventListener("input", async function(){
-  var q = mobileSearchInput.value;
+    try{
+      var res=await fetch(
+        "https://api.maptiler.com/geocoding/" +
+        encodeURIComponent(q) +
+        ".json?key=" + MAPTILER_API_KEY +
+        "&language=sv"
+      );
 
-  if(q.length < 2){
-    mobileSearchResults.innerHTML="";
-    return;
-  }
+      var data=await res.json();
+      mobileSearchResults.innerHTML="";
 
-  var res = await fetch(
-    "https://api.maptiler.com/geocoding/" +
-    encodeURIComponent(q) +
-    ".json?key=" + MAPTILER_API_KEY
-  );
+      (data.features || []).forEach(function(f){
+        var div=document.createElement("div");
+        div.className="search-result-item";
+        div.textContent=f.place_name || f.text || "Okänd plats";
 
-  var data = await res.json();
+        div.onclick=function(){
+          var lon=f.center[0];
+          var lat=f.center[1];
 
-  mobileSearchResults.innerHTML="";
+          closeSearch();
 
-  (data.features || []).forEach(function(f){
-    var div=document.createElement("div");
-    div.className="search-result-item";
-    div.textContent=f.place_name;
+          map.setView([lat,lon],9);
+          if(maptilerMap){
+            maptilerMap.flyTo({center:[lon,lat],zoom:9});
+          }
 
-    div.onclick=function(){
-      var lon=f.center[0];
-      var lat=f.center[1];
+          handlePrimaryMapClick(lat,lon);
+        };
 
-      closeSearch();
-
-      map.setView([lat,lon],9);
-      if(maptilerMap){
-        maptilerMap.flyTo({center:[lon,lat],zoom:9});
-      }
-
-      handlePrimaryMapClick(lat,lon);
-    };
-
-    mobileSearchResults.appendChild(div);
+        mobileSearchResults.appendChild(div);
+      });
+    }catch(err){
+      console.error("Sökfel",err);
+      mobileSearchResults.innerHTML='<div class="search-result-item">Kunde inte söka just nu</div>';
+    }
   });
-});
+}
     updateModeUI();
     updateActiveLayersBadge();
 
