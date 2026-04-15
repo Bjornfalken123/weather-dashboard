@@ -722,44 +722,50 @@ border-right:none;
       return formatCoord(lat)+', '+formatCoord(lon);
     }
 
-      function normalizePlaceName(feature,lat,lon){
+          function normalizePlaceName(feature,lat,lon){
       if(!feature) return formatCoordsLabel(lat,lon);
 
       var shortName = feature.text || feature.name || '';
-      var longName = feature.place_name || '';
-      var props = feature.properties || {};
-      var featureType = props.type || '';
+      var context = Array.isArray(feature.context) ? feature.context : [];
 
+      function findContextName(prefixes){
+        for(var i=0;i<context.length;i++){
+          var item=context[i];
+          var id=(item && item.id) ? String(item.id) : '';
+          var text=(item && (item.text || item.name)) ? String(item.text || item.name) : '';
+          if(!text) continue;
+
+          for(var j=0;j<prefixes.length;j++){
+            if(id.indexOf(prefixes[j])===0){
+              return text;
+            }
+          }
+        }
+        return '';
+      }
+
+      var contextPlace =
+        findContextName(['city.','town.','village.','hamlet.','locality.','municipality.']) ||
+        findContextName(['county.','region.']);
+
+      if(contextPlace) return contextPlace;
       if(shortName) return shortName;
 
+      var longName = feature.place_name || '';
       if(longName){
         return String(longName).split(',')[0].trim();
       }
-
-      if(featureType) return featureType;
 
       return formatCoordsLabel(lat,lon);
     }
 
     async function reverseGeocodePlace(lat,lon){
       try{
-        var baseUrl='https://api.maptiler.com/geocoding/' + Number(lon) + ',' + Number(lat) + '.json';
-        var preferredTypes='municipality,city,town,village,hamlet,locality';
-        var url=baseUrl + '?key=' + MAPTILER_API_KEY + '&language=sv&limit=1&types=' + encodeURIComponent(preferredTypes);
-
+        var url='https://api.maptiler.com/geocoding/' + Number(lon) + ',' + Number(lat) + '.json?key=' + MAPTILER_API_KEY + '&language=sv&limit=1';
         var res=await fetch(url);
         var data=await res.json();
         var feature=(data.features && data.features[0]) || null;
-
-        if(feature){
-          return normalizePlaceName(feature,lat,lon);
-        }
-
-        var fallbackRes=await fetch(baseUrl + '?key=' + MAPTILER_API_KEY + '&language=sv&limit=1');
-        var fallbackData=await fallbackRes.json();
-        var fallbackFeature=(fallbackData.features && fallbackData.features[0]) || null;
-
-        return normalizePlaceName(fallbackFeature,lat,lon);
+        return normalizePlaceName(feature,lat,lon);
       }catch(err){
         console.error('Reverse geocoding misslyckades',err);
         return formatCoordsLabel(lat,lon);
