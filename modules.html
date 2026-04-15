@@ -3586,8 +3586,18 @@ function closeSearch(){
   }
 
   refreshMobileNavState();
-  updateAppHeightVars();
-  refreshMapSizeSoon();
+
+  setTimeout(function(){
+    stableAppHeight=window.innerHeight;
+    updateAppHeightVars(true);
+    refreshMapSizeSoon();
+  },120);
+
+  setTimeout(function(){
+    stableAppHeight=window.innerHeight;
+    updateAppHeightVars(true);
+    refreshMapSizeSoon();
+  },320);
 }
 
 if(mobileSearchCloseBtn){
@@ -3737,28 +3747,38 @@ if(mobileSearchInput){
         div.className="search-result-item";
         div.textContent=f.place_name || f.text || "Okänd plats";
 
-        div.onclick=function(){
-          var lon=f.center[0];
-          var lat=f.center[1];
+      div.onclick=function(){
+  var lon=f.center[0];
+  var lat=f.center[1];
 
-          if(mobileSearchInput){
-            mobileSearchInput.blur();
-          }
+  if(mobileSearchInput){
+    mobileSearchInput.blur();
+  }
 
-          closeSearch();
+  closeSearch();
 
-          setTimeout(function(){
-            map.setView([lat,lon],9);
+  setTimeout(function(){
+    map.setView([lat,lon],9);
 
-            if(maptilerMap){
-              maptilerMap.flyTo({center:[lon,lat],zoom:9});
-            }
+    if(maptilerMap){
+      maptilerMap.flyTo({center:[lon,lat],zoom:9});
+    }
 
-            handlePrimaryMapClick(lat,lon);
-            updateAppHeightVars();
-            refreshMapSizeSoon();
-          },100);
-        };
+    handlePrimaryMapClick(lat,lon);
+  },180);
+
+  setTimeout(function(){
+    stableAppHeight=window.innerHeight;
+    updateAppHeightVars(true);
+    refreshMapSizeSoon();
+  },260);
+
+  setTimeout(function(){
+    stableAppHeight=window.innerHeight;
+    updateAppHeightVars(true);
+    refreshMapSizeSoon();
+  },500);
+};
 
         mobileSearchResults.appendChild(div);
       });
@@ -3776,39 +3796,76 @@ if(mobileSearchInput){
       ensureLighthouseStationsLoaded().catch(function(e){console.error("Preload fyrar misslyckades",e);})
     ]);
 
-    function updateAppHeightVars(){
-      var vh = window.innerHeight;
-      document.documentElement.style.setProperty("--app-height", vh + "px");
+   var stableAppHeight=window.innerHeight;
 
-      var bottomBar = document.getElementById("bottomTabBar");
-      var bottomBarHeight = 0;
+function updateAppHeightVars(force){
+  var currentHeight=window.innerHeight;
+  var searchIsOpen=mobileSearchSheet && mobileSearchSheet.classList.contains("is-open");
 
-      if (bottomBar && window.getComputedStyle(bottomBar).display !== "none") {
-        bottomBarHeight = bottomBar.offsetHeight;
+  if(force){
+    stableAppHeight=currentHeight;
+  }else{
+    if(!searchIsOpen){
+      stableAppHeight=Math.max(stableAppHeight,currentHeight);
+    }else{
+      if(currentHeight > stableAppHeight - 120){
+        stableAppHeight=currentHeight;
       }
-
-      var extraGap = 18;
-      document.documentElement.style.setProperty("--bottom-ui-offset", bottomBarHeight + "px");
-      document.documentElement.style.setProperty("--time-control-bottom", (bottomBarHeight + extraGap) + "px");
     }
+  }
 
-    window.addEventListener("resize", updateAppHeightVars);
-    window.addEventListener("orientationchange", updateAppHeightVars);
-    window.addEventListener("load", updateAppHeightVars);
+  document.documentElement.style.setProperty("--app-height", stableAppHeight + "px");
 
-    setTimeout(updateAppHeightVars, 100);
-    setTimeout(updateAppHeightVars, 500);
-    setTimeout(updateAppHeightVars, 1000);
+  var bottomBar=document.getElementById("bottomTabBar");
+  var bottomBarHeight=0;
 
-    setTimeout(function(){
-      updateAppHeightVars();
-      refreshMapSizeSoon();
-    },120);
+  if(bottomBar && window.getComputedStyle(bottomBar).display!=="none"){
+    bottomBarHeight=bottomBar.offsetHeight;
+  }
 
-    setTimeout(function(){
-      updateAppHeightVars();
-      refreshMapSizeSoon();
-    },500);
+  var extraGap=18;
+  document.documentElement.style.setProperty("--bottom-ui-offset", bottomBarHeight + "px");
+  document.documentElement.style.setProperty("--time-control-bottom", (bottomBarHeight + extraGap) + "px");
+}
+
+window.addEventListener("resize", function(){
+  updateAppHeightVars(false);
+});
+
+window.addEventListener("orientationchange", function(){
+  setTimeout(function(){
+    stableAppHeight=window.innerHeight;
+    updateAppHeightVars(true);
+    refreshMapSizeSoon();
+  },250);
+});
+
+window.addEventListener("load", function(){
+  stableAppHeight=window.innerHeight;
+  updateAppHeightVars(true);
+});
+
+setTimeout(function(){
+  updateAppHeightVars(true);
+},100);
+
+setTimeout(function(){
+  updateAppHeightVars(true);
+},500);
+
+setTimeout(function(){
+  updateAppHeightVars(true);
+},1000);
+
+setTimeout(function(){
+  updateAppHeightVars(true);
+  refreshMapSizeSoon();
+},120);
+
+setTimeout(function(){
+  updateAppHeightVars(true);
+  refreshMapSizeSoon();
+},500);
   </script>
 </body>
 </html>
