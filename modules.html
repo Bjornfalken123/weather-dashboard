@@ -263,6 +263,15 @@ border-right:none;
       .sheet-body{padding:12px 14px;}
       .sheet-row{padding:11px 12px;}
     }
+    .filter-row button.is-disabled,
+.sheet-toggle.is-disabled {
+  background: rgba(255,255,255,0.04) !important;
+  color: rgba(255,255,255,0.35) !important;
+  border-color: rgba(255,255,255,0.05) !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  opacity: 0.6;
+}
   </style>
 </head>
 <body>
@@ -319,7 +328,7 @@ border-right:none;
               <div class="filter-group-title">Objekt</div>
               <div class="filter-row"><div class="filter-row-left"><span class="layer-dot precip"></span><span>Boj / våg</span></div><button id="toggleWaveModeBtn" type="button">Av</button></div>
               <div class="filter-row"><div class="filter-row-left"><span class="layer-dot cloud"></span><span>Fyr / station</span></div><button id="toggleLighthouseModeBtn" type="button">Av</button></div>
-              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot wind"></span><span>AIS</span></div><button id="toggleAisLayerBtn" type="button">Av</button></div>
+              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot wind"></span><span>AIS</span></div><button id="toggleAisLayerBtn" type="button" class="is-disabled">AIS</button></div>
             </div>
           </div>
 
@@ -377,7 +386,7 @@ border-right:none;
         <div class="sheet-group-title">Objekt</div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Boj / våg</span></div><button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button></div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot cloud"></span><span>Fyr / station</span></div><button class="sheet-toggle" id="mobileToggleLighthouseBtn" type="button"></button></div>
-        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>AIS</span></div><button class="sheet-toggle" id="mobileToggleAisBtn" type="button"></button></div>
+        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>AIS</span></div><button class="sheet-toggle is-disabled" id="mobileToggleAisBtn" type="button"></button></div>
       </div>
     </div>
   </div>
@@ -982,7 +991,7 @@ border-right:none;
     if(filterCloseBtn){ filterCloseBtn.addEventListener('click',function(e){ e.stopPropagation(); closeFilterDrawer(); refreshMapSizeSoon(); }); }
       var toggleWaveModeBtn=document.getElementById('toggleWaveModeBtn'); if(toggleWaveModeBtn){ toggleWaveModeBtn.addEventListener('click',function(){ showWaveObjects=!showWaveObjects; updateModeUI(); }); }
     var toggleLighthouseModeBtn=document.getElementById('toggleLighthouseModeBtn'); if(toggleLighthouseModeBtn){ toggleLighthouseModeBtn.addEventListener('click',function(){ showLighthouseObjects=!showLighthouseObjects; updateModeUI(); }); }
-    var toggleAisLayerBtn=document.getElementById('toggleAisLayerBtn'); if(toggleAisLayerBtn){ toggleAisLayerBtn.addEventListener('click',function(){ onAisToggle(); }); }
+
 
     function openMobileFilterSheet(){ if(!mobileFilterSheet) return; if(mobileSearchSheet) mobileSearchSheet.classList.remove('is-open'); mobileFilterSheet.classList.add('is-open'); refreshMobileNavState(); refreshMapSizeSoon(); }
     function closeMobileFilterSheet(){ if(!mobileFilterSheet) return; mobileFilterSheet.classList.remove('is-open'); refreshMobileNavState(); refreshMapSizeSoon(); }
