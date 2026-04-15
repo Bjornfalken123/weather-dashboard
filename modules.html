@@ -722,17 +722,44 @@ border-right:none;
       return formatCoord(lat)+', '+formatCoord(lon);
     }
 
-    function normalizePlaceName(feature,lat,lon){
+      function normalizePlaceName(feature,lat,lon){
       if(!feature) return formatCoordsLabel(lat,lon);
-      return feature.place_name || feature.text || feature.name || formatCoordsLabel(lat,lon);
+
+      var shortName = feature.text || feature.name || '';
+      var longName = feature.place_name || '';
+      var props = feature.properties || {};
+      var featureType = props.type || '';
+
+      if(shortName) return shortName;
+
+      if(longName){
+        return String(longName).split(',')[0].trim();
+      }
+
+      if(featureType) return featureType;
+
+      return formatCoordsLabel(lat,lon);
     }
 
     async function reverseGeocodePlace(lat,lon){
       try{
-        var res=await fetch('https://api.maptiler.com/geocoding/' + Number(lon) + ',' + Number(lat) + '.json?key=' + MAPTILER_API_KEY + '&language=sv');
+        var baseUrl='https://api.maptiler.com/geocoding/' + Number(lon) + ',' + Number(lat) + '.json';
+        var preferredTypes='municipality,city,town,village,hamlet,locality';
+        var url=baseUrl + '?key=' + MAPTILER_API_KEY + '&language=sv&limit=1&types=' + encodeURIComponent(preferredTypes);
+
+        var res=await fetch(url);
         var data=await res.json();
         var feature=(data.features && data.features[0]) || null;
-        return normalizePlaceName(feature,lat,lon);
+
+        if(feature){
+          return normalizePlaceName(feature,lat,lon);
+        }
+
+        var fallbackRes=await fetch(baseUrl + '?key=' + MAPTILER_API_KEY + '&language=sv&limit=1');
+        var fallbackData=await fallbackRes.json();
+        var fallbackFeature=(fallbackData.features && fallbackData.features[0]) || null;
+
+        return normalizePlaceName(fallbackFeature,lat,lon);
       }catch(err){
         console.error('Reverse geocoding misslyckades',err);
         return formatCoordsLabel(lat,lon);
