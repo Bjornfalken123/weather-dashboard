@@ -1411,25 +1411,69 @@
 </button>
   </nav>
 
-  <div id="mobileFilterSheet">
-    <div class="sheet-header">
-      <button id="mobileFilterCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
-      <div class="sheet-title">Visa på kartan</div>
-    </div>
-    <div id="mobileSearchSheet">
+ <div id="mobileFilterSheet">
   <div class="sheet-header">
-    <button id="mobileSearchCloseBtn" class="sheet-close-btn">Stäng</button>
-    <div class="sheet-title">Sök stad</div>
+    <button id="mobileFilterCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
+    <div class="sheet-title">Visa på kartan</div>
   </div>
 
-  <div class="search-input-wrap">
-    <input id="mobileSearchInput" placeholder="Sök stad..." />
+  <div class="sheet-body">
+      <div class="sheet-group">
+        <div class="sheet-group-title">Kartlager</div>
+
+        <div class="sheet-row">
+          <div class="sheet-row-left">
+            <span class="layer-dot wind"></span>
+            <span>Vind</span>
+          </div>
+          <button class="sheet-toggle is-on" id="mobileToggleWindBtn" type="button"></button>
+        </div>
+
+        <div class="sheet-row">
+          <div class="sheet-row-left">
+            <span class="layer-dot precip"></span>
+            <span>Nederbörd</span>
+          </div>
+          <button class="sheet-toggle" id="mobileTogglePrecipBtn" type="button"></button>
+        </div>
+
+        <div class="sheet-row">
+          <div class="sheet-row-left">
+            <span class="layer-dot cloud"></span>
+            <span>Moln</span>
+          </div>
+          <button class="sheet-toggle" id="mobileToggleCloudBtn" type="button"></button>
+        </div>
+      </div>
+
+      <div class="sheet-group">
+        <div class="sheet-group-title">Objekt</div>
+
+        <div class="sheet-row">
+          <div class="sheet-row-left">
+            <span class="layer-dot precip"></span>
+            <span>Boj / våg</span>
+          </div>
+          <button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button>
+        </div>
+
+        <div class="sheet-row">
+          <div class="sheet-row-left">
+            <span class="layer-dot cloud"></span>
+            <span>Fyr / station</span>
+          </div>
+          <button class="sheet-toggle" id="mobileToggleLighthouseBtn" type="button"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+<div id="mobileFilterSheet">
+  <div class="sheet-header">
+    <button id="mobileFilterCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
+    <div class="sheet-title">Visa på kartan</div>
   </div>
 
-  <div id="mobileSearchResults"></div>
-</div>
-
-    <div class="sheet-body">
+  <div class="sheet-body">
       <div class="sheet-group">
         <div class="sheet-group-title">Kartlager</div>
 
@@ -1480,6 +1524,18 @@
     </div>
   </div>
 
+<div id="mobileSearchSheet">
+  <div class="sheet-header">
+    <button id="mobileSearchCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
+    <div class="sheet-title">Sök stad</div>
+  </div>
+
+  <div class="search-input-wrap">
+    <input id="mobileSearchInput" type="text" placeholder="Sök stad..." />
+  </div>
+
+  <div id="mobileSearchResults"></div>
+</div>
   <script>
    var activeMode="weather",
     showWaveObjects=false,
