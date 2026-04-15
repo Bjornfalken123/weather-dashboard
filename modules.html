@@ -1212,7 +1212,7 @@
         padding:11px 12px;
       }
     }
-    /* ===== SÖK ===== */
+/* ===== SÖK ===== */
 
 #mobileSearchSheet{
   display:none;
@@ -1220,37 +1220,52 @@
   bottom:0;
   left:0;
   right:0;
-  z-index:6500;
+  z-index:6600;
   background:rgba(5,11,22,0.96);
-  backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
   border-top:1px solid rgba(255,255,255,0.1);
   border-radius:22px 22px 0 0;
-  padding-bottom:100px;
+  padding:0 0 calc(var(--tab-bar-height) + var(--safe-bottom) + 8px);
+  box-shadow:0 -12px 48px rgba(0,0,0,0.5);
   max-height:80vh;
-  overflow:auto;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
 }
 
 #mobileSearchSheet.is-open{
   display:block;
+  animation:sheetUp 260ms cubic-bezier(0.22,1,0.36,1) both;
 }
 
 .search-input-wrap{
-  padding:14px;
+  padding:14px 18px 10px;
 }
 
 #mobileSearchInput{
   width:100%;
-  padding:12px;
+  padding:12px 14px;
   border-radius:12px;
-  border:none;
+  border:1px solid rgba(255,255,255,0.08);
   background:rgba(255,255,255,0.06);
-  color:white;
+  color:#fff;
+  outline:none;
+  font-size:16px;
+}
+
+#mobileSearchInput::placeholder{
+  color:rgba(255,255,255,0.45);
+}
+
+#mobileSearchResults{
+  padding:0 0 6px;
 }
 
 .search-result-item{
-  padding:12px;
+  padding:12px 18px;
   border-bottom:1px solid rgba(255,255,255,0.08);
   cursor:pointer;
+  color:var(--text-soft);
 }
   </style>
 </head>
@@ -1368,105 +1383,53 @@
     </section>
   </div>
 
-  <nav id="bottomTabBar">
-    <button class="tab-btn active" id="tabWeather" type="button">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
-        <circle cx="12" cy="12" r="4"></circle>
-      </svg>
-      Väder
-    </button>
+<nav id="bottomTabBar">
+  <button class="tab-btn active" id="tabWeather" type="button">
+    <svg viewBox="0 0 24 24">
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+      <circle cx="12" cy="12" r="4"></circle>
+    </svg>
+    Väder
+  </button>
 
-    <button class="tab-btn" id="tabWave" type="button">
-      <svg viewBox="0 0 24 24">
-        <path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path>
-        <path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path>
-      </svg>
-      Boj / hav
-      <span class="tab-btn-badge" id="waveBadge"></span>
-    </button>
+  <button class="tab-btn" id="tabWave" type="button">
+    <svg viewBox="0 0 24 24">
+      <path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path>
+      <path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path>
+    </svg>
+    Boj / hav
+    <span class="tab-btn-badge" id="waveBadge"></span>
+  </button>
 
-    <button class="tab-btn" id="tabLighthouse" type="button">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2L9 8h6L12 2z"></path>
-        <rect x="10" y="8" width="4" height="10" rx="1"></rect>
-        <path d="M8 18h8M6 21h12"></path>
-      </svg>
-      Fyr
-      <span class="tab-btn-badge" id="lighthouseBadge"></span>
-    </button>
+  <button class="tab-btn" id="tabLighthouse" type="button">
+    <svg viewBox="0 0 24 24">
+      <path d="M12 2L9 8h6L12 2z"></path>
+      <rect x="10" y="8" width="4" height="10" rx="1"></rect>
+      <path d="M8 18h8M6 21h12"></path>
+    </svg>
+    Fyr
+    <span class="tab-btn-badge" id="lighthouseBadge"></span>
+  </button>
 
-    <button class="tab-btn" id="tabFilter" type="button">
-      <svg viewBox="0 0 24 24">
-        <line x1="4" y1="6" x2="20" y2="6"></line>
-        <line x1="8" y1="12" x2="16" y2="12"></line>
-        <line x1="11" y1="18" x2="13" y2="18"></line>
-      </svg>
-      Filter
-      <span class="tab-btn-badge" id="filterBadge"></span>
-    </button>
-    <button class="tab-btn" id="tabSearch" type="button">
-  🔍
-  Sök
-</button>
-  </nav>
+  <button class="tab-btn" id="tabFilter" type="button">
+    <svg viewBox="0 0 24 24">
+      <line x1="4" y1="6" x2="20" y2="6"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+      <line x1="11" y1="18" x2="13" y2="18"></line>
+    </svg>
+    Filter
+    <span class="tab-btn-badge" id="filterBadge"></span>
+  </button>
 
- <div id="mobileFilterSheet">
-  <div class="sheet-header">
-    <button id="mobileFilterCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
-    <div class="sheet-title">Visa på kartan</div>
-  </div>
+  <button class="tab-btn" id="tabSearch" type="button">
+    <svg viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7"></circle>
+      <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+    </svg>
+    Sök
+  </button>
+</nav>
 
-  <div class="sheet-body">
-      <div class="sheet-group">
-        <div class="sheet-group-title">Kartlager</div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot wind"></span>
-            <span>Vind</span>
-          </div>
-          <button class="sheet-toggle is-on" id="mobileToggleWindBtn" type="button"></button>
-        </div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot precip"></span>
-            <span>Nederbörd</span>
-          </div>
-          <button class="sheet-toggle" id="mobileTogglePrecipBtn" type="button"></button>
-        </div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot cloud"></span>
-            <span>Moln</span>
-          </div>
-          <button class="sheet-toggle" id="mobileToggleCloudBtn" type="button"></button>
-        </div>
-      </div>
-
-      <div class="sheet-group">
-        <div class="sheet-group-title">Objekt</div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot precip"></span>
-            <span>Boj / våg</span>
-          </div>
-          <button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button>
-        </div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot cloud"></span>
-            <span>Fyr / station</span>
-          </div>
-          <button class="sheet-toggle" id="mobileToggleLighthouseBtn" type="button"></button>
-        </div>
-      </div>
-    </div>
-  </div>
 <div id="mobileFilterSheet">
   <div class="sheet-header">
     <button id="mobileFilterCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
@@ -1474,55 +1437,55 @@
   </div>
 
   <div class="sheet-body">
-      <div class="sheet-group">
-        <div class="sheet-group-title">Kartlager</div>
+    <div class="sheet-group">
+      <div class="sheet-group-title">Kartlager</div>
 
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot wind"></span>
-            <span>Vind</span>
-          </div>
-          <button class="sheet-toggle is-on" id="mobileToggleWindBtn" type="button"></button>
+      <div class="sheet-row">
+        <div class="sheet-row-left">
+          <span class="layer-dot wind"></span>
+          <span>Vind</span>
         </div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot precip"></span>
-            <span>Nederbörd</span>
-          </div>
-          <button class="sheet-toggle" id="mobileTogglePrecipBtn" type="button"></button>
-        </div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot cloud"></span>
-            <span>Moln</span>
-          </div>
-          <button class="sheet-toggle" id="mobileToggleCloudBtn" type="button"></button>
-        </div>
+        <button class="sheet-toggle is-on" id="mobileToggleWindBtn" type="button"></button>
       </div>
 
-      <div class="sheet-group">
-        <div class="sheet-group-title">Objekt</div>
-
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot precip"></span>
-            <span>Boj / våg</span>
-          </div>
-          <button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button>
+      <div class="sheet-row">
+        <div class="sheet-row-left">
+          <span class="layer-dot precip"></span>
+          <span>Nederbörd</span>
         </div>
+        <button class="sheet-toggle" id="mobileTogglePrecipBtn" type="button"></button>
+      </div>
 
-        <div class="sheet-row">
-          <div class="sheet-row-left">
-            <span class="layer-dot cloud"></span>
-            <span>Fyr / station</span>
-          </div>
-          <button class="sheet-toggle" id="mobileToggleLighthouseBtn" type="button"></button>
+      <div class="sheet-row">
+        <div class="sheet-row-left">
+          <span class="layer-dot cloud"></span>
+          <span>Moln</span>
         </div>
+        <button class="sheet-toggle" id="mobileToggleCloudBtn" type="button"></button>
+      </div>
+    </div>
+
+    <div class="sheet-group">
+      <div class="sheet-group-title">Objekt</div>
+
+      <div class="sheet-row">
+        <div class="sheet-row-left">
+          <span class="layer-dot precip"></span>
+          <span>Boj / våg</span>
+        </div>
+        <button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-row-left">
+          <span class="layer-dot cloud"></span>
+          <span>Fyr / station</span>
+        </div>
+        <button class="sheet-toggle" id="mobileToggleLighthouseBtn" type="button"></button>
       </div>
     </div>
   </div>
+</div>
 
 <div id="mobileSearchSheet">
   <div class="sheet-header">
@@ -2376,22 +2339,6 @@ function clearWaveSelection(){
 
   refreshMapSizeSoon();
 }
-
-function clearLighthouseSelection(){
-  selectedLighthouseStationId=null;
-
-  if(lighthouseSelectionMarker){
-    map.removeLayer(lighthouseSelectionMarker);
-    lighthouseSelectionMarker=null;
-  }
-
-  hideLighthouseOverlay();
-
-  lighthouseMarkerMap.forEach(function(_, id){
-    var station=lighthouseStationsCache.get(id);
-    if(station){
-      setLighthouseMarkerColorById(id,"active",station.name+" • data tillgänglig");
-    }
   });
 
   refreshMapSizeSoon();
@@ -3598,7 +3545,7 @@ async function startLighthouseBackgroundCheck(){
       });
     }
 
- var mobileFilterSheet=document.getElementById("mobileFilterSheet");
+var mobileFilterSheet=document.getElementById("mobileFilterSheet");
 var mobileSearchSheet=document.getElementById("mobileSearchSheet");
 var mobileSearchInput=document.getElementById("mobileSearchInput");
 var mobileSearchResults=document.getElementById("mobileSearchResults");
@@ -3637,7 +3584,13 @@ function openSearch(){
 function closeSearch(){
   if(!mobileSearchSheet) return;
   mobileSearchSheet.classList.remove("is-open");
+
+  if(mobileSearchInput){
+    mobileSearchInput.blur();
+  }
+
   refreshMobileNavState();
+  updateAppHeightVars();
   refreshMapSizeSoon();
 }
 
@@ -3792,14 +3745,23 @@ if(mobileSearchInput){
           var lon=f.center[0];
           var lat=f.center[1];
 
-          closeSearch();
-
-          map.setView([lat,lon],9);
-          if(maptilerMap){
-            maptilerMap.flyTo({center:[lon,lat],zoom:9});
+          if(mobileSearchInput){
+            mobileSearchInput.blur();
           }
 
-          handlePrimaryMapClick(lat,lon);
+          closeSearch();
+
+          setTimeout(function(){
+            map.setView([lat,lon],9);
+
+            if(maptilerMap){
+              maptilerMap.flyTo({center:[lon,lat],zoom:9});
+            }
+
+            handlePrimaryMapClick(lat,lon);
+            updateAppHeightVars();
+            refreshMapSizeSoon();
+          },100);
         };
 
         mobileSearchResults.appendChild(div);
