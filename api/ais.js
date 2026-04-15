@@ -1,4 +1,3 @@
-
 import WebSocket from "ws";
 
 export default async function handler(req, res) {
@@ -8,11 +7,28 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "bbox required" });
   }
 
-  const [minLon, minLat, maxLon, maxLat] = bbox.split(",").map(Number);
+  const [minLon, minLat, maxLon, maxLat] = String(bbox).split(",").map(Number);
+
+  if ([minLon, minLat, maxLon, maxLat].some((v) => Number.isNaN(v))) {
+    return res.status(400).json({ error: "invalid bbox" });
+  }
 
   const API_KEY = process.env.AISSTREAM_API_KEY;
 
+  if (!API_KEY) {
+    return res.status(500).json({ error: "AISSTREAM_API_KEY missing" });
+  }
+
   const vessels = new Map();
+  let finished = false;
+
+  function done(status, payload, ws, resolve) {
+    if (finished) return;
+    finished = true;
+    try { if (ws) ws.close(); } catch (e) {}
+    res.status(status).json(payload);
+    resolve();
+  }
 
   return new Promise((resolve) => {
     const ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
@@ -28,42 +44,47 @@ export default async function handler(req, res) {
         ]
       }));
 
-      // samla data i 2 sek
       setTimeout(() => {
-        ws.close();
-      }, 2000);
+        done(200, { vessels: Array.from(vessels.values()) }, ws, resolve);
+      }, 2200);
     });
 
     ws.on("message", (data) => {
       try {
         const msg = JSON.parse(data);
-        const report = msg.Message?.PositionReport;
+        const payload = msg && msg.Message ? msg.Message : null;
+        if (!payload) return;
+
+        const report =
+          payload.PositionReport ||
+          payload.StandardClassBPositionReport ||
+          payload.ExtendedClassBPositionReport;
 
         if (!report) return;
 
-        const mmsi = report.UserID;
+        const mmsi = report.UserID || report.MMSI || null;
+        const lat = report.Latitude;
+        const lon = report.Longitude;
 
-        vessels.set(mmsi, {
-          mmsi,
-          lat: report.Latitude,
-          lon: report.Longitude,
-          cog: report.Cog,
-          sog: report.Sog
+        if (lat == null || lon == null) return;
+
+        vessels.set(String(mmsi || `${lat}:${lon}`), {
+          mmsi: mmsi || null,
+          lat,
+          lon,
+          cog: report.Cog || 0,
+          sog: report.Sog || null,
+          name: null
         });
-
       } catch (e) {}
     });
 
-    ws.on("close", () => {
-      res.status(200).json({
-        vessels: Array.from(vessels.values())
-      });
-      resolve();
+    ws.on("error", () => {
+      done(200, { vessels: [] }, ws, resolve);
     });
 
-    ws.on("error", () => {
-      res.status(500).json({ vessels: [] });
-      resolve();
+    ws.on("close", () => {
+      done(200, { vessels: Array.from(vessels.values()) }, null, resolve);
     });
   });
 }
