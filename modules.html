@@ -315,10 +315,11 @@ border-right:none;
               <div class="filter-row"><div class="filter-row-left"><span class="layer-dot wind"></span><span>Temperatur</span></div><button id="toggleTemperatureLayerBtn" type="button">Av</button></div>
             </div>
 
-            <div class="filter-group">
+                       <div class="filter-group">
               <div class="filter-group-title">Objekt</div>
               <div class="filter-row"><div class="filter-row-left"><span class="layer-dot precip"></span><span>Boj / våg</span></div><button id="toggleWaveModeBtn" type="button">Av</button></div>
               <div class="filter-row"><div class="filter-row-left"><span class="layer-dot cloud"></span><span>Fyr / station</span></div><button id="toggleLighthouseModeBtn" type="button">Av</button></div>
+              <div class="filter-row"><div class="filter-row-left"><span class="layer-dot wind"></span><span>AIS</span></div><button id="toggleAisLayerBtn" type="button">Av</button></div>
             </div>
           </div>
 
@@ -372,10 +373,11 @@ border-right:none;
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>Temperatur</span></div><button class="sheet-toggle" id="mobileToggleTemperatureBtn" type="button"></button></div>
       </div>
 
-      <div class="sheet-group">
+           <div class="sheet-group">
         <div class="sheet-group-title">Objekt</div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Boj / våg</span></div><button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button></div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot cloud"></span><span>Fyr / station</span></div><button class="sheet-toggle" id="mobileToggleLighthouseBtn" type="button"></button></div>
+        <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>AIS</span></div><button class="sheet-toggle" id="mobileToggleAisBtn" type="button"></button></div>
       </div>
     </div>
   </div>
@@ -390,9 +392,10 @@ border-right:none;
   </div>
 
   <script>
-    var activeMode="weather",
+      var activeMode="weather",
         showWaveObjects=false,
         showLighthouseObjects=false,
+        showAisObjects=false,
         lastObjectInteractionAt=0,
         forecastExpanded=false,
         currentForecastDays=[],
@@ -448,13 +451,27 @@ border-right:none;
 
     var weatherMarker=null,
         waveSelectionMarker=null,
-        lighthouseSelectionMarker=null;
+        lighthouseSelectionMarker=null,
+        aisMarkerMap=new Map();
 
     function markObjectInteraction(){ lastObjectInteractionAt=Date.now(); }
     function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
     function isMobileView(){ return window.matchMedia("(max-width:700px)").matches; }
     function setOverlayHeaderDot(state){ var dot=document.getElementById("overlayHeaderDot"); if(dot) dot.classList.toggle("loading",state==="loading"); }
-
+    function createShipElement(rotation){
+      var el=document.createElement("div");
+      el.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L15 8 L15 16 L12 22 L9 16 L9 8 Z" fill="#7bc7ff" stroke="#ffffff" stroke-width="1.2"></path></svg>';
+      el.style.width='22px';
+      el.style.height='22px';
+      el.style.display='flex';
+      el.style.alignItems='center';
+      el.style.justifyContent='center';
+      el.style.transform='rotate(' + (Number(rotation) || 0) + 'deg)';
+      el.style.transformOrigin='50% 50%';
+      el.style.filter='drop-shadow(0 0 6px rgba(123,199,255,0.55))';
+      el.style.cursor='pointer';
+      return el;
+    }
          function updateActiveLayersBadge(){
       var count=[windLayerVisible,precipitationLayerVisible,cloudLayerVisible,radarLayerVisible,temperatureLayerVisible].filter(Boolean).length;
       var badge=document.getElementById("activeLayersBadge"), text=document.getElementById("activeLayersText"), fb=document.getElementById("filterBadge");
@@ -622,7 +639,81 @@ border-right:none;
     }
 
     function setActiveTab(id){ document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); }); var t=document.getElementById(id); if(t) t.classList.add('active'); }
+    function clearAisMarkers(){
+      aisMarkerMap.forEach(function(marker){ try{ marker.remove(); }catch(e){} });
+      aisMarkerMap.clear();
+    }
 
+    function updateAisMarkers(vessels){
+      clearAisMarkers();
+      if(!maptilerMap || !Array.isArray(vessels)) return;
+
+      vessels.forEach(function(v){
+        if(v == null || v.lat == null || v.lon == null) return;
+
+        var el=createShipElement(v.cog || 0);
+        var marker=new maptilersdk.Marker({element:el})
+          .setLngLat([Number(v.lon), Number(v.lat)])
+          .addTo(maptilerMap);
+
+        if(v.name || v.mmsi){
+          var label=(v.name ? v.name : 'Fartyg') + (v.mmsi ? ' • MMSI ' + v.mmsi : '');
+          marker.setPopup(new maptilersdk.Popup({offset:18}).setText(label));
+        }
+
+        aisMarkerMap.set(v.mmsi || (String(v.lat)+':'+String(v.lon)), marker);
+      });
+    }
+
+    async function loadAisData(){
+      if(!maptilerMap || !showAisObjects) return;
+
+      try{
+        var bounds=maptilerMap.getBounds();
+        var bbox=[
+          bounds.getWest(),
+          bounds.getSouth(),
+          bounds.getEast(),
+          bounds.getNorth()
+        ].join(',');
+
+        var res=await fetch('/api/ais?bbox=' + encodeURIComponent(bbox));
+        var data=await res.json();
+
+        if(!res.ok){
+          throw new Error((data && data.error) || 'AIS-fel');
+        }
+
+        updateAisMarkers(data.vessels || []);
+      }catch(err){
+        console.error('AIS kunde inte hämtas', err);
+        clearAisMarkers();
+      }
+    }
+
+    function onAisToggle(){
+      showAisObjects=!showAisObjects;
+
+      var deskBtn=document.getElementById('toggleAisLayerBtn');
+      var mobileBtn=document.getElementById('mobileToggleAisBtn');
+
+      if(deskBtn){
+        deskBtn.textContent=showAisObjects ? 'På' : 'Av';
+        deskBtn.classList.toggle('is-on',showAisObjects);
+        deskBtn.classList.toggle('is-off',!showAisObjects);
+      }
+      if(mobileBtn){
+        mobileBtn.classList.toggle('is-on',showAisObjects);
+      }
+
+      if(showAisObjects){
+        loadAisData();
+      }else{
+        clearAisMarkers();
+      }
+
+      refreshMobileNavState();
+    }
     var mobileFilterSheet=document.getElementById('mobileFilterSheet');
     var mobileSearchSheet=document.getElementById('mobileSearchSheet');
     var mobileSearchInput=document.getElementById('mobileSearchInput');
@@ -651,10 +742,19 @@ border-right:none;
       var waveBtn=document.getElementById('toggleWaveModeBtn'), lighthouseBtn=document.getElementById('toggleLighthouseModeBtn');
       if(waveBtn){ waveBtn.textContent=showWaveObjects ? 'På' : 'Av'; waveBtn.classList.toggle('is-on',showWaveObjects); waveBtn.classList.toggle('is-off',!showWaveObjects); }
       if(lighthouseBtn){ lighthouseBtn.textContent=showLighthouseObjects ? 'På' : 'Av'; lighthouseBtn.classList.toggle('is-on',showLighthouseObjects); lighthouseBtn.classList.toggle('is-off',!showLighthouseObjects); }
-      var mobileWaveBtn=document.getElementById('mobileToggleWaveBtn'), mobileLighthouseBtn=document.getElementById('mobileToggleLighthouseBtn');
+           var mobileWaveBtn=document.getElementById('mobileToggleWaveBtn'),
+          mobileLighthouseBtn=document.getElementById('mobileToggleLighthouseBtn'),
+          mobileAisBtn=document.getElementById('mobileToggleAisBtn');
       if(mobileWaveBtn) mobileWaveBtn.classList.toggle('is-on',showWaveObjects);
       if(mobileLighthouseBtn) mobileLighthouseBtn.classList.toggle('is-on',showLighthouseObjects);
+      if(mobileAisBtn) mobileAisBtn.classList.toggle('is-on',showAisObjects);
       if(!savedSelections.weather){ updateMapOverlay('Väderpunkt','Klicka i kartan för att visa aktuell väderdata för en vald punkt.'); }
+            var aisBtn=document.getElementById('toggleAisLayerBtn');
+      if(aisBtn){
+        aisBtn.textContent=showAisObjects ? 'På' : 'Av';
+        aisBtn.classList.toggle('is-on',showAisObjects);
+        aisBtn.classList.toggle('is-off',!showAisObjects);
+      }
       refreshMobileNavState();
       refreshMapSizeSoon();
     }
@@ -880,8 +980,9 @@ border-right:none;
     if(filterDrawer){ filterDrawer.addEventListener('click',function(e){ e.stopPropagation(); }); }
     if(filterToggleBtn){ filterToggleBtn.addEventListener('click',function(e){ e.stopPropagation(); if(filterDrawer) filterDrawer.classList.toggle('is-hidden'); refreshMapSizeSoon(); }); }
     if(filterCloseBtn){ filterCloseBtn.addEventListener('click',function(e){ e.stopPropagation(); closeFilterDrawer(); refreshMapSizeSoon(); }); }
-    var toggleWaveModeBtn=document.getElementById('toggleWaveModeBtn'); if(toggleWaveModeBtn){ toggleWaveModeBtn.addEventListener('click',function(){ showWaveObjects=!showWaveObjects; updateModeUI(); }); }
+      var toggleWaveModeBtn=document.getElementById('toggleWaveModeBtn'); if(toggleWaveModeBtn){ toggleWaveModeBtn.addEventListener('click',function(){ showWaveObjects=!showWaveObjects; updateModeUI(); }); }
     var toggleLighthouseModeBtn=document.getElementById('toggleLighthouseModeBtn'); if(toggleLighthouseModeBtn){ toggleLighthouseModeBtn.addEventListener('click',function(){ showLighthouseObjects=!showLighthouseObjects; updateModeUI(); }); }
+    var toggleAisLayerBtn=document.getElementById('toggleAisLayerBtn'); if(toggleAisLayerBtn){ toggleAisLayerBtn.addEventListener('click',function(){ onAisToggle(); }); }
 
     function openMobileFilterSheet(){ if(!mobileFilterSheet) return; if(mobileSearchSheet) mobileSearchSheet.classList.remove('is-open'); mobileFilterSheet.classList.add('is-open'); refreshMobileNavState(); refreshMapSizeSoon(); }
     function closeMobileFilterSheet(){ if(!mobileFilterSheet) return; mobileFilterSheet.classList.remove('is-open'); refreshMobileNavState(); refreshMapSizeSoon(); }
@@ -1002,8 +1103,9 @@ border-right:none;
           ['toggleCloudLayerBtn','mobileToggleCloudBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onCloudToggle); });
           ['toggleRadarLayerBtn','mobileToggleRadarBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onRadarToggle); });
           ['toggleTemperatureLayerBtn','mobileToggleTemperatureBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click',onTemperatureToggle); });
-          var mobileToggleWaveBtn=document.getElementById('mobileToggleWaveBtn'); if(mobileToggleWaveBtn){ mobileToggleWaveBtn.addEventListener('click',function(){ showWaveObjects=!showWaveObjects; updateModeUI(); syncAllLayerButtons(); }); }
+                   var mobileToggleWaveBtn=document.getElementById('mobileToggleWaveBtn'); if(mobileToggleWaveBtn){ mobileToggleWaveBtn.addEventListener('click',function(){ showWaveObjects=!showWaveObjects; updateModeUI(); syncAllLayerButtons(); }); }
           var mobileToggleLighthouseBtn=document.getElementById('mobileToggleLighthouseBtn'); if(mobileToggleLighthouseBtn){ mobileToggleLighthouseBtn.addEventListener('click',function(){ showLighthouseObjects=!showLighthouseObjects; updateModeUI(); syncAllLayerButtons(); }); }
+          var mobileToggleAisBtn=document.getElementById('mobileToggleAisBtn'); if(mobileToggleAisBtn){ mobileToggleAisBtn.addEventListener('click',function(){ onAisToggle(); }); }
                            [maptilerTimelineLayer,maptilerPrecipitationLayer,maptilerCloudLayer,maptilerRadarLayer,maptilerTemperatureLayer,maptilerWindLayer].forEach(function(layer){ if(!layer || !layer.on) return; layer.on('sourceReady',function(){ initializeForecastTimeline(); }); });
           setTimeout(function(){ initializeForecastTimeline(); },800);
           setTimeout(function(){ initializeForecastTimeline(); },1400);
@@ -1014,7 +1116,14 @@ border-right:none;
         }catch(err){ console.error('Fel vid skapande av väderlager.',err); }
       });
       var isSyncMT=false,isSyncL=false;
-      maptilerMap.on('moveend',function(){ if(isSyncL) return; isSyncMT=true; var c=maptilerMap.getCenter(); map.setView([c.lat,c.lng],maptilerMap.getZoom(),{animate:false}); setTimeout(function(){ isSyncMT=false; },0); });
+          maptilerMap.on('moveend',function(){
+        if(isSyncL) return;
+        isSyncMT=true;
+        var c=maptilerMap.getCenter();
+        map.setView([c.lat,c.lng],maptilerMap.getZoom(),{animate:false});
+        if(showAisObjects){ loadAisData(); }
+        setTimeout(function(){ isSyncMT=false; },0);
+      });
       map.on('moveend',function(){ if(isSyncMT || !maptilerMap) return; isSyncL=true; var c=map.getCenter(); maptilerMap.jumpTo({center:[c.lng,c.lat],zoom:map.getZoom()}); setTimeout(function(){ isSyncL=false; },0); });
       maptilerMap.on('click',function(e){ if(e.lngLat) handlePrimaryMapClick(e.lngLat.lat,e.lngLat.lng); });
     }else{
