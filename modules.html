@@ -152,7 +152,7 @@
     #timeTickRow{display:flex;justify-content:space-between;margin-top:5px;padding:0 1px;gap:8px;}
     .time-tick{font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-       #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;height:calc(var(--tab-bar-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:rgba(5,11,22,0.96);border-top:1px solid rgba(255,255,255,0.09);align-items:stretch;}
+           #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;height:calc(var(--tab-bar-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:rgba(5,11,22,0.96);border-top:1px solid rgba(255,255,255,0.09);align-items:stretch;}
     .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer;padding:8px 4px;position:relative;}
     .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
     .tab-btn.active{color:var(--accent);}
@@ -363,8 +363,7 @@ border-right:none;
       <div class="sheet-title">Visa på kartan</div>
     </div>
     <div class="sheet-body">
-         <div class="sheet-group">
-          <div class="sheet-group">
+      <div class="sheet-group">
         <div class="sheet-group-title">Kartlager</div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>Vind</span></div><button class="sheet-toggle is-on" id="mobileToggleWindBtn" type="button"></button></div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Nederbörd</span></div><button class="sheet-toggle is-on" id="mobileTogglePrecipBtn" type="button"></button></div>
@@ -372,6 +371,7 @@ border-right:none;
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Radar</span></div><button class="sheet-toggle" id="mobileToggleRadarBtn" type="button"></button></div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot wind"></span><span>Temperatur</span></div><button class="sheet-toggle" id="mobileToggleTemperatureBtn" type="button"></button></div>
       </div>
+
       <div class="sheet-group">
         <div class="sheet-group-title">Objekt</div>
         <div class="sheet-row"><div class="sheet-row-left"><span class="layer-dot precip"></span><span>Boj / våg</span></div><button class="sheet-toggle" id="mobileToggleWaveBtn" type="button"></button></div>
@@ -897,7 +897,7 @@ border-right:none;
     var tabFilter=document.getElementById('tabFilter'); if(tabFilter){ tabFilter.addEventListener('click',function(e){ e.stopPropagation(); if(!mobileFilterSheet) return; if(mobileFilterSheet.classList.contains('is-open')){ closeMobileFilterSheet(); }else{ openMobileFilterSheet(); } }); }
     var tabSearch=document.getElementById('tabSearch'); if(tabSearch){ tabSearch.addEventListener('click',function(e){ e.stopPropagation(); if(!mobileSearchSheet) return; if(mobileSearchSheet.classList.contains('is-open')){ closeSearch(); }else{ openSearch(); } }); }
 
-       document.addEventListener('click',function(e){
+        document.addEventListener('click',function(e){
       var clickedFilterTab = e.target && e.target.closest ? e.target.closest('#tabFilter') : null;
       var clickedSearchTab = e.target && e.target.closest ? e.target.closest('#tabSearch') : null;
 
