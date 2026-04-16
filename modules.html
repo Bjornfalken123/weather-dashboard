@@ -34,7 +34,7 @@
       --safe-bottom:env(safe-area-inset-bottom,0px);
       --safe-top:env(safe-area-inset-top,0px);
 
-             --app-height:100dvh;
+             --app-height:100vh;
       --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
       --time-control-bottom:var(--bottom-ui-offset);
     }
@@ -60,7 +60,7 @@
       position:relative;overflow:hidden;border-radius:var(--radius-xl);
       border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
       backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
-            box-shadow:var(--shadow-md);padding:18px;min-height:calc(var(--app-height) - 36px);
+          box-shadow:var(--shadow-md);padding:18px;min-height:calc(var(--app-height) - 36px);
     }
     .map-note{position:relative;z-index:1;margin-bottom:16px;color:var(--muted-soft);font-size:14px;line-height:1.6;}
     .map-stack{position:relative;z-index:1;}
@@ -272,6 +272,12 @@ border-right:none;
   pointer-events: none;
   opacity: 0.6;
 }
+     @media (max-width:700px){
+      html,body{
+        height:var(--app-height);
+        min-height:var(--app-height);
+      }
+    }   
   </style>
 </head>
 <body>
@@ -401,6 +407,7 @@ border-right:none;
   </div>
 
   <script>
+    
       var activeMode="weather",
         showWaveObjects=false,
         showLighthouseObjects=false,
@@ -462,6 +469,12 @@ border-right:none;
         waveSelectionMarker=null,
         lighthouseSelectionMarker=null,
         aisMarkerMap=new Map();
+        function setAppHeight(){
+      var h = window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', h + 'px');
+    }
+
+    setAppHeight();
 
     function markObjectInteraction(){ lastObjectInteractionAt=Date.now(); }
     function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
@@ -1035,8 +1048,17 @@ border-right:none;
 }
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
-    window.addEventListener('resize',refreshMapSizeSoon);
-    window.addEventListener('orientationchange',function(){ setTimeout(function(){ refreshMapSizeSoon(); },250); });
+       window.addEventListener('resize',function(){
+      setAppHeight();
+      refreshMapSizeSoon();
+    });
+
+    window.addEventListener('orientationchange',function(){
+      setTimeout(function(){
+        setAppHeight();
+        refreshMapSizeSoon();
+      },250);
+    });
 
     if(mobileSearchInput){
       mobileSearchInput.addEventListener('input', async function(){
@@ -1142,8 +1164,15 @@ border-right:none;
     updateModeUI();
     updateActiveLayersBadge();
     Promise.all([ensureWaveStationsLoaded().catch(function(e){console.error('Preload bojar misslyckades',e);}),ensureLighthouseStationsLoaded().catch(function(e){console.error('Preload fyrar misslyckades',e);})]);
-    setTimeout(function(){ refreshMapSizeSoon(); },120);
-    setTimeout(function(){ refreshMapSizeSoon(); },500);
+    setTimeout(function(){
+      setAppHeight();
+      refreshMapSizeSoon();
+    },120);
+
+    setTimeout(function(){
+      setAppHeight();
+      refreshMapSizeSoon();
+    },500);
   </script>
 </body>
 </html>
