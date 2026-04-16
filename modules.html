@@ -15,29 +15,29 @@
   <script src="https://cdn.maptiler.com/maptiler-weather/v3.1.1/maptiler-weather.umd.min.js"></script>
 
   <style>
-   :root{
-  --bg-1:#040913;
-  --bg-2:#08101d;
-  --bg-3:#0c1727;
-  --border:rgba(255,255,255,0.11);
-  --text:#f3f7ff;
-  --text-soft:#dfe8f7;
-  --muted:#95a5bf;
-  --muted-soft:#b7c5d9;
-  --accent:#7bc7ff;
-  --accent-2:#98f0db;
-  --accent-gold:#e8d7a8;
-  --shadow-md:0 20px 50px rgba(0,0,0,0.28);
-  --radius-xl:30px;
+    :root{
+      --bg-1:#040913;
+      --bg-2:#08101d;
+      --bg-3:#0c1727;
+      --border:rgba(255,255,255,0.11);
+      --text:#f3f7ff;
+      --text-soft:#dfe8f7;
+      --muted:#95a5bf;
+      --muted-soft:#b7c5d9;
+      --accent:#7bc7ff;
+      --accent-2:#98f0db;
+      --accent-gold:#e8d7a8;
+      --shadow-md:0 20px 50px rgba(0,0,0,0.28);
+      --radius-xl:30px;
 
-  --tab-bar-height:62px;
-  --safe-top:env(safe-area-inset-top,0px);
-  --safe-bottom:env(safe-area-inset-bottom,0px);
+      --tab-bar-height:74px;
+      --safe-bottom:env(safe-area-inset-bottom,0px);
+      --safe-top:env(safe-area-inset-top,0px);
 
-  --app-height:100vh;
- --bottom-ui-offset:var(--tab-bar-height);
-  --time-control-bottom:var(--bottom-ui-offset);
-}
+             --app-height:100dvh;
+      --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
+      --time-control-bottom:var(--bottom-ui-offset);
+    }
 
     *{box-sizing:border-box;}
     html,body{height:100%;margin:0;overflow-x:hidden;}
@@ -60,14 +60,14 @@
       position:relative;overflow:hidden;border-radius:var(--radius-xl);
       border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
       backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
-          box-shadow:var(--shadow-md);padding:18px;min-height:calc(var(--app-height) - 36px);
+      box-shadow:var(--shadow-md);padding:18px;min-height:calc(100vh - 36px);
     }
     .map-note{position:relative;z-index:1;margin-bottom:16px;color:var(--muted-soft);font-size:14px;line-height:1.6;}
     .map-stack{position:relative;z-index:1;}
     .map-instance-wrap{position:relative;isolation:isolate;}
 
     #map,#maptilerMap{
-           position:relative;z-index:1;width:100%;height:calc(var(--app-height) - 72px);min-height:620px;
+      position:relative;z-index:1;width:100%;height:calc(100vh - 72px);min-height:620px;
       border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);
       box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 20px 42px rgba(0,0,0,0.24);
     }
@@ -152,19 +152,7 @@
     #timeTickRow{display:flex;justify-content:space-between;margin-top:5px;padding:0 1px;gap:8px;}
     .time-tick{font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-               #bottomTabBar{
-  display:none;
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  z-index:8000;
-  height:var(--tab-bar-height);
-  padding-bottom:0;
-  background:#040913;
-  border-top:1px solid rgba(255,255,255,0.09);
-  align-items:stretch;
-}
+           #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;height:calc(var(--tab-bar-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:rgba(5,11,22,0.96);border-top:1px solid rgba(255,255,255,0.09);align-items:stretch;}
     .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer;padding:8px 4px;position:relative;}
     .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
     .tab-btn.active{color:var(--accent);}
@@ -176,7 +164,7 @@
     #mobileSearchSheet{
       display:none;position:fixed;bottom:0;left:0;right:0;z-index:9000;background:rgba(5,11,22,0.96);
       border-top:1px solid rgba(255,255,255,0.1);border-radius:22px 22px 0 0;
-    padding:0 0 calc(var(--tab-bar-height) + 8px);
+      padding:0 0 calc(var(--tab-bar-height) + var(--safe-bottom) + 8px);
       box-shadow:0 -12px 48px rgba(0,0,0,0.5);max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
     }
     #mobileSearchSheet{z-index:9100;}
@@ -216,7 +204,7 @@
       #timeTickRow{display:none;}
       #mapOverlayPanel{
   position:fixed !important;
-  top:calc(var(--safe-top) * 0.5);
+  top:calc(var(--safe-top) + 10px) !important;
   left:12px !important;
   right:auto !important;
   transform:none !important;
@@ -284,118 +272,6 @@ border-right:none;
   pointer-events: none;
   opacity: 0.6;
 }
-   @media (max-width:700px){
-  html,
-  body{
-    position:fixed;
-    inset:0;
-    width:100%;
-    height:100%;
-    margin:0;
-    overflow:hidden;
-    overscroll-behavior:none;
-    background:#040913;
-  }
-
-  .container{
-    position:fixed;
-    inset:0;
-    width:100%;
-    height:100%;
-    max-width:none;
-    padding:0;
-    overflow:hidden;
-  }
-
-  .map-panel{
-    padding:0;
-    border:none;
-    border-radius:0;
-    background:transparent;
-    box-shadow:none;
-    min-height:var(--app-height);
-    overflow:visible;
-  }
-
-  .map-instance-wrap{
-    height:var(--app-height);
-    overflow:visible;
-  }
-
-  #map,
-  #maptilerMap{
-    height:var(--app-height);
-    min-height:var(--app-height);
-    border:none;
-    border-radius:0;
-    box-shadow:none;
-  }
-
-  #bottomTabBar{
-    display:flex;
-    position:fixed;
-    left:0;
-    right:0;
-    bottom:0;
-    z-index:8000;
-    height:calc(var(--tab-bar-height) + var(--safe-bottom));
-    padding-bottom:var(--safe-bottom);
-    background:#040913;
-    border-top:1px solid rgba(255,255,255,0.09);
-    align-items:stretch;
-  }
-
-  #timeControl{
-    position:fixed !important;
-    left:0 !important;
-    right:0 !important;
-    bottom:calc(var(--tab-bar-height) + var(--safe-bottom)) !important;
-    transform:none !important;
-    width:100% !important;
-    z-index:7000 !important;
-    padding:9px 12px;
-    border-radius:14px 14px 0 0;
-    border-left:none;
-    border-right:none;
-  }
-
-  #mapOverlayPanel{
-    position:fixed !important;
-    top:calc(var(--safe-top) + 10px) !important;
-    left:12px !important;
-    right:auto !important;
-    transform:none !important;
-    width:min(300px, calc(100vw - 96px)) !important;
-    min-width:0 !important;
-    max-width:none !important;
-    border-radius:16px;
-    z-index:3000 !important;
-  }
-
-  #mapOverlayPanel.weather-expanded{
-    width:min(340px, calc(100vw - 32px)) !important;
-  }
-
-  #overlayBody{
-    padding:9px 12px 11px;
-    max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 170px);
-    overflow-y:auto;
-    transition:max-height 180ms ease;
-  }
-
-  #mapOverlayPanel.weather-expanded #overlayBody{
-    max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 100px);
-  }
-
-  .map-topbar,
-  #filterToggleBtn,
-  #activeLayersBadge,
-  #filterDrawer,
-  #timeTickRow,
-  .map-note{
-    display:none !important;
-  }
-} 
   </style>
 </head>
 <body>
@@ -525,7 +401,6 @@ border-right:none;
   </div>
 
   <script>
-    
       var activeMode="weather",
         showWaveObjects=false,
         showLighthouseObjects=false,
@@ -587,12 +462,6 @@ border-right:none;
         waveSelectionMarker=null,
         lighthouseSelectionMarker=null,
         aisMarkerMap=new Map();
-        function setAppHeight(){
-      var h = window.innerHeight;
-      document.documentElement.style.setProperty('--app-height', h + 'px');
-    }
-
-    setAppHeight();
 
     function markObjectInteraction(){ lastObjectInteractionAt=Date.now(); }
     function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
@@ -1166,17 +1035,8 @@ border-right:none;
 }
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
-       window.addEventListener('resize',function(){
-      setAppHeight();
-      refreshMapSizeSoon();
-    });
-
-    window.addEventListener('orientationchange',function(){
-      setTimeout(function(){
-        setAppHeight();
-        refreshMapSizeSoon();
-      },250);
-    });
+    window.addEventListener('resize',refreshMapSizeSoon);
+    window.addEventListener('orientationchange',function(){ setTimeout(function(){ refreshMapSizeSoon(); },250); });
 
     if(mobileSearchInput){
       mobileSearchInput.addEventListener('input', async function(){
@@ -1282,15 +1142,8 @@ border-right:none;
     updateModeUI();
     updateActiveLayersBadge();
     Promise.all([ensureWaveStationsLoaded().catch(function(e){console.error('Preload bojar misslyckades',e);}),ensureLighthouseStationsLoaded().catch(function(e){console.error('Preload fyrar misslyckades',e);})]);
-    setTimeout(function(){
-      setAppHeight();
-      refreshMapSizeSoon();
-    },120);
-
-    setTimeout(function(){
-      setAppHeight();
-      refreshMapSizeSoon();
-    },500);
+    setTimeout(function(){ refreshMapSizeSoon(); },120);
+    setTimeout(function(){ refreshMapSizeSoon(); },500);
   </script>
 </body>
 </html>
