@@ -152,7 +152,20 @@
     #timeTickRow{display:flex;justify-content:space-between;margin-top:5px;padding:0 1px;gap:8px;}
     .time-tick{font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-           #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;height:calc(var(--tab-bar-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:rgba(5,11,22,0.96);border-top:1px solid rgba(255,255,255,0.09);align-items:stretch;}
+           #bottomTabBar{
+  display:none;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:8000;
+  height:var(--tab-bar-height);
+  padding-bottom:var(--safe-bottom);
+  background:rgba(5,11,22,0.96);
+  border-top:1px solid rgba(255,255,255,0.09);
+  align-items:stretch;
+  box-sizing:content-box;
+}
     .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer;padding:8px 4px;position:relative;}
     .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
     .tab-btn.active{color:var(--accent);}
