@@ -37,7 +37,7 @@
       --safe-bottom:env(safe-area-inset-bottom,0px);
       --safe-top:env(safe-area-inset-top,0px);
 
-             --app-height:100dvh;
+                   --app-height:100vh;
       --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
       --time-control-bottom:var(--bottom-ui-offset);
     }
@@ -563,6 +563,12 @@ border-right:none;
         waveSelectionMarker=null,
         lighthouseSelectionMarker=null,
         aisMarkerMap=new Map();
+        function setAppHeight(){
+      var h = window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', h + 'px');
+    }
+
+    setAppHeight();
 
     function markObjectInteraction(){ lastObjectInteractionAt=Date.now(); }
     function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
@@ -1371,8 +1377,17 @@ border-right:none;
 }
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
-    window.addEventListener('resize',refreshMapSizeSoon);
-    window.addEventListener('orientationchange',function(){ setTimeout(function(){ refreshMapSizeSoon(); },250); });
+       window.addEventListener('resize',function(){
+      setAppHeight();
+      refreshMapSizeSoon();
+    });
+
+    window.addEventListener('orientationchange',function(){
+      setTimeout(function(){
+        setAppHeight();
+        refreshMapSizeSoon();
+      },250);
+    });
 
     if(mobileSearchInput){
       mobileSearchInput.addEventListener('input', async function(){
@@ -1480,8 +1495,15 @@ border-right:none;
     updateModeUI();
     updateActiveLayersBadge();
     Promise.all([ensureWaveStationsLoaded().catch(function(e){console.error('Preload bojar misslyckades',e);}),ensureLighthouseStationsLoaded().catch(function(e){console.error('Preload fyrar misslyckades',e);})]);
-    setTimeout(function(){ refreshMapSizeSoon(); },120);
-    setTimeout(function(){ refreshMapSizeSoon(); },500);
+    setTimeout(function(){
+      setAppHeight();
+      refreshMapSizeSoon();
+    },120);
+
+    setTimeout(function(){
+      setAppHeight();
+      refreshMapSizeSoon();
+    },500);
         window.addEventListener('load', function(){
       var splash=document.getElementById('splashScreen');
       if(!splash) return;
