@@ -314,6 +314,19 @@ border-right:none;
         pointer-events:none;
         z-index:7999;
       }
+        @media (max-width:700px){
+      .container{
+        top:var(--safe-top);
+        height:calc(100% - var(--safe-top));
+      }
+
+      .map-panel,
+      .map-instance-wrap,
+      #map,
+      #maptilerMap{
+        min-height:calc(var(--app-height) - var(--safe-top));
+        height:calc(var(--app-height) - var(--safe-top));
+      }
     }
   </style>
 </head>
