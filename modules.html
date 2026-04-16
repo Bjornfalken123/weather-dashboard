@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
+  <link rel="apple-touch-icon" href="/icon.png">
+<meta name="apple-mobile-web-app-title" content="Kustväder">
+<meta name="theme-color" content="#040913">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -338,10 +341,38 @@ border-right:none;
       font-weight:700;
       cursor:pointer;
       flex-shrink:0;
-    }    
+    } 
+        #splashScreen{
+      position:fixed;
+      inset:0;
+      z-index:99999;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#040913;
+      opacity:1;
+      visibility:visible;
+      transition:opacity 520ms ease, visibility 520ms ease;
+    }
+
+    #splashScreen.is-hidden{
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+    }
+
+    #splashImage{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
   </style>
 </head>
 <body>
+  <div id="splashScreen" aria-hidden="true">
+    <img id="splashImage" src="/splash.png" alt="Kustväder" />
+  </div>
   <div class="container">
     <section class="map-panel">
       <div class="map-note" id="mapNote">Klicka på kartan för att välja en punkt för vädermodulen.</div>
@@ -1451,6 +1482,20 @@ border-right:none;
     Promise.all([ensureWaveStationsLoaded().catch(function(e){console.error('Preload bojar misslyckades',e);}),ensureLighthouseStationsLoaded().catch(function(e){console.error('Preload fyrar misslyckades',e);})]);
     setTimeout(function(){ refreshMapSizeSoon(); },120);
     setTimeout(function(){ refreshMapSizeSoon(); },500);
+        window.addEventListener('load', function(){
+      var splash=document.getElementById('splashScreen');
+      if(!splash) return;
+
+      setTimeout(function(){
+        splash.classList.add('is-hidden');
+
+        setTimeout(function(){
+          if(splash && splash.parentNode){
+            splash.parentNode.removeChild(splash);
+          }
+        }, 540);
+      }, 1400);
+    });
   </script>
 </body>
 </html>
