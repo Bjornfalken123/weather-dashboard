@@ -35,21 +35,29 @@
       --safe-top:env(safe-area-inset-top,0px);
 
       --app-height:100dvh;
+--viewport-height:100dvh;
       --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
       --time-control-bottom:var(--bottom-ui-offset);
     }
 
     *{box-sizing:border-box;}
-    html,body{height:100%;margin:0;overflow-x:hidden;}
-    body{
-      font-family:Inter,Arial,Helvetica,sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at 8% 0%,rgba(123,199,255,0.16) 0%,transparent 24%),
-        radial-gradient(circle at 92% 8%,rgba(152,240,219,0.10) 0%,transparent 18%),
-        radial-gradient(circle at 50% 100%,rgba(180,199,255,0.10) 0%,transparent 20%),
-        linear-gradient(180deg,var(--bg-1) 0%,var(--bg-2) 42%,var(--bg-3) 100%);
-    }
+html,body{
+  height:100%;
+  margin:0;
+  overflow-x:hidden;
+  background-color:#040913;
+}
+
+body{
+  font-family:Inter,Arial,Helvetica,sans-serif;
+  color:var(--text);
+  background-color:#040913;
+  background:
+    radial-gradient(circle at 8% 0%,rgba(123,199,255,0.16) 0%,transparent 24%),
+    radial-gradient(circle at 92% 8%,rgba(152,240,219,0.10) 0%,transparent 18%),
+    radial-gradient(circle at 50% 100%,rgba(180,199,255,0.10) 0%,transparent 20%),
+    linear-gradient(180deg,var(--bg-1) 0%,var(--bg-2) 42%,var(--bg-3) 100%);
+}
 
     button,input,select,textarea{font:inherit;}
 
@@ -193,13 +201,42 @@
 
     @media (min-width:701px){#bottomTabBar,#mobileFilterSheet,#mobileSearchSheet{display:none !important;}}
 
-    @media (max-width:700px){
-      html,body{height:var(--app-height);overflow:hidden;}
-      .container{max-width:none;padding:0;height:var(--app-height);}
-      .map-panel{padding:0;border:none;border-radius:0;background:transparent;box-shadow:none;min-height:var(--app-height);overflow:visible;}
-      .map-note{display:none;}
-      .map-instance-wrap{height:var(--app-height);overflow:visible;}
-      #map,#maptilerMap{height:var(--app-height);min-height:var(--app-height);border:none;border-radius:0;box-shadow:none;}
+   @media (max-width:700px){
+  html,body{
+    height:100%;
+    min-height:100%;
+    overflow:hidden;
+    background:var(--bg-1);
+  }
+  .container{
+    max-width:none;
+    padding:0;
+    height:var(--viewport-height);
+    min-height:var(--viewport-height);
+  }
+  .map-panel{
+    padding:0;
+    border:none;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    min-height:var(--viewport-height);
+    height:var(--viewport-height);
+    overflow:visible;
+  }
+  .map-note{display:none;}
+  .map-instance-wrap{
+    height:var(--viewport-height);
+    min-height:var(--viewport-height);
+    overflow:visible;
+  }
+  #map,#maptilerMap{
+    height:var(--viewport-height);
+    min-height:var(--viewport-height);
+    border:none;
+    border-radius:0;
+    box-shadow:none;
+  }
       .map-topbar,#filterToggleBtn,#activeLayersBadge,#filterDrawer{display:none !important;}
       #timeTickRow{display:none;}
       #mapOverlayPanel{
@@ -469,17 +506,33 @@
     var mobileSearchTimer = null;
     var mobileSearchRequestId = 0;
 
-    function updateDynamicAppHeight(){
-      var h = window.innerHeight || document.documentElement.clientHeight || 0;
-      document.documentElement.style.setProperty('--app-height', h + 'px');
-    }
+ function updateDynamicViewportHeight(){
+  var h = 0;
 
-    updateDynamicAppHeight();
-    window.addEventListener('resize', updateDynamicAppHeight);
-    window.addEventListener('orientationchange', function(){
-      setTimeout(updateDynamicAppHeight, 250);
-    });
-    window.addEventListener('pageshow', updateDynamicAppHeight);
+  if (window.visualViewport && window.visualViewport.height) {
+    h = window.visualViewport.height;
+  } else {
+    h = window.innerHeight || document.documentElement.clientHeight || 0;
+  }
+
+  if (h > 0) {
+    document.documentElement.style.setProperty('--viewport-height', h + 'px');
+  }
+}
+
+updateDynamicViewportHeight();
+
+window.addEventListener('resize', updateDynamicViewportHeight);
+window.addEventListener('orientationchange', function(){
+  setTimeout(updateDynamicViewportHeight, 250);
+  setTimeout(updateDynamicViewportHeight, 600);
+});
+window.addEventListener('pageshow', updateDynamicViewportHeight);
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', updateDynamicViewportHeight);
+  window.visualViewport.addEventListener('scroll', updateDynamicViewportHeight);
+}
 
     function markObjectInteraction(){ lastObjectInteractionAt=Date.now(); }
     function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
