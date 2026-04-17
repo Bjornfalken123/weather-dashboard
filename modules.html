@@ -1020,67 +1020,73 @@ function extractPlaceLabel(feature){
 
   var props = feature.properties || {};
 
-  var directName =
-    props.name_sv ||
+  var name =
     props.name ||
-    feature.text_sv ||
     feature.text ||
-    "";
-
-  if(directName && String(directName).trim()){
-    return String(directName).trim();
-  }
-
-  var placeName =
-    feature.place_name_sv ||
     feature.place_name ||
     "";
 
-  if(placeName && String(placeName).trim()){
-    return String(placeName).split(",")[0].trim();
-  }
+  if(!name) return "";
 
-  return "";
+  return String(name).split(",")[0].trim();
 }
 
-async function reverseGeocodePlace(lat, lon){
+async function fetchNearestPlaceByType(lat, lon, type){
   try{
-    var nearbyUrl =
+    var url =
       "https://api.maptiler.com/geocoding/" +
       encodeURIComponent(String(lon) + "," + String(lat)) +
       ".json?key=" + MAPTILER_API_KEY +
       "&language=sv" +
       "&limit=10" +
-      "&types=municipality,city,town,village,hamlet,locality,county";
+      "&types=" + encodeURIComponent(type);
 
-    var nearbyRes = await fetch(nearbyUrl);
-    var nearbyData = await nearbyRes.json();
+    var res = await fetch(url);
+    var data = await res.json();
 
-    var nearbyFeatures = Array.isArray(nearbyData && nearbyData.features) ? nearbyData.features : [];
+    var features = Array.isArray(data && data.features) ? data.features : [];
+    if(!features.length) return "";
 
-    if(nearbyFeatures.length){
-      var bestFeature = null;
-      var bestDistance = Infinity;
+    var best = null;
+    var bestDist = Infinity;
 
-      nearbyFeatures.forEach(function(feature){
-        if(!feature || !Array.isArray(feature.center) || feature.center.length < 2) return;
+    features.forEach(function(feature){
+      if(!feature || !Array.isArray(feature.center) || feature.center.length < 2) return;
 
-        var featureLon = Number(feature.center[0]);
-        var featureLat = Number(feature.center[1]);
+      var fLon = Number(feature.center[0]);
+      var fLat = Number(feature.center[1]);
+      if(!isFinite(fLat) || !isFinite(fLon)) return;
 
-        if(!isFinite(featureLat) || !isFinite(featureLon)) return;
+      var dist = distanceKmBetween(lat, lon, fLat, fLon);
+      if(dist < bestDist){
+        bestDist = dist;
+        best = feature;
+      }
+    });
 
-        var dist = distanceKmBetween(lat, lon, featureLat, featureLon);
-        if(dist < bestDistance){
-          bestDistance = dist;
-          bestFeature = feature;
-        }
-      });
+    return extractPlaceLabel(best);
+  }catch(e){
+    console.warn("MapTiler typ-sökning misslyckades", type, e);
+    return "";
+  }
+}
 
-      var bestName = extractPlaceLabel(bestFeature);
-      if(bestName) return bestName;
-    }
+async function reverseGeocodePlace(lat, lon){
+  var typeOrder = [
+    "municipality",
+    "city",
+    "town",
+    "village",
+    "locality",
+    "hamlet"
+  ];
 
+  for(var i=0; i<typeOrder.length; i++){
+    var place = await fetchNearestPlaceByType(lat, lon, typeOrder[i]);
+    if(place) return place;
+  }
+
+  try{
     var fallbackUrl =
       "https://api.maptiler.com/geocoding/" +
       encodeURIComponent(String(lon) + "," + String(lat)) +
@@ -1090,11 +1096,10 @@ async function reverseGeocodePlace(lat, lon){
 
     var fallbackRes = await fetch(fallbackUrl);
     var fallbackData = await fallbackRes.json();
-
     var fallbackFeatures = Array.isArray(fallbackData && fallbackData.features) ? fallbackData.features : [];
+
     if(fallbackFeatures.length){
-      var fallbackName = extractPlaceLabel(fallbackFeatures[0]);
-      if(fallbackName) return fallbackName;
+      return extractPlaceLabel(fallbackFeatures[0]);
     }
 
     return "";
@@ -1103,7 +1108,6 @@ async function reverseGeocodePlace(lat, lon){
     return "";
   }
 }
-
     function renderFavoritesList(){
       var list = document.getElementById("favoritePlacesList");
       if(!list) return;
