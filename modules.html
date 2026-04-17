@@ -160,23 +160,29 @@
 #bottomTabBar{
   display:none;
   position:fixed;
-  bottom:0;
   left:0;
   right:0;
+  bottom:0;
   z-index:8000;
-  height:var(--tab-bar-height);
-  padding-bottom:0;
+  height:calc(var(--tab-bar-height) + var(--safe-bottom));
+  padding-bottom:var(--safe-bottom);
   background:rgba(5,11,22,0.96);
   border-top:1px solid rgba(255,255,255,0.09);
+}
+
+#bottomTabBarInner{
+  height:var(--tab-bar-height);
+  display:flex;
   align-items:stretch;
 }
-    .tab-btn{
+
+.tab-btn{
   flex:1;
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:flex-end;
-  gap:3px;
+  justify-content:center;
+  gap:4px;
   background:none;
   border:none;
   color:var(--muted);
@@ -184,7 +190,7 @@
   font-weight:700;
   text-transform:uppercase;
   cursor:pointer;
-  padding:6px 4px 8px;
+  padding:8px 4px;
   position:relative;
 }
     .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
@@ -265,11 +271,11 @@
   position:fixed !important;
   left:0 !important;
   right:0 !important;
-  bottom:calc(var(--tab-bar-height) - 1px) !important;
+  bottom:var(--tab-bar-height) !important;
   transform:none !important;
   width:100% !important;
   z-index:7000 !important;
-  padding:9px 12px 7px;
+  padding:9px 12px;
   border-radius:14px 14px 0 0;
   border-left:none;
   border-right:none;
@@ -392,13 +398,15 @@
     </section>
   </div>
 
-  <nav id="bottomTabBar">
+<nav id="bottomTabBar">
+  <div id="bottomTabBarInner">
     <button class="tab-btn active" id="tabWeather" type="button"><svg viewBox="0 0 24 24"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path><circle cx="12" cy="12" r="4"></circle></svg>Väder</button>
     <button class="tab-btn" id="tabWave" type="button"><svg viewBox="0 0 24 24"><path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path><path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path></svg>Boj / hav<span class="tab-btn-badge" id="waveBadge"></span></button>
     <button class="tab-btn" id="tabLighthouse" type="button"><svg viewBox="0 0 24 24"><path d="M12 2L9 8h6L12 2z"></path><rect x="10" y="8" width="4" height="10" rx="1"></rect><path d="M8 18h8M6 21h12"></path></svg>Fyr<span class="tab-btn-badge" id="lighthouseBadge"></span></button>
     <button class="tab-btn" id="tabFilter" type="button"><svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="11" y1="18" x2="13" y2="18"></line></svg>Filter<span class="tab-btn-badge" id="filterBadge"></span></button>
     <button class="tab-btn" id="tabSearch" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>Sök</button>
-  </nav>
+  </div>
+</nav>
 
   <div id="mobileFilterSheet">
     <div class="sheet-header">
