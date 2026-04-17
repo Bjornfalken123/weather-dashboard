@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
- <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <title>Kustväder – väder, vågor och stationer i realtid</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -35,80 +35,166 @@
       --safe-top:env(safe-area-inset-top,0px);
 
       --app-height:100dvh;
---viewport-height:100dvh;
+      --viewport-height:100dvh;
       --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
       --time-control-bottom:var(--bottom-ui-offset);
     }
 
     *{box-sizing:border-box;}
-html,body{
-  height:100%;
-  margin:0;
-  overflow-x:hidden;
-  background-color:#040913;
-}
 
-body{
-  font-family:Inter,Arial,Helvetica,sans-serif;
-  color:var(--text);
-  background-color:#040913;
-  background:
-    radial-gradient(circle at 8% 0%,rgba(123,199,255,0.16) 0%,transparent 24%),
-    radial-gradient(circle at 92% 8%,rgba(152,240,219,0.10) 0%,transparent 18%),
-    radial-gradient(circle at 50% 100%,rgba(180,199,255,0.10) 0%,transparent 20%),
-    linear-gradient(180deg,var(--bg-1) 0%,var(--bg-2) 42%,var(--bg-3) 100%);
-}
+    html,body{
+      height:100%;
+      margin:0;
+      overflow-x:hidden;
+      background-color:#040913;
+    }
+
+    body{
+      font-family:Inter,Arial,Helvetica,sans-serif;
+      color:var(--text);
+      background-color:#040913;
+      background:
+        radial-gradient(circle at 8% 0%,rgba(123,199,255,0.16) 0%,transparent 24%),
+        radial-gradient(circle at 92% 8%,rgba(152,240,219,0.10) 0%,transparent 18%),
+        radial-gradient(circle at 50% 100%,rgba(180,199,255,0.10) 0%,transparent 20%),
+        linear-gradient(180deg,var(--bg-1) 0%,var(--bg-2) 42%,var(--bg-3) 100%);
+    }
 
     button,input,select,textarea{font:inherit;}
 
     .container,.map-panel,.map-instance-wrap,#maptilerMap,#map{min-height:var(--app-height);}
 
-    .container{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:18px;}
-    .map-panel{
-      position:relative;overflow:hidden;border-radius:var(--radius-xl);
-      border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
-      backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
-      box-shadow:var(--shadow-md);padding:18px;min-height:calc(100vh - 36px);
+    .container{
+      position:relative;
+      z-index:1;
+      max-width:1600px;
+      margin:0 auto;
+      padding:18px;
     }
+
+    .map-panel{
+      position:relative;
+      overflow:hidden;
+      border-radius:var(--radius-xl);
+      border:1px solid var(--border);
+      background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
+      backdrop-filter:blur(22px) saturate(155%);
+      -webkit-backdrop-filter:blur(22px) saturate(155%);
+      box-shadow:var(--shadow-md);
+      padding:18px;
+      min-height:calc(100vh - 36px);
+    }
+
     .map-note{position:relative;z-index:1;margin-bottom:16px;color:var(--muted-soft);font-size:14px;line-height:1.6;}
     .map-stack{position:relative;z-index:1;}
     .map-instance-wrap{position:relative;isolation:isolate;}
 
     #map,#maptilerMap{
-      position:relative;z-index:1;width:100%;height:calc(100vh - 72px);min-height:620px;
-      border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);
+      position:relative;
+      z-index:1;
+      width:100%;
+      height:calc(100vh - 72px);
+      min-height:620px;
+      border-radius:24px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.12);
       box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 20px 42px rgba(0,0,0,0.24);
     }
 
     .map-topbar{
-      position:absolute;top:16px;left:16px;z-index:1200;display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 32px);
+      position:absolute;
+      top:16px;
+      left:16px;
+      z-index:1200;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      max-width:calc(100% - 32px);
     }
 
     #filterToggleBtn{
-      appearance:none;border:1px solid rgba(255,255,255,0.12);background:rgba(5,11,22,0.82);color:var(--text);
-      border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;
-      backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-      display:flex;align-items:center;gap:7px;
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(5,11,22,0.82);
+      color:var(--text);
+      border-radius:14px;
+      padding:10px 14px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px);
+      display:flex;
+      align-items:center;
+      gap:7px;
     }
     #filterToggleBtn svg{width:14px;height:14px;opacity:0.75;}
 
-    #activeLayersBadge{display:none;align-items:center;gap:5px;padding:7px 11px;border-radius:999px;font-size:11px;font-weight:700;color:var(--accent);border:1px solid rgba(123,199,255,0.28);background:rgba(123,199,255,0.1);}
+    #activeLayersBadge{
+      display:none;
+      align-items:center;
+      gap:5px;
+      padding:7px 11px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      color:var(--accent);
+      border:1px solid rgba(123,199,255,0.28);
+      background:rgba(123,199,255,0.1);
+    }
     #activeLayersBadge.visible{display:flex;}
     .badge-dot{width:6px;height:6px;border-radius:999px;background:var(--accent);}
 
     #mapOverlayPanel{
-      position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1100;padding:0;border-radius:20px;
-      border:1px solid rgba(255,255,255,0.11);background:rgba(5,11,22,0.84);color:var(--text);font-size:13px;
-      width:min(360px, calc(100vw - 160px));min-width:280px;max-width:calc(100vw - 32px);
-      box-shadow:0 16px 42px rgba(0,0,0,0.38);overflow:hidden;
+      position:absolute;
+      top:16px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:1100;
+      padding:0;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,0.11);
+      background:rgba(5,11,22,0.84);
+      color:var(--text);
+      font-size:13px;
+      width:min(360px, calc(100vw - 160px));
+      min-width:280px;
+      max-width:calc(100vw - 32px);
+      box-shadow:0 16px 42px rgba(0,0,0,0.38);
+      overflow:hidden;
     }
+
     #mapOverlayPanel.is-collapsed #overlayBody{display:none;}
-    #overlayHeader{display:flex;align-items:center;gap:9px;padding:11px 14px 9px;border-bottom:1px solid rgba(255,255,255,0.065);background:linear-gradient(180deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.02) 100%);min-height:48px;}
+
+    #overlayHeader{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      padding:11px 14px 9px;
+      border-bottom:1px solid rgba(255,255,255,0.065);
+      background:linear-gradient(180deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.02) 100%);
+      min-height:48px;
+    }
+
     #overlayHeaderDot{width:8px;height:8px;border-radius:999px;background:var(--accent-2);flex-shrink:0;}
     #overlayHeaderDot.loading{background:var(--accent-gold);animation:blink-dot 900ms ease-in-out infinite;}
     @keyframes blink-dot{0%,100%{opacity:1;}50%{opacity:0.35;}}
     #overlayTitle{font-weight:800;font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    #overlayCollapseBtn{appearance:none;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text-soft);min-width:58px;height:30px;padding:0 10px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;}
+    #overlayCollapseBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.04);
+      color:var(--text-soft);
+      min-width:58px;
+      height:30px;
+      padding:0 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:11px;
+      font-weight:700;
+    }
+
     #overlayBody{padding:10px 14px 12px;max-height:min(68vh,680px);overflow:auto;-webkit-overflow-scrolling:touch;}
     #overlayContent{color:var(--muted-soft);font-size:12px;line-height:1.65;}
 
@@ -119,7 +205,19 @@ body{
     .weather-main-time{margin-top:3px;font-size:11px;color:var(--muted-soft);line-height:1.3;}
     .weather-temp-big{margin:8px 0 10px;font-size:28px;font-weight:900;color:var(--text);line-height:1;}
     .weather-point-line{margin-bottom:10px;font-size:11px;color:var(--muted);}
-    .weather-details-toggle{appearance:none;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text-soft);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px;}
+    .weather-details-toggle{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.04);
+      color:var(--text-soft);
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+      margin-bottom:10px;
+    }
+
     .overlay-data-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;}
     .overlay-data-cell{min-width:0;padding:7px 9px;border-radius:10px;border:1px solid rgba(255,255,255,0.055);background:rgba(255,255,255,0.035);}
     .overlay-data-label{color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:2px;}
@@ -128,18 +226,53 @@ body{
     .overlay-object-section{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);}
     .overlay-object-title{margin-bottom:6px;font-size:10px;font-weight:800;color:var(--accent-2);text-transform:uppercase;}
 
-    #filterDrawer{position:absolute;top:60px;left:16px;width:272px;max-width:calc(100% - 32px);z-index:1250;padding:14px;border-radius:20px;border:1px solid rgba(255,255,255,0.11);background:rgba(5,11,22,0.9);box-shadow:0 20px 48px rgba(0,0,0,0.4);}
+    #filterDrawer{
+      position:absolute;
+      top:60px;
+      left:16px;
+      width:272px;
+      max-width:calc(100% - 32px);
+      z-index:1250;
+      padding:14px;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,0.11);
+      background:rgba(5,11,22,0.9);
+      box-shadow:0 20px 48px rgba(0,0,0,0.4);
+    }
     #filterDrawer.is-hidden{display:none;}
+
     .filter-drawer-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;}
     .filter-drawer-title{font-size:11px;font-weight:800;text-transform:uppercase;}
-    #filterCloseBtn{appearance:none;border:1px solid rgba(255,255,255,0.1);background:rgba(11,20,34,0.82);color:var(--text);border-radius:10px;padding:7px 11px;font-size:11px;font-weight:800;cursor:pointer;}
+    #filterCloseBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(11,20,34,0.82);
+      color:var(--text);
+      border-radius:10px;
+      padding:7px 11px;
+      font-size:11px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
     .filter-group + .filter-group{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);}
     .filter-group-title{margin-bottom:9px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);}
     .filter-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 11px;border-radius:13px;background:rgba(255,255,255,0.032);border:1px solid rgba(255,255,255,0.055);}
     .filter-row + .filter-row{margin-top:7px;}
     .filter-row-left{display:flex;align-items:center;gap:9px;min-width:0;}
     .filter-row-left span:last-child{font-size:12px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .filter-row button{appearance:none;border:1px solid rgba(255,255,255,0.1);background:rgba(11,20,34,0.82);color:var(--text);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;min-width:52px;}
+    .filter-row button{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(11,20,34,0.82);
+      color:var(--text);
+      border-radius:10px;
+      padding:7px 12px;
+      font-size:11px;
+      font-weight:800;
+      cursor:pointer;
+      min-width:52px;
+    }
     .filter-row button.is-on{background:rgba(43,108,255,0.9);color:#fff;}
     .filter-row button.is-off{background:rgba(255,255,255,0.06);color:var(--muted-soft);}
 
@@ -148,20 +281,91 @@ body{
     .layer-dot.precip{background:#7bc7ff;}
     .layer-dot.cloud{background:#b7c5d9;}
 
-    #timeControl{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:1200;width:min(760px, calc(100% - 32px));padding:14px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.09);background:rgba(5,11,22,0.86);pointer-events:auto;touch-action:none;}
+    #timeControl{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:16px;
+      z-index:1200;
+      width:min(760px, calc(100% - 32px));
+      padding:14px 16px;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,0.09);
+      background:rgba(5,11,22,0.86);
+      pointer-events:auto;
+      touch-action:none;
+    }
+
     .time-compact-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
     .time-compact-label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);}
     #timeValueLabel{font-size:12px;color:var(--text);font-weight:800;text-align:right;min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .time-compact-bottom{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;}
-    #timePlayPauseBtn{appearance:none;border:1px solid rgba(255,255,255,0.1);background:rgba(11,20,34,0.82);color:var(--text);border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;min-width:84px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;}
-    #timeSlider{width:100%;margin:0;touch-action:none;-webkit-appearance:none;appearance:none;height:8px;border-radius:999px;background:linear-gradient(90deg,rgba(123,199,255,0.7) 0%,rgba(152,240,219,0.5) 55%,rgba(255,255,255,0.12) 100%);border:1px solid rgba(255,255,255,0.055);cursor:pointer;}
+    #timePlayPauseBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(11,20,34,0.82);
+      color:var(--text);
+      border-radius:14px;
+      padding:10px 14px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      min-width:84px;
+      min-height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+    }
+
+    #timeSlider{
+      width:100%;
+      margin:0;
+      touch-action:none;
+      -webkit-appearance:none;
+      appearance:none;
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg,rgba(123,199,255,0.7) 0%,rgba(152,240,219,0.5) 55%,rgba(255,255,255,0.12) 100%);
+      border:1px solid rgba(255,255,255,0.055);
+      cursor:pointer;
+    }
     #timeSlider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:999px;border:1.5px solid rgba(255,255,255,0.7);background:linear-gradient(180deg,#ffffff 0%,#c6e4ff 100%);}
     #timeSlider::-moz-range-thumb{width:18px;height:18px;border-radius:999px;border:1.5px solid rgba(255,255,255,0.7);background:linear-gradient(180deg,#ffffff 0%,#c6e4ff 100%);}
     #timeTickRow{display:flex;justify-content:space-between;margin-top:5px;padding:0 1px;gap:8px;}
     .time-tick{font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-    #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;height:calc(var(--tab-bar-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:rgba(5,11,22,0.96);border-top:1px solid rgba(255,255,255,0.09);align-items:stretch;}
-    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer;padding:8px 4px;position:relative;}
+    #bottomTabBar{
+      display:none;
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      z-index:8000;
+      height:calc(var(--tab-bar-height) + var(--safe-bottom));
+      padding-bottom:var(--safe-bottom);
+      background:rgba(5,11,22,0.96);
+      border-top:1px solid rgba(255,255,255,0.09);
+      align-items:stretch;
+    }
+
+    .tab-btn{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      background:none;
+      border:none;
+      color:var(--muted);
+      font-size:10px;
+      font-weight:700;
+      text-transform:uppercase;
+      cursor:pointer;
+      padding:8px 4px;
+      position:relative;
+    }
     .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
     .tab-btn.active{color:var(--accent);}
     .tab-btn.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:2px;border-radius:999px;background:var(--accent);}
@@ -170,14 +374,25 @@ body{
 
     #mobileFilterSheet,
     #mobileSearchSheet{
-      display:none;position:fixed;bottom:0;left:0;right:0;z-index:9000;background:rgba(5,11,22,0.96);
-      border-top:1px solid rgba(255,255,255,0.1);border-radius:22px 22px 0 0;
+      display:none;
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      z-index:9000;
+      background:rgba(5,11,22,0.96);
+      border-top:1px solid rgba(255,255,255,0.1);
+      border-radius:22px 22px 0 0;
       padding:0 0 calc(var(--tab-bar-height) + var(--safe-bottom) + 8px);
-      box-shadow:0 -12px 48px rgba(0,0,0,0.5);max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      box-shadow:0 -12px 48px rgba(0,0,0,0.5);
+      max-height:80vh;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
     }
     #mobileSearchSheet{z-index:9100;}
     #mobileFilterSheet.is-open,#mobileSearchSheet.is-open{display:block;animation:sheetUp 260ms cubic-bezier(0.22,1,0.36,1) both;}
     @keyframes sheetUp{from{transform:translateY(100%);opacity:0.5;}to{transform:translateY(0);opacity:1;}}
+
     .sheet-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px 12px;border-bottom:1px solid rgba(255,255,255,0.07);}
     .sheet-title{font-size:13px;font-weight:800;color:var(--text);text-transform:uppercase;flex:1;text-align:center;}
     .sheet-close-btn{appearance:none;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;}
@@ -199,127 +414,82 @@ body{
     #mobileSearchResults{padding:0 0 6px;}
     .search-result-item{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.08);cursor:pointer;color:var(--text-soft);}
 
-    @media (min-width:701px){#bottomTabBar,#mobileFilterSheet,#mobileSearchSheet{display:none !important;}}
+    #favoritePlacesWrap{padding-bottom:6px;}
+    #favoritePlacesList{padding:0 0 8px;}
+    .favorite-place-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.08);}
+    .favorite-place-main{min-width:0;flex:1;color:var(--text-soft);cursor:pointer;}
+    .favorite-place-name{color:var(--text);font-size:14px;font-weight:700;line-height:1.3;}
+    .favorite-place-coords{margin-top:3px;color:var(--muted);font-size:11px;}
+    .favorite-place-remove{appearance:none;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text);border-radius:10px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+    .favorite-place-empty{padding:8px 18px 14px;color:var(--muted);font-size:12px;}
+    .weather-point-actions{display:flex;gap:8px;margin-top:8px;}
+    .weather-favorite-btn{appearance:none;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text-soft);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer;}
 
-  @media (max-width:700px){
-  html,body{
-    width:100%;
-    height:100%;
-    margin:0;
-    overflow:hidden;
-    background:#040913;
-  }
+    @media (min-width:701px){
+      #bottomTabBar,#mobileFilterSheet,#mobileSearchSheet{display:none !important;}
+    }
 
-  .container{
-    position:fixed;
-    inset:0;
-    max-width:none;
-    padding:0;
-    margin:0;
-    width:100%;
-    height:100%;
-    min-height:0;
-  }
+    @media (max-width:700px){
+      html,body{
+        width:100%;
+        height:100%;
+        margin:0;
+        overflow:hidden;
+        background:#040913;
+      }
 
-  .map-panel{
-    position:absolute;
-    inset:0;
-    padding:0;
-    margin:0;
-    border:none;
-    border-radius:0;
-    background:transparent;
-    box-shadow:none;
-    min-height:0;
-    height:100%;
-    overflow:visible;
-  }
+      .container{
+        position:fixed;
+        inset:0;
+        max-width:none;
+        padding:0;
+        margin:0;
+        width:100%;
+        height:100%;
+        min-height:0;
+      }
 
-  .map-note{display:none;}
+      .map-panel{
+        position:absolute;
+        inset:0;
+        padding:0;
+        margin:0;
+        border:none;
+        border-radius:0;
+        background:transparent;
+        box-shadow:none;
+        min-height:0;
+        height:100%;
+        overflow:visible;
+      }
 
-  .map-stack,
-  .map-instance-wrap{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    min-height:0;
-    overflow:visible;
-  }
+      .map-note{display:none;}
 
-  #map,
-  #maptilerMap{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    min-height:0;
-    border:none;
-    border-radius:0;
-    box-shadow:none;
-  }
+      .map-stack,
+      .map-instance-wrap{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        min-height:0;
+        overflow:visible;
+      }
 
-  .map-topbar,#filterToggleBtn,#activeLayersBadge,#filterDrawer{display:none !important;}
-  #timeTickRow{display:none;}
+      #map,
+      #maptilerMap{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        min-height:0;
+        border:none;
+        border-radius:0;
+        box-shadow:none;
+      }
 
-  #mapOverlayPanel{
-    position:fixed !important;
-    top:calc(var(--safe-top) + 10px) !important;
-    left:12px !important;
-    right:auto !important;
-    transform:none !important;
-    width:min(300px, calc(100vw - 96px)) !important;
-    min-width:0 !important;
-    max-width:none !important;
-    border-radius:16px;
-    z-index:3000 !important;
-  }
-
-  #mapOverlayPanel.weather-expanded{
-    width:min(340px, calc(100vw - 32px)) !important;
-  }
-
-  #overlayHeader{padding:10px 12px;}
-
-  #overlayBody{
-    padding:9px 12px 11px;
-    max-height:calc(100dvh - var(--bottom-ui-offset) - 170px);
-    overflow-y:auto;
-    transition:max-height 180ms ease;
-  }
-
-  #mapOverlayPanel.weather-expanded #overlayBody{
-    max-height:calc(100dvh - var(--bottom-ui-offset) - 100px);
-  }
-
-  #timeControl{
-    position:fixed !important;
-    left:0 !important;
-    right:0 !important;
-    bottom:var(--time-control-bottom) !important;
-    transform:none !important;
-    width:100% !important;
-    z-index:7000 !important;
-    padding:9px 12px;
-    border-radius:14px 14px 0 0;
-    border-left:none;
-    border-right:none;
-  }
-
-  .time-compact-top{margin-bottom:7px;}
-  .time-compact-label{font-size:9px;}
-  #timeValueLabel{min-width:0;font-size:11px;}
-  .time-compact-bottom{grid-template-columns:64px 1fr;gap:7px;}
-  #timePlayPauseBtn{min-width:62px;min-height:36px;font-size:10px;padding:8px 8px;}
-  #timeSlider{height:7px;}
-  .overlay-data-grid{grid-template-columns:1fr 1fr;gap:5px;}
-  .overlay-data-cell{padding:6px 8px;}
-  .overlay-data-label{font-size:9px;}
-  .overlay-data-value{font-size:12px;}
-  #bottomTabBar{display:flex;}
-}
       .map-topbar,#filterToggleBtn,#activeLayersBadge,#filterDrawer{display:none !important;}
       #timeTickRow{display:none;}
+
       #mapOverlayPanel{
         position:fixed !important;
         top:calc(var(--safe-top) + 10px) !important;
@@ -332,20 +502,24 @@ body{
         border-radius:16px;
         z-index:3000 !important;
       }
+
       #mapOverlayPanel.weather-expanded{
         width:min(340px, calc(100vw - 32px)) !important;
       }
+
       #overlayHeader{padding:10px 12px;}
+
       #overlayBody{
         padding:9px 12px 11px;
-        max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 170px);
+        max-height:calc(100dvh - var(--bottom-ui-offset) - 170px);
         overflow-y:auto;
         transition:max-height 180ms ease;
       }
 
       #mapOverlayPanel.weather-expanded #overlayBody{
-        max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 100px);
+        max-height:calc(100dvh - var(--bottom-ui-offset) - 100px);
       }
+
       #timeControl{
         position:fixed !important;
         left:0 !important;
@@ -359,6 +533,7 @@ body{
         border-left:none;
         border-right:none;
       }
+
       .time-compact-top{margin-bottom:7px;}
       .time-compact-label{font-size:9px;}
       #timeValueLabel{min-width:0;font-size:11px;}
@@ -391,102 +566,37 @@ body{
       pointer-events: none;
       opacity: 0.6;
     }
-    #favoritePlacesWrap{
-  padding-bottom:6px;
-}
-#favoritePlacesList{
-  padding:0 0 8px;
-}
-.favorite-place-item{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:12px 18px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-}
-.favorite-place-main{
-  min-width:0;
-  flex:1;
-  color:var(--text-soft);
-  cursor:pointer;
-}
-.favorite-place-name{
-  color:var(--text);
-  font-size:14px;
-  font-weight:700;
-  line-height:1.3;
-}
-.favorite-place-coords{
-  margin-top:3px;
-  color:var(--muted);
-  font-size:11px;
-}
-.favorite-place-remove{
-  appearance:none;
-  border:1px solid rgba(255,255,255,0.12);
-  background:rgba(255,255,255,0.05);
-  color:var(--text);
-  border-radius:10px;
-  padding:7px 10px;
-  font-size:11px;
-  font-weight:700;
-  cursor:pointer;
-}
-.favorite-place-empty{
-  padding:8px 18px 14px;
-  color:var(--muted);
-  font-size:12px;
-}
-.weather-point-actions{
-  display:flex;
-  gap:8px;
-  margin-top:8px;
-}
-.weather-favorite-btn{
-  appearance:none;
-  border:1px solid rgba(255,255,255,0.08);
-  background:rgba(255,255,255,0.04);
-  color:var(--text-soft);
-  border-radius:10px;
-  padding:8px 10px;
-  font-size:11px;
-  font-weight:700;
-  cursor:pointer;
-}
+
     html.standalone-webapp {
-  --safe-top: 0px;
-}
+      --safe-top: 0px;
+    }
 
-@media (max-width:700px) {
-  html.standalone-webapp #mapOverlayPanel {
-    top: 10px !important;
-  }
+    @media (max-width:700px) {
+      html.standalone-webapp #mapOverlayPanel {
+        top: 10px !important;
+      }
 
-  html.standalone-webapp #timeControl {
-    bottom: var(--time-control-bottom) !important;
-  }
+      html.standalone-webapp #timeControl {
+        bottom: var(--time-control-bottom) !important;
+      }
 
-  html.standalone-webapp #bottomTabBar {
-    bottom: 0 !important;
-  }
-@media (max-width:700px) {
-  html.standalone-webapp .container,
-  html.standalone-webapp .map-panel,
-  html.standalone-webapp .map-stack,
-  html.standalone-webapp .map-instance-wrap,
-  html.standalone-webapp #maptilerMap,
-  html.standalone-webapp #map {
-    top: 0 !important;
-    margin-top: 0 !important;
-    translate: none !important;
-  }
-@media (max-width:700px) {
-  html.standalone-webapp #bottomTabBar {
-    padding-bottom: calc(var(--safe-bottom) + 6px);
-    height: calc(var(--tab-bar-height) + var(--safe-bottom) + 6px);
-  }
-}
+      html.standalone-webapp #bottomTabBar {
+        bottom: 0 !important;
+        padding-bottom: calc(var(--safe-bottom) + 6px);
+        height: calc(var(--tab-bar-height) + var(--safe-bottom) + 6px);
+      }
+
+      html.standalone-webapp .container,
+      html.standalone-webapp .map-panel,
+      html.standalone-webapp .map-stack,
+      html.standalone-webapp .map-instance-wrap,
+      html.standalone-webapp #maptilerMap,
+      html.standalone-webapp #map {
+        top: 0 !important;
+        margin-top: 0 !important;
+        translate: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -611,15 +721,16 @@ body{
       <button id="mobileSearchCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
       <div class="sheet-title">Sök stad</div>
     </div>
-   <div class="search-input-wrap"><input id="mobileSearchInput" type="text" placeholder="Sök stad..." /></div>
-<div id="mobileSearchResults"></div>
+    <div class="search-input-wrap"><input id="mobileSearchInput" type="text" placeholder="Sök stad..." /></div>
+    <div id="mobileSearchResults"></div>
 
-<div id="favoritePlacesWrap">
-  <div class="sheet-header" style="border-top:1px solid rgba(255,255,255,0.07); border-bottom:none;">
-    <div class="sheet-title" style="text-align:left;">Sparade platser</div>
+    <div id="favoritePlacesWrap">
+      <div class="sheet-header" style="border-top:1px solid rgba(255,255,255,0.07); border-bottom:none;">
+        <div class="sheet-title" style="text-align:left;">Sparade platser</div>
+      </div>
+      <div id="favoritePlacesList"></div>
+    </div>
   </div>
-  <div id="favoritePlacesList"></div>
-</div>
 
   <script>
     var activeMode="weather",
@@ -689,32 +800,31 @@ body{
     var mobileSearchTimer = null;
     var mobileSearchRequestId = 0;
     var selectedPlaceName = "";
-var favoritesStorageKey = "weatherFavorites";
+    var favoritesStorageKey = "weatherFavorites";
 
-// Ingen JS-styrd viewport-höjd på mobil.
-// Appskalet låses med position: fixed i CSS i stället.
     function isStandaloneWebApp() {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
 
-function applyStandaloneInsetsFix() {
-  var standalone = isStandaloneWebApp();
-  document.documentElement.classList.toggle('standalone-webapp', standalone);
+    function applyStandaloneInsetsFix() {
+      var standalone = isStandaloneWebApp();
+      document.documentElement.classList.toggle('standalone-webapp', standalone);
 
-  if (standalone) {
-    document.documentElement.style.setProperty('--safe-top', '0px');
-  } else {
-    document.documentElement.style.removeProperty('--safe-top');
-  }
-}
+      if (standalone) {
+        document.documentElement.style.setProperty('--safe-top', '0px');
+      } else {
+        document.documentElement.style.removeProperty('--safe-top');
+      }
+    }
 
-applyStandaloneInsetsFix();
-window.addEventListener('pageshow', applyStandaloneInsetsFix);
-window.addEventListener('resize', applyStandaloneInsetsFix);
-window.addEventListener('orientationchange', function(){
-  setTimeout(applyStandaloneInsetsFix, 250);
-  setTimeout(applyStandaloneInsetsFix, 600);
-});
+    applyStandaloneInsetsFix();
+    window.addEventListener('pageshow', applyStandaloneInsetsFix);
+    window.addEventListener('resize', applyStandaloneInsetsFix);
+    window.addEventListener('orientationchange', function(){
+      setTimeout(applyStandaloneInsetsFix, 250);
+      setTimeout(applyStandaloneInsetsFix, 600);
+    });
+
     function markObjectInteraction(){ lastObjectInteractionAt=Date.now(); }
     function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
     function isMobileView(){ return window.matchMedia("(max-width:700px)").matches; }
@@ -808,113 +918,115 @@ window.addEventListener('orientationchange', function(){
     function distanceKm(a,b,c,d){ var R=6371,dLat=toRad(c-a),dLon=toRad(d-b),x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toRad(a))*Math.cos(toRad(c))*Math.sin(dLon/2)*Math.sin(dLon/2); return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
     function buildVivaNearestCacheKey(lat,lon,names,lm){ return Number(lat).toFixed(3)+':'+Number(lon).toFixed(3)+':'+names.join('|')+':'+(lm?'light':'full'); }
     function buildWaveEvaluationCacheKey(s,lm){ return s.id+':'+(lm?'light':'full'); }
-function buildFavoriteId(lat, lon){
-  return Number(lat).toFixed(4) + ":" + Number(lon).toFixed(4);
-}
 
-function getStoredFavorites(){
-  try{
-    var raw = localStorage.getItem(favoritesStorageKey);
-    var parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  }catch(e){
-    return [];
-  }
-}
+    function buildFavoriteId(lat, lon){
+      return Number(lat).toFixed(4) + ":" + Number(lon).toFixed(4);
+    }
 
-function saveStoredFavorites(items){
-  localStorage.setItem(favoritesStorageKey, JSON.stringify(items));
-}
+    function getStoredFavorites(){
+      try{
+        var raw = localStorage.getItem(favoritesStorageKey);
+        var parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(e){
+        return [];
+      }
+    }
 
-function isFavorite(lat, lon){
-  var id = buildFavoriteId(lat, lon);
-  return getStoredFavorites().some(function(item){ return item.id === id; });
-}
+    function saveStoredFavorites(items){
+      localStorage.setItem(favoritesStorageKey, JSON.stringify(items));
+    }
 
-function addFavorite(place){
-  var items = getStoredFavorites();
-  if(items.some(function(item){ return item.id === place.id; })) return;
-  items.unshift(place);
-  saveStoredFavorites(items.slice(0, 20));
-  renderFavoritesList();
-}
+    function isFavorite(lat, lon){
+      var id = buildFavoriteId(lat, lon);
+      return getStoredFavorites().some(function(item){ return item.id === id; });
+    }
 
-function removeFavorite(id){
-  var items = getStoredFavorites().filter(function(item){ return item.id !== id; });
-  saveStoredFavorites(items);
-  renderFavoritesList();
-}
+    function addFavorite(place){
+      var items = getStoredFavorites();
+      if(items.some(function(item){ return item.id === place.id; })) return;
+      items.unshift(place);
+      saveStoredFavorites(items.slice(0, 20));
+      renderFavoritesList();
+    }
 
-async function reverseGeocodePlace(lat, lon){
-  try{
-    var url =
-      "https://api.maptiler.com/geocoding/" +
-      encodeURIComponent(lon + "," + lat) +
-      ".json?key=" + MAPTILER_API_KEY +
-      "&language=sv&types=municipality,city,town,village,hamlet,locality";
+    function removeFavorite(id){
+      var items = getStoredFavorites().filter(function(item){ return item.id !== id; });
+      saveStoredFavorites(items);
+      renderFavoritesList();
+    }
 
-    var res = await fetch(url);
-    var data = await res.json();
+    async function reverseGeocodePlace(lat, lon){
+      try{
+        var url =
+          "https://api.maptiler.com/geocoding/" +
+          encodeURIComponent(lon + "," + lat) +
+          ".json?key=" + MAPTILER_API_KEY +
+          "&language=sv&types=municipality,city,town,village,hamlet,locality";
 
-    var features = Array.isArray(data && data.features) ? data.features : [];
-    if(!features.length) return "";
+        var res = await fetch(url);
+        var data = await res.json();
 
-    var best = features[0];
-    return best.place_name_sv || best.place_name || best.text_sv || best.text || "";
-  }catch(e){
-    console.warn("Reverse geocoding misslyckades", e);
-    return "";
-  }
-}
+        var features = Array.isArray(data && data.features) ? data.features : [];
+        if(!features.length) return "";
 
-function renderFavoritesList(){
-  var list = document.getElementById("favoritePlacesList");
-  if(!list) return;
+        var best = features[0];
+        return best.place_name_sv || best.place_name || best.text_sv || best.text || "";
+      }catch(e){
+        console.warn("Reverse geocoding misslyckades", e);
+        return "";
+      }
+    }
 
-  var items = getStoredFavorites();
+    function renderFavoritesList(){
+      var list = document.getElementById("favoritePlacesList");
+      if(!list) return;
 
-  if(!items.length){
-    list.innerHTML = '<div class="favorite-place-empty">Inga sparade platser ännu.</div>';
-    return;
-  }
+      var items = getStoredFavorites();
 
-  list.innerHTML = "";
-  items.forEach(function(item){
-    var row = document.createElement("div");
-    row.className = "favorite-place-item";
+      if(!items.length){
+        list.innerHTML = '<div class="favorite-place-empty">Inga sparade platser ännu.</div>';
+        return;
+      }
 
-    var main = document.createElement("div");
-    main.className = "favorite-place-main";
-    main.innerHTML =
-      '<div class="favorite-place-name">' + item.name + '</div>' +
-      '<div class="favorite-place-coords">' + formatCoord(item.lat) + ', ' + formatCoord(item.lon) + '</div>';
+      list.innerHTML = "";
+      items.forEach(function(item){
+        var row = document.createElement("div");
+        row.className = "favorite-place-item";
 
-    main.onclick = function(){
-      closeSearch();
-      setTimeout(function(){
-        map.setView([item.lat, item.lon], 9);
-        if(maptilerMap){
-          maptilerMap.flyTo({center:[item.lon, item.lat], zoom:9});
-        }
-        handlePrimaryMapClick(item.lat, item.lon);
-        refreshMapSizeSoon();
-      }, 120);
-    };
+        var main = document.createElement("div");
+        main.className = "favorite-place-main";
+        main.innerHTML =
+          '<div class="favorite-place-name">' + item.name + '</div>' +
+          '<div class="favorite-place-coords">' + formatCoord(item.lat) + ', ' + formatCoord(item.lon) + '</div>';
 
-    var removeBtn = document.createElement("button");
-    removeBtn.className = "favorite-place-remove";
-    removeBtn.type = "button";
-    removeBtn.textContent = "Ta bort";
-    removeBtn.onclick = function(e){
-      e.stopPropagation();
-      removeFavorite(item.id);
-    };
+        main.onclick = function(){
+          closeSearch();
+          setTimeout(function(){
+            map.setView([item.lat, item.lon], 9);
+            if(maptilerMap){
+              maptilerMap.flyTo({center:[item.lon, item.lat], zoom:9});
+            }
+            handlePrimaryMapClick(item.lat, item.lon);
+            refreshMapSizeSoon();
+          }, 120);
+        };
 
-    row.appendChild(main);
-    row.appendChild(removeBtn);
-    list.appendChild(row);
-  });
-}
+        var removeBtn = document.createElement("button");
+        removeBtn.className = "favorite-place-remove";
+        removeBtn.type = "button";
+        removeBtn.textContent = "Ta bort";
+        removeBtn.onclick = function(e){
+          e.stopPropagation();
+          removeFavorite(item.id);
+        };
+
+        row.appendChild(main);
+        row.appendChild(removeBtn);
+        list.appendChild(row);
+      });
+    }
+
     function updateMapViewportOffsets(){
       if(!maptilerMap) return;
       try{
@@ -931,8 +1043,6 @@ function renderFavoritesList(){
     function refreshMapSizeSoon(){ setTimeout(function(){ try{ map.invalidateSize(); }catch(e){} try{ if(maptilerMap) maptilerMap.resize(); }catch(e){} updateMapViewportOffsets(); },60); }
 
     var map=L.map('map',{zoomControl:false}).setView([58.6,13.0],6);
-    // Ingen tileLayer behövs här eftersom Leaflet-kartan inte visas.
-    // Den används bara som intern bärare för vissa lager/objekt.
 
     var MAPTILER_API_KEY='72WUquDNJCLDzyB9DSky';
 
@@ -1209,15 +1319,17 @@ function renderFavoritesList(){
               {label:'Luftfuktighet',value:formatHumidity(humidity)}
             ])+'</div>';
           }
-          return '<div class="weather-overview"><div class="weather-icon">'+weatherIconFromSymbol(symbol)+'</div><div class="weather-main"><div class="weather-main-title">'+weatherLabelFromSymbol(symbol)+'</div><div class="weather-main-time">'+formatWeatherDateTime(pt)+'</div></div></div><div class="weather-temp-big">'+formatTemp(temp)+'</div>'<div class="weather-point-line">' +
-  (selectedPlaceName ? selectedPlaceName : 'Vald plats') +
-  '<br><span style="color:var(--muted);">' + formatCoord(lat) + ', ' + formatCoord(lon) + '</span>' +
-'</div>' +
-'<div class="weather-point-actions">' +
-  '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
-    (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
-  '</button>' +
-'</div>'<button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">'+detailsButtonText+'</button>'+detailsHtml;
+
+          return '<div class="weather-overview"><div class="weather-icon">'+weatherIconFromSymbol(symbol)+'</div><div class="weather-main"><div class="weather-main-title">'+weatherLabelFromSymbol(symbol)+'</div><div class="weather-main-time">'+formatWeatherDateTime(pt)+'</div></div></div><div class="weather-temp-big">'+formatTemp(temp)+'</div><div class="weather-point-line">' +
+            (selectedPlaceName ? selectedPlaceName : 'Vald plats') +
+            '<br><span style="color:var(--muted);">' + formatCoord(lat) + ', ' + formatCoord(lon) + '</span>' +
+            '</div>' +
+            '<div class="weather-point-actions">' +
+              '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
+                (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
+              '</button>' +
+            '</div>' +
+            '<button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">'+detailsButtonText+'</button>'+detailsHtml;
         }
 
         window.updateWeatherForSelectedTime=function(){
@@ -1390,40 +1502,42 @@ function renderFavoritesList(){
     }
     function toggleOverlayCollapsed(forceState){ if(!mapOverlayPanel) return; if(typeof forceState==='boolean'){ mapOverlayPanel.classList.toggle('is-collapsed',forceState); } else { mapOverlayPanel.classList.toggle('is-collapsed'); } updateOverlayCollapseButtonText(); refreshMapSizeSoon(); }
     if(overlayCollapseBtn){ overlayCollapseBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleOverlayCollapsed(); }); }
- if(overlayContentEl){
-  overlayContentEl.addEventListener("click",function(e){
-    if(e.target && e.target.id==="weatherDetailsToggleBtn"){
-      e.stopPropagation();
-      weatherDetailsExpanded=!weatherDetailsExpanded;
-      syncWeatherOverlayExpandedState();
-      if(window.updateWeatherForSelectedTime){
-        window.updateWeatherForSelectedTime();
-      }
-      return;
-    }
 
-    if(e.target && e.target.id==="saveFavoriteBtn"){
-      e.stopPropagation();
+    if(overlayContentEl){
+      overlayContentEl.addEventListener("click",function(e){
+        if(e.target && e.target.id==="weatherDetailsToggleBtn"){
+          e.stopPropagation();
+          weatherDetailsExpanded=!weatherDetailsExpanded;
+          syncWeatherOverlayExpandedState();
+          if(window.updateWeatherForSelectedTime){
+            window.updateWeatherForSelectedTime();
+          }
+          return;
+        }
 
-      var sel = savedSelections.weather;
-      if(!sel) return;
+        if(e.target && e.target.id==="saveFavoriteBtn"){
+          e.stopPropagation();
 
-      var favId = buildFavoriteId(sel.lat, sel.lon);
-      if(isFavorite(sel.lat, sel.lon)) return;
+          var sel = savedSelections.weather;
+          if(!sel) return;
 
-      addFavorite({
-        id: favId,
-        name: selectedPlaceName || ("Plats " + formatCoord(sel.lat) + ", " + formatCoord(sel.lon)),
-        lat: sel.lat,
-        lon: sel.lon
+          var favId = buildFavoriteId(sel.lat, sel.lon);
+          if(isFavorite(sel.lat, sel.lon)) return;
+
+          addFavorite({
+            id: favId,
+            name: selectedPlaceName || ("Plats " + formatCoord(sel.lat) + ", " + formatCoord(sel.lon)),
+            lat: sel.lat,
+            lon: sel.lon
+          });
+
+          if(window.updateWeatherForSelectedTime){
+            window.updateWeatherForSelectedTime();
+          }
+        }
       });
-
-      if(window.updateWeatherForSelectedTime){
-        window.updateWeatherForSelectedTime();
-      }
     }
-  });
-}
+
     if(isMobileView()){ toggleOverlayCollapsed(false); } else { updateOverlayCollapseButtonText(); }
 
     var filterDrawer=document.getElementById('filterDrawer'), filterToggleBtn=document.getElementById('filterToggleBtn'), filterCloseBtn=document.getElementById('filterCloseBtn');
@@ -1467,27 +1581,27 @@ function renderFavoritesList(){
 
     function setMaptilerWeatherMarker(lat,lon){ if(!maptilerMap || !window.maptilersdk) return; if(maptilerWeatherMarker) maptilerWeatherMarker.remove(); maptilerWeatherMarker=new maptilersdk.Marker().setLngLat([lon,lat]).addTo(maptilerMap); }
 
-async function handlePrimaryMapClick(lat,lon){
-  if(Date.now()-lastObjectInteractionAt<500) return;
+    async function handlePrimaryMapClick(lat,lon){
+      if(Date.now()-lastObjectInteractionAt<500) return;
 
-  weatherDetailsExpanded = false;
-  syncWeatherOverlayExpandedState();
+      weatherDetailsExpanded = false;
+      syncWeatherOverlayExpandedState();
 
-  saveSelection('weather',{lat:lat,lon:lon});
-  setWeatherMarker(lat,lon);
-  setMaptilerWeatherMarker(lat,lon);
+      saveSelection('weather',{lat:lat,lon:lon});
+      setWeatherMarker(lat,lon);
+      setMaptilerWeatherMarker(lat,lon);
 
-  selectedPlaceName = "";
-  updateMapOverlay("Laddar plats...", "Söker närmaste ort...");
+      selectedPlaceName = "";
+      updateMapOverlay("Laddar plats...", "Söker närmaste ort...");
 
-  try{
-    selectedPlaceName = await reverseGeocodePlace(lat, lon);
-  }catch(e){
-    selectedPlaceName = "";
-  }
+      try{
+        selectedPlaceName = await reverseGeocodePlace(lat, lon);
+      }catch(e){
+        selectedPlaceName = "";
+      }
 
-  loadWeatherForPoint(lat,lon);
-}
+      loadWeatherForPoint(lat,lon);
+    }
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
     window.addEventListener('resize',refreshMapSizeSoon);
@@ -1649,9 +1763,6 @@ async function handlePrimaryMapClick(lat,lon){
         setTimeout(function(){ isSyncMT=false; },0);
       });
 
-      // Leaflet-kartan är dold och ska inte styra MapTiler.
-      // Vi synkar bara från MapTiler -> Leaflet, inte tvärtom.
-
       maptilerMap.on('click',function(e){ if(e.lngLat) handlePrimaryMapClick(e.lngLat.lat,e.lngLat.lng); });
     }else{
       console.error('MapTiler SDK ej tillgänglig');
@@ -1660,9 +1771,6 @@ async function handlePrimaryMapClick(lat,lon){
     updateModeUI();
     updateActiveLayersBadge();
     renderFavoritesList();
-
-    // Ladda inte bojar/fyrar direkt vid sidstart.
-    // De laddas först när användaren aktiverar respektive lager.
 
     setTimeout(function(){ refreshMapSizeSoon(); },120);
     setTimeout(function(){ refreshMapSizeSoon(); },500);
