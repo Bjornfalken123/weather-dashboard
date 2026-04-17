@@ -157,8 +157,36 @@
     #timeTickRow{display:flex;justify-content:space-between;margin-top:5px;padding:0 1px;gap:8px;}
     .time-tick{font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-#bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;height:var(--tab-bar-height);padding-bottom:0;background:rgba(5,11,22,0.96);border-top:1px solid rgba(255,255,255,0.09);align-items:stretch;}
-    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer;padding:8px 4px;position:relative;}
+#bottomTabBar{
+  display:none;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:8000;
+  height:var(--tab-bar-height);
+  padding-bottom:0;
+  background:rgba(5,11,22,0.96);
+  border-top:1px solid rgba(255,255,255,0.09);
+  align-items:stretch;
+}
+    .tab-btn{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  gap:3px;
+  background:none;
+  border:none;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  cursor:pointer;
+  padding:6px 4px 8px;
+  position:relative;
+}
     .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
     .tab-btn.active{color:var(--accent);}
     .tab-btn.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:2px;border-radius:999px;background:var(--accent);}
@@ -233,18 +261,18 @@
 #mapOverlayPanel.weather-expanded #overlayBody{
   max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 100px);
 }
-              #timeControl{
+#timeControl{
   position:fixed !important;
   left:0 !important;
   right:0 !important;
-  bottom:var(--time-control-bottom) !important;
+  bottom:calc(var(--tab-bar-height) - 1px) !important;
   transform:none !important;
   width:100% !important;
   z-index:7000 !important;
-  padding:9px 12px;
+  padding:9px 12px 7px;
   border-radius:14px 14px 0 0;
   border-left:none;
-border-right:none;
+  border-right:none;
 }
       .time-compact-top{margin-bottom:7px;}
       .time-compact-label{font-size:9px;}
