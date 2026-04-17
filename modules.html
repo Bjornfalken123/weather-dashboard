@@ -204,19 +204,36 @@
     .weather-main-title{font-size:14px;font-weight:800;color:var(--text);line-height:1.2;}
     .weather-main-time{margin-top:3px;font-size:11px;color:var(--muted-soft);line-height:1.3;}
     .weather-temp-big{margin:8px 0 10px;font-size:28px;font-weight:900;color:var(--text);line-height:1;}
-    .weather-point-line{margin-bottom:10px;font-size:11px;color:var(--muted);}
-    .weather-details-toggle{
-      appearance:none;
-      border:1px solid rgba(255,255,255,0.08);
-      background:rgba(255,255,255,0.04);
-      color:var(--text-soft);
-      border-radius:10px;
-      padding:8px 10px;
-      font-size:11px;
-      font-weight:700;
-      cursor:pointer;
-      margin-bottom:10px;
-    }
+.weather-point-line{
+  margin-bottom:4px;
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.35;
+}
+.weather-place-name{
+  color:var(--text);
+  font-size:12px;
+  font-weight:800;
+  line-height:1.3;
+}
+.weather-place-coords{
+  color:var(--muted);
+  font-size:10px;
+  margin-top:2px;
+}
+.weather-details-toggle{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.04);
+  color:var(--text-soft);
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  margin:0;
+  min-height:34px;
+}
 
     .overlay-data-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;}
     .overlay-data-cell{min-width:0;padding:7px 9px;border-radius:10px;border:1px solid rgba(255,255,255,0.055);background:rgba(255,255,255,0.035);}
@@ -422,181 +439,208 @@
     .favorite-place-coords{margin-top:3px;color:var(--muted);font-size:11px;}
     .favorite-place-remove{appearance:none;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text);border-radius:10px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;}
     .favorite-place-empty{padding:8px 18px 14px;color:var(--muted);font-size:12px;}
-    .weather-point-actions{display:flex;gap:8px;margin-top:8px;}
-    .weather-favorite-btn{appearance:none;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text-soft);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+   .weather-point-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:6px 0 8px;
+}
+.weather-favorite-btn{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.04);
+  color:var(--text-soft);
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  min-height:34px;
+}
+.overlay-object-section{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.07);
+}
+.overlay-object-title{
+  margin-bottom:4px;
+  font-size:10px;
+  font-weight:800;
+  color:var(--accent-2);
+  text-transform:uppercase;
+}
 
     @media (min-width:701px){
       #bottomTabBar,#mobileFilterSheet,#mobileSearchSheet{display:none !important;}
     }
 
-    @media (max-width:700px){
-      html,body{
-        width:100%;
-        height:100%;
-        margin:0;
-        overflow:hidden;
-        background:#040913;
-      }
+   @media (max-width:700px){
+  html,body{
+    width:100%;
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    background:#040913;
+  }
 
-      .container{
-        position:fixed;
-        inset:0;
-        max-width:none;
-        padding:0;
-        margin:0;
-        width:100%;
-        height:100%;
-        min-height:0;
-      }
+  .container{
+    position:fixed;
+    inset:0;
+    max-width:none;
+    padding:0;
+    margin:0;
+    width:100%;
+    height:100%;
+    min-height:0;
+  }
 
-      .map-panel{
-        position:absolute;
-        inset:0;
-        padding:0;
-        margin:0;
-        border:none;
-        border-radius:0;
-        background:transparent;
-        box-shadow:none;
-        min-height:0;
-        height:100%;
-        overflow:visible;
-      }
+  .map-panel{
+    position:absolute;
+    inset:0;
+    padding:0;
+    margin:0;
+    border:none;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    min-height:0;
+    height:100%;
+    overflow:visible;
+  }
 
-      .map-note{display:none;}
+  .map-note{display:none;}
 
-      .map-stack,
-      .map-instance-wrap{
-        position:absolute;
-        inset:0;
-        width:100%;
-        height:100%;
-        min-height:0;
-        overflow:visible;
-      }
+  .map-stack,
+  .map-instance-wrap{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    min-height:0;
+    overflow:visible;
+  }
 
-      #map,
-      #maptilerMap{
-        position:absolute;
-        inset:0;
-        width:100%;
-        height:100%;
-        min-height:0;
-        border:none;
-        border-radius:0;
-        box-shadow:none;
-      }
+  #map,
+  #maptilerMap{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    min-height:0;
+    border:none;
+    border-radius:0;
+    box-shadow:none;
+  }
 
-      .map-topbar,#filterToggleBtn,#activeLayersBadge,#filterDrawer{display:none !important;}
-      #timeTickRow{display:none;}
+  .map-topbar,
+  #filterToggleBtn,
+  #activeLayersBadge,
+  #filterDrawer{
+    display:none !important;
+  }
 
-      #mapOverlayPanel{
-        position:fixed !important;
-        top:calc(var(--safe-top) + 10px) !important;
-        left:12px !important;
-        right:auto !important;
-        transform:none !important;
-        width:min(300px, calc(100vw - 96px)) !important;
-        min-width:0 !important;
-        max-width:none !important;
-        border-radius:16px;
-        z-index:3000 !important;
-      }
+  #timeTickRow{display:none;}
 
-      #mapOverlayPanel.weather-expanded{
-        width:min(340px, calc(100vw - 32px)) !important;
-      }
+  #mapOverlayPanel{
+    position:fixed !important;
+    top:calc(var(--safe-top) + 10px) !important;
+    left:12px !important;
+    right:auto !important;
+    transform:none !important;
+    width:min(300px, calc(100vw - 96px)) !important;
+    min-width:0 !important;
+    max-width:none !important;
+    border-radius:16px;
+    z-index:3000 !important;
+  }
 
-      #overlayHeader{padding:10px 12px;}
+  #mapOverlayPanel.weather-expanded{
+    width:min(340px, calc(100vw - 32px)) !important;
+  }
 
-      #overlayBody{
-        padding:9px 12px 11px;
-        max-height:calc(100dvh - var(--bottom-ui-offset) - 170px);
-        overflow-y:auto;
-        transition:max-height 180ms ease;
-      }
+  #overlayHeader{
+    padding:10px 12px;
+  }
 
-      #mapOverlayPanel.weather-expanded #overlayBody{
-        max-height:calc(100dvh - var(--bottom-ui-offset) - 100px);
-      }
+  #overlayBody{
+    padding:9px 12px 11px;
+    max-height:calc(100dvh - var(--bottom-ui-offset) - 170px);
+    overflow-y:auto;
+    transition:max-height 180ms ease;
+  }
 
-      #timeControl{
-        position:fixed !important;
-        left:0 !important;
-        right:0 !important;
-        bottom:var(--time-control-bottom) !important;
-        transform:none !important;
-        width:100% !important;
-        z-index:7000 !important;
-        padding:9px 12px;
-        border-radius:14px 14px 0 0;
-        border-left:none;
-        border-right:none;
-      }
+  #mapOverlayPanel.weather-expanded #overlayBody{
+    max-height:calc(100dvh - var(--bottom-ui-offset) - 100px);
+  }
 
-      .time-compact-top{margin-bottom:7px;}
-      .time-compact-label{font-size:9px;}
-      #timeValueLabel{min-width:0;font-size:11px;}
-      .time-compact-bottom{grid-template-columns:64px 1fr;gap:7px;}
-      #timePlayPauseBtn{min-width:62px;min-height:36px;font-size:10px;padding:8px 8px;}
-      #timeSlider{height:7px;}
-      .overlay-data-grid{grid-template-columns:1fr 1fr;gap:5px;}
-      .overlay-data-cell{padding:6px 8px;}
-      .overlay-data-label{font-size:9px;}
-      .overlay-data-value{font-size:12px;}
-      #bottomTabBar{display:flex;}
-    }
+  #timeControl{
+    position:fixed !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:var(--time-control-bottom) !important;
+    transform:none !important;
+    width:100% !important;
+    z-index:7000 !important;
+    padding:9px 12px;
+    border-radius:14px 14px 0 0;
+    border-left:none;
+    border-right:none;
+  }
 
-    @media (max-width:420px){
-      #overlayTitle{font-size:12px;}
-      #mapOverlayPanel:not(.weather-expanded) #overlayBody{max-height:min(27vh, 190px);}
-      .overlay-data-grid{grid-template-columns:1fr;}
-      .time-compact-bottom{grid-template-columns:60px 1fr;}
-      #timePlayPauseBtn{min-width:60px;min-height:34px;padding:8px 6px;}
-      .sheet-body{padding:12px 14px;}
-      .sheet-row{padding:11px 12px;}
-    }
+  .time-compact-top{margin-bottom:7px;}
+  .time-compact-label{font-size:9px;}
+  #timeValueLabel{min-width:0;font-size:11px;}
+  .time-compact-bottom{grid-template-columns:64px 1fr;gap:7px;}
+  #timePlayPauseBtn{min-width:62px;min-height:36px;font-size:10px;padding:8px 8px;}
+  #timeSlider{height:7px;}
 
-    .filter-row button.is-disabled,
-    .sheet-toggle.is-disabled {
-      background: rgba(255,255,255,0.04) !important;
-      color: rgba(255,255,255,0.35) !important;
-      border-color: rgba(255,255,255,0.05) !important;
-      cursor: not-allowed !important;
-      pointer-events: none;
-      opacity: 0.6;
-    }
+  .weather-temp-big{
+    margin:6px 0 6px;
+    font-size:26px;
+  }
 
-    html.standalone-webapp {
-      --safe-top: 0px;
-    }
+  .weather-point-actions{
+    gap:6px;
+    margin:6px 0 6px;
+  }
 
-    @media (max-width:700px) {
-      html.standalone-webapp #mapOverlayPanel {
-        top: 10px !important;
-      }
+  .weather-favorite-btn,
+  .weather-details-toggle{
+    font-size:10px;
+    padding:6px 9px;
+    min-height:32px;
+  }
 
-      html.standalone-webapp #timeControl {
-        bottom: var(--time-control-bottom) !important;
-      }
+  .overlay-data-grid{
+    grid-template-columns:1fr 1fr;
+    gap:5px;
+  }
 
-      html.standalone-webapp #bottomTabBar {
-        bottom: 0 !important;
-        padding-bottom: calc(var(--safe-bottom) + 6px);
-        height: calc(var(--tab-bar-height) + var(--safe-bottom) + 6px);
-      }
+  .overlay-data-cell{
+    padding:6px 8px;
+  }
 
-      html.standalone-webapp .container,
-      html.standalone-webapp .map-panel,
-      html.standalone-webapp .map-stack,
-      html.standalone-webapp .map-instance-wrap,
-      html.standalone-webapp #maptilerMap,
-      html.standalone-webapp #map {
-        top: 0 !important;
-        margin-top: 0 !important;
-        translate: none !important;
-      }
-    }
+  .overlay-data-label{
+    font-size:9px;
+  }
+
+  .overlay-data-value{
+    font-size:12px;
+  }
+
+  .overlay-object-section{
+    margin-top:6px;
+    padding-top:6px;
+  }
+
+  .overlay-object-title{
+    margin-bottom:3px;
+  }
+
+  #bottomTabBar{
+    display:flex;
+  }
+}
   </style>
 </head>
 <body>
@@ -956,27 +1000,66 @@
       renderFavoritesList();
     }
 
-    async function reverseGeocodePlace(lat, lon){
-      try{
-        var url =
-          "https://api.maptiler.com/geocoding/" +
-          encodeURIComponent(lon + "," + lat) +
-          ".json?key=" + MAPTILER_API_KEY +
-          "&language=sv&types=municipality,city,town,village,hamlet,locality";
+async function reverseGeocodePlace(lat, lon){
+  try{
+    var url =
+      "https://api.maptiler.com/geocoding/" +
+      encodeURIComponent(lon + "," + lat) +
+      ".json?key=" + MAPTILER_API_KEY +
+      "&language=sv&limit=5";
 
-        var res = await fetch(url);
-        var data = await res.json();
+    var res = await fetch(url);
+    var data = await res.json();
 
-        var features = Array.isArray(data && data.features) ? data.features : [];
-        if(!features.length) return "";
+    var features = Array.isArray(data && data.features) ? data.features : [];
+    if(!features.length) return "";
 
-        var best = features[0];
-        return best.place_name_sv || best.place_name || best.text_sv || best.text || "";
-      }catch(e){
-        console.warn("Reverse geocoding misslyckades", e);
-        return "";
-      }
+    var preferred = features.find(function(feature){
+      var props = feature && feature.properties ? feature.properties : {};
+      var category = String(props.category || "").toLowerCase();
+      var layer = String(props.layer || "").toLowerCase();
+      var placeType = String(feature && feature.place_type && feature.place_type[0] || "").toLowerCase();
+
+      return (
+        category.includes("municipality") ||
+        layer.includes("municipality") ||
+        layer.includes("city") ||
+        layer.includes("town") ||
+        layer.includes("village") ||
+        placeType === "municipality" ||
+        placeType === "city" ||
+        placeType === "town" ||
+        placeType === "village" ||
+        placeType === "locality"
+      );
+    }) || features[0];
+
+    var props = preferred.properties || {};
+
+    var name =
+      props.name_sv ||
+      props.name ||
+      preferred.text_sv ||
+      preferred.text ||
+      "";
+
+    if(name) return String(name).trim();
+
+    var placeName =
+      preferred.place_name_sv ||
+      preferred.place_name ||
+      "";
+
+    if(placeName){
+      return String(placeName).split(",")[0].trim();
     }
+
+    return "";
+  }catch(e){
+    console.warn("Reverse geocoding misslyckades", e);
+    return "";
+  }
+}
 
     function renderFavoritesList(){
       var list = document.getElementById("favoritePlacesList");
@@ -1307,30 +1390,50 @@
           return formatWind(cl.value);
         }
 
-        function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
-          var detailsButtonText=weatherDetailsExpanded ? 'Visa mindre' : 'Se mer';
-          var detailsHtml='';
-          if(weatherDetailsExpanded){
-            detailsHtml='<div class="weather-extra-details">'+buildOverlayDataGrid([
-              {label:'Vind',value:formatWindWithDirection(ws,wd)},
-              {label:'Vindbyar',value:gust},
-              {label:'Nederbörd',value:formatRain(rain)},
-              {label:'Lufttryck',value:formatPressure(pres)},
-              {label:'Luftfuktighet',value:formatHumidity(humidity)}
-            ])+'</div>';
-          }
+      function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
+  var detailsButtonText = weatherDetailsExpanded ? 'Visa mindre' : 'Se mer';
+  var detailsHtml = '';
 
-          return '<div class="weather-overview"><div class="weather-icon">'+weatherIconFromSymbol(symbol)+'</div><div class="weather-main"><div class="weather-main-title">'+weatherLabelFromSymbol(symbol)+'</div><div class="weather-main-time">'+formatWeatherDateTime(pt)+'</div></div></div><div class="weather-temp-big">'+formatTemp(temp)+'</div><div class="weather-point-line">' +
-            (selectedPlaceName ? selectedPlaceName : 'Vald plats') +
-            '<br><span style="color:var(--muted);">' + formatCoord(lat) + ', ' + formatCoord(lon) + '</span>' +
-            '</div>' +
-            '<div class="weather-point-actions">' +
-              '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
-                (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
-              '</button>' +
-            '</div>' +
-            '<button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">'+detailsButtonText+'</button>'+detailsHtml;
-        }
+  if(weatherDetailsExpanded){
+    detailsHtml =
+      '<div class="weather-extra-details">' +
+        buildOverlayDataGrid([
+          {label:'Vind',value:formatWindWithDirection(ws,wd)},
+          {label:'Vindbyar',value:gust},
+          {label:'Nederbörd',value:formatRain(rain)},
+          {label:'Lufttryck',value:formatPressure(pres)},
+          {label:'Luftfuktighet',value:formatHumidity(humidity)}
+        ]) +
+      '</div>';
+  }
+
+  var placeName = (selectedPlaceName && selectedPlaceName.trim()) ? selectedPlaceName.trim() : 'Vald plats';
+
+  return '' +
+    '<div class="weather-overview">' +
+      '<div class="weather-icon">' + weatherIconFromSymbol(symbol) + '</div>' +
+      '<div class="weather-main">' +
+        '<div class="weather-main-title">' + weatherLabelFromSymbol(symbol) + '</div>' +
+        '<div class="weather-main-time">' + formatWeatherDateTime(pt) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="weather-temp-big">' + formatTemp(temp) + '</div>' +
+
+    '<div class="weather-point-line">' +
+      '<div class="weather-place-name">' + placeName + '</div>' +
+      '<div class="weather-place-coords">' + formatCoord(lat) + ', ' + formatCoord(lon) + '</div>' +
+    '</div>' +
+
+    '<div class="weather-point-actions">' +
+      '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
+        (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
+      '</button>' +
+      '<button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">' + detailsButtonText + '</button>' +
+    '</div>' +
+
+    detailsHtml;
+}
 
         window.updateWeatherForSelectedTime=function(){
           if(!weatherTimeseries.length || !selectedForecastTime) return;
