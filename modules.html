@@ -35,17 +35,12 @@
       --safe-top:env(safe-area-inset-top,0px);
 
              --app-height:100dvh;
-     --bottom-ui-offset:var(--tab-bar-height);
---time-control-bottom:var(--tab-bar-height);
+      --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
+      --time-control-bottom:var(--bottom-ui-offset);
     }
 
     *{box-sizing:border-box;}
-   html,body{
-  height:100%;
-  margin:0;
-  overflow-x:hidden;
-  background:#040913;
-}
+    html,body{height:100%;margin:0;overflow-x:hidden;}
     body{
       font-family:Inter,Arial,Helvetica,sans-serif;
       color:var(--text);
@@ -61,21 +56,21 @@
     .container,.map-panel,.map-instance-wrap,#maptilerMap,#map{min-height:var(--app-height);}
 
     .container{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:18px;}
-  .map-panel{
-  position:relative;overflow:hidden;border-radius:var(--radius-xl);
-  border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
-  backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
-  box-shadow:var(--shadow-md);padding:18px;min-height:calc(var(--app-height) - 36px);
-}
+    .map-panel{
+      position:relative;overflow:hidden;border-radius:var(--radius-xl);
+      border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
+      backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
+      box-shadow:var(--shadow-md);padding:18px;min-height:calc(100vh - 36px);
+    }
     .map-note{position:relative;z-index:1;margin-bottom:16px;color:var(--muted-soft);font-size:14px;line-height:1.6;}
     .map-stack{position:relative;z-index:1;}
     .map-instance-wrap{position:relative;isolation:isolate;}
 
-#map,#maptilerMap{
-  position:relative;z-index:1;width:100%;height:calc(var(--app-height) - 72px);min-height:620px;
-  border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 20px 42px rgba(0,0,0,0.24);
-}
+    #map,#maptilerMap{
+      position:relative;z-index:1;width:100%;height:calc(100vh - 72px);min-height:620px;
+      border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 20px 42px rgba(0,0,0,0.24);
+    }
 
     .map-topbar{
       position:absolute;top:16px;left:16px;z-index:1200;display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 32px);
@@ -157,42 +152,8 @@
     #timeTickRow{display:flex;justify-content:space-between;margin-top:5px;padding:0 1px;gap:8px;}
     .time-tick{font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-#bottomTabBar{
-  display:none;
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  z-index:8000;
-  height:calc(var(--tab-bar-height) + var(--safe-bottom));
-  padding-bottom:var(--safe-bottom);
-  background:rgba(5,11,22,0.96);
-  border-top:1px solid rgba(255,255,255,0.09);
-}
-
-#bottomTabBarInner{
-  height:var(--tab-bar-height);
-  display:flex;
-  align-items:stretch;
-}
-
-.tab-btn{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-  background:none;
-  border:none;
-  color:var(--muted);
-  font-size:10px;
-  font-weight:700;
-  text-transform:uppercase;
-  cursor:pointer;
-  padding:8px 4px;
-  position:relative;
-}
+           #bottomTabBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;height:calc(var(--tab-bar-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:rgba(5,11,22,0.96);border-top:1px solid rgba(255,255,255,0.09);align-items:stretch;}
+    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer;padding:8px 4px;position:relative;}
     .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
     .tab-btn.active{color:var(--accent);}
     .tab-btn.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:2px;border-radius:999px;background:var(--accent);}
@@ -203,7 +164,7 @@
     #mobileSearchSheet{
       display:none;position:fixed;bottom:0;left:0;right:0;z-index:9000;background:rgba(5,11,22,0.96);
       border-top:1px solid rgba(255,255,255,0.1);border-radius:22px 22px 0 0;
-      padding:0 0 calc(var(--tab-bar-height) + 8px);
+      padding:0 0 calc(var(--tab-bar-height) + var(--safe-bottom) + 8px);
       box-shadow:0 -12px 48px rgba(0,0,0,0.5);max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
     }
     #mobileSearchSheet{z-index:9100;}
@@ -267,18 +228,18 @@
 #mapOverlayPanel.weather-expanded #overlayBody{
   max-height:calc(var(--app-height) - var(--bottom-ui-offset) - 100px);
 }
-#timeControl{
+              #timeControl{
   position:fixed !important;
   left:0 !important;
   right:0 !important;
-  bottom:var(--tab-bar-height) !important;
+  bottom:var(--time-control-bottom) !important;
   transform:none !important;
   width:100% !important;
   z-index:7000 !important;
   padding:9px 12px;
   border-radius:14px 14px 0 0;
   border-left:none;
-  border-right:none;
+border-right:none;
 }
       .time-compact-top{margin-bottom:7px;}
       .time-compact-label{font-size:9px;}
@@ -398,15 +359,13 @@
     </section>
   </div>
 
-<nav id="bottomTabBar">
-  <div id="bottomTabBarInner">
+  <nav id="bottomTabBar">
     <button class="tab-btn active" id="tabWeather" type="button"><svg viewBox="0 0 24 24"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path><circle cx="12" cy="12" r="4"></circle></svg>Väder</button>
     <button class="tab-btn" id="tabWave" type="button"><svg viewBox="0 0 24 24"><path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path><path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"></path></svg>Boj / hav<span class="tab-btn-badge" id="waveBadge"></span></button>
     <button class="tab-btn" id="tabLighthouse" type="button"><svg viewBox="0 0 24 24"><path d="M12 2L9 8h6L12 2z"></path><rect x="10" y="8" width="4" height="10" rx="1"></rect><path d="M8 18h8M6 21h12"></path></svg>Fyr<span class="tab-btn-badge" id="lighthouseBadge"></span></button>
     <button class="tab-btn" id="tabFilter" type="button"><svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="11" y1="18" x2="13" y2="18"></line></svg>Filter<span class="tab-btn-badge" id="filterBadge"></span></button>
     <button class="tab-btn" id="tabSearch" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>Sök</button>
-  </div>
-</nav>
+  </nav>
 
   <div id="mobileFilterSheet">
     <div class="sheet-header">
