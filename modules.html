@@ -1205,18 +1205,30 @@ function renderFavoritesList(){
   });
 }
 
-    function updateMapViewportOffsets(){
-      if(!maptilerMap) return;
-      try{
-        var mobile=isMobileView();
-        var overlay=document.getElementById('mapOverlayPanel');
-        var timeControl=document.getElementById('timeControl');
-        var padding={top:20,right:20,bottom:20,left:20};
-        if(overlay && overlay.offsetParent!==null){ padding.top=Math.max(20, overlay.offsetHeight + (mobile ? 22 : 26)); }
-        if(timeControl && timeControl.offsetParent!==null){ padding.bottom=Math.max(20, timeControl.offsetHeight + (mobile ? 24 : 26)); }
-        maptilerMap.easeTo({center:maptilerMap.getCenter(),zoom:maptilerMap.getZoom(),duration:0,padding:padding});
-      }catch(e){ console.warn('Kunde inte uppdatera map padding',e); }
+  function updateMapViewportOffsets(){
+  if(!maptilerMap) return;
+  try{
+    var mobile = isMobileView();
+    var overlay = document.getElementById('mapOverlayPanel');
+    var timeControl = document.getElementById('timeControl');
+
+    var padding = { top:20, right:20, bottom:20, left:20 };
+
+    if(overlay && overlay.offsetParent !== null){
+      padding.top = Math.max(20, overlay.offsetHeight + (mobile ? 22 : 26));
     }
+
+    if(timeControl && timeControl.offsetParent !== null){
+      padding.bottom = Math.max(20, timeControl.offsetHeight + (mobile ? 24 : 26));
+    }
+
+    if(typeof maptilerMap.setPadding === "function"){
+      maptilerMap.setPadding(padding);
+    }
+  }catch(e){
+    console.warn('Kunde inte uppdatera map padding', e);
+  }
+}
 
     function refreshMapSizeSoon(){ setTimeout(function(){ try{ map.invalidateSize(); }catch(e){} try{ if(maptilerMap) maptilerMap.resize(); }catch(e){} updateMapViewportOffsets(); },60); }
 
