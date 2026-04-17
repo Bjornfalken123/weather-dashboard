@@ -596,8 +596,7 @@ border-right:none;
     function buildVivaNearestCacheKey(lat,lon,names,lm){ return Number(lat).toFixed(3)+':'+Number(lon).toFixed(3)+':'+names.join('|')+':'+(lm?'light':'full'); }
     function buildWaveEvaluationCacheKey(s,lm){ return s.id+':'+(lm?'light':'full'); }
 
-       var resizeRefreshTimer=null;
-    var lastAppliedMapPaddingKey='';
+      var resizeRefreshTimer=null;
 
     function setAppHeightVar(){
       var viewportHeight=window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -607,34 +606,7 @@ border-right:none;
     }
 
     function updateMapViewportOffsets(){
-      if(!maptilerMap) return;
-      try{
-        var mobile=isMobileView();
-        var overlay=document.getElementById('mapOverlayPanel');
-        var timeControl=document.getElementById('timeControl');
-        var padding={top:20,right:20,bottom:20,left:20};
-
-        if(overlay && overlay.offsetParent!==null){
-          padding.top=Math.max(20, overlay.offsetHeight + (mobile ? 22 : 26));
-        }
-
-        if(timeControl && timeControl.offsetParent!==null){
-          padding.bottom=Math.max(20, timeControl.offsetHeight + (mobile ? 24 : 26));
-        }
-
-        var paddingKey=[padding.top,padding.right,padding.bottom,padding.left].join(':');
-        if(paddingKey===lastAppliedMapPaddingKey) return;
-        lastAppliedMapPaddingKey=paddingKey;
-
-        maptilerMap.easeTo({
-          center:maptilerMap.getCenter(),
-          zoom:maptilerMap.getZoom(),
-          duration:0,
-          padding:padding
-        });
-      }catch(e){
-        console.warn('Kunde inte uppdatera map padding',e);
-      }
+      return;
     }
 
     function refreshMapSizeSoon(){
@@ -646,21 +618,13 @@ border-right:none;
         setAppHeightVar();
 
         try{
-          var hiddenLeafletMap=document.getElementById('map');
-          if(hiddenLeafletMap && hiddenLeafletMap.offsetParent!==null){
-            map.invalidateSize(false);
-          }
-        }catch(e){}
-
-        try{
           if(maptilerMap) maptilerMap.resize();
         }catch(e){}
 
-        updateMapViewportOffsets();
       },120);
     }
 
-       var map=L.map('map',{
+          var map=L.map('map',{
       zoomControl:false,
       attributionControl:false,
       preferCanvas:true
@@ -1128,9 +1092,11 @@ border-right:none;
 }
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
-       setAppHeightVar();
+        setAppHeightVar();
 
-    window.addEventListener('resize',refreshMapSizeSoon);
+    window.addEventListener('resize',function(){
+      refreshMapSizeSoon();
+    });
 
     window.addEventListener('orientationchange',function(){
       setTimeout(function(){
@@ -1140,15 +1106,7 @@ border-right:none;
     });
 
     if(window.visualViewport){
-      window.visualViewport.addEventListener('resize',function(){
-        setAppHeightVar();
-        refreshMapSizeSoon();
-      });
-
-      window.visualViewport.addEventListener('scroll',function(){
-        setAppHeightVar();
-        refreshMapSizeSoon();
-      });
+     
     }
 
     if(mobileSearchInput){
