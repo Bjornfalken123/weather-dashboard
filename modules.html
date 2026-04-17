@@ -11,7 +11,6 @@
 
   <link rel="icon" type="image/png" href="/icon.png" />
   <link rel="apple-touch-icon" href="/icon.png" />
-  <link rel="apple-touch-startup-image" href="/splash.png" />
 
   <title>Kustväder – väder, vågor och stationer i realtid</title>
 
@@ -666,9 +665,44 @@
     display:flex;
   }
 }
+#appSplash{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:#040913;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  opacity:1;
+  visibility:visible;
+  transition:opacity 300ms ease, visibility 300ms ease;
+}
+
+#appSplashImage{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+#appSplash.is-hidden{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+
+#appRoot{
+  visibility:hidden;
+}
   </style>
 </head>
 <body>
+<div id="appSplash" aria-hidden="true">
+  <img src="/splash.png" alt="Kustväder" id="appSplashImage" />
+</div>
+
+<div id="appRoot">
   <div class="container">
     <section class="map-panel">
       <div class="map-note" id="mapNote">Klicka på kartan för att välja en punkt för vädermodulen.</div>
@@ -1992,5 +2026,41 @@ function renderFavoritesList(){
     setTimeout(function(){ refreshMapSizeSoon(); },120);
     setTimeout(function(){ refreshMapSizeSoon(); },500);
   </script>
+  </div>
+
+<script>
+  (function () {
+    var splashDelay = 1500;
+    var fadeDuration = 300;
+    var appShown = false;
+
+    function showAppAfterSplash() {
+      if (appShown) return;
+      appShown = true;
+
+      var splash = document.getElementById("appSplash");
+      var appRoot = document.getElementById("appRoot");
+
+      if (appRoot) {
+        appRoot.style.visibility = "visible";
+      }
+
+      if (splash) {
+        splash.classList.add("is-hidden");
+        window.setTimeout(function () {
+          if (splash && splash.parentNode) {
+            splash.parentNode.removeChild(splash);
+          }
+        }, fadeDuration);
+      }
+    }
+
+    window.addEventListener("load", function () {
+      window.setTimeout(showAppAfterSplash, splashDelay);
+    });
+
+    window.setTimeout(showAppAfterSplash, 2200);
+  })();
+</script>
 </body>
 </html>
