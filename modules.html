@@ -407,6 +407,17 @@ body{
   html.standalone-webapp #bottomTabBar {
     bottom: 0 !important;
   }
+@media (max-width:700px) {
+  html.standalone-webapp .container,
+  html.standalone-webapp .map-panel,
+  html.standalone-webapp .map-stack,
+  html.standalone-webapp .map-instance-wrap,
+  html.standalone-webapp #maptilerMap,
+  html.standalone-webapp #map {
+    top: 0 !important;
+    margin-top: 0 !important;
+    translate: none !important;
+  }
 }
   </style>
 </head>
