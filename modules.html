@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+ <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <title>Kustväder – väder, vågor och stationer i realtid</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -391,6 +391,23 @@ body{
       pointer-events: none;
       opacity: 0.6;
     }
+    html.standalone-webapp {
+  --safe-top: 0px;
+}
+
+@media (max-width:700px) {
+  html.standalone-webapp #mapOverlayPanel {
+    top: 10px !important;
+  }
+
+  html.standalone-webapp #timeControl {
+    bottom: var(--time-control-bottom) !important;
+  }
+
+  html.standalone-webapp #bottomTabBar {
+    bottom: 0 !important;
+  }
+}
   </style>
 </head>
 <body>
@@ -589,7 +606,28 @@ body{
 
 // Ingen JS-styrd viewport-höjd på mobil.
 // Appskalet låses med position: fixed i CSS i stället.
+    function isStandaloneWebApp() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
 
+function applyStandaloneInsetsFix() {
+  var standalone = isStandaloneWebApp();
+  document.documentElement.classList.toggle('standalone-webapp', standalone);
+
+  if (standalone) {
+    document.documentElement.style.setProperty('--safe-top', '0px');
+  } else {
+    document.documentElement.style.removeProperty('--safe-top');
+  }
+}
+
+applyStandaloneInsetsFix();
+window.addEventListener('pageshow', applyStandaloneInsetsFix);
+window.addEventListener('resize', applyStandaloneInsetsFix);
+window.addEventListener('orientationchange', function(){
+  setTimeout(applyStandaloneInsetsFix, 250);
+  setTimeout(applyStandaloneInsetsFix, 600);
+});
     function markObjectInteraction(){ lastObjectInteractionAt=Date.now(); }
     function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
     function isMobileView(){ return window.matchMedia("(max-width:700px)").matches; }
