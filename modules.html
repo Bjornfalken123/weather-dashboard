@@ -391,6 +391,69 @@ body{
       pointer-events: none;
       opacity: 0.6;
     }
+    #favoritePlacesWrap{
+  padding-bottom:6px;
+}
+#favoritePlacesList{
+  padding:0 0 8px;
+}
+.favorite-place-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.favorite-place-main{
+  min-width:0;
+  flex:1;
+  color:var(--text-soft);
+  cursor:pointer;
+}
+.favorite-place-name{
+  color:var(--text);
+  font-size:14px;
+  font-weight:700;
+  line-height:1.3;
+}
+.favorite-place-coords{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:11px;
+}
+.favorite-place-remove{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+.favorite-place-empty{
+  padding:8px 18px 14px;
+  color:var(--muted);
+  font-size:12px;
+}
+.weather-point-actions{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+.weather-favorite-btn{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.04);
+  color:var(--text-soft);
+  border-radius:10px;
+  padding:8px 10px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
     html.standalone-webapp {
   --safe-top: 0px;
 }
@@ -548,9 +611,15 @@ body{
       <button id="mobileSearchCloseBtn" type="button" class="sheet-close-btn">Stäng</button>
       <div class="sheet-title">Sök stad</div>
     </div>
-    <div class="search-input-wrap"><input id="mobileSearchInput" type="text" placeholder="Sök stad..." /></div>
-    <div id="mobileSearchResults"></div>
+   <div class="search-input-wrap"><input id="mobileSearchInput" type="text" placeholder="Sök stad..." /></div>
+<div id="mobileSearchResults"></div>
+
+<div id="favoritePlacesWrap">
+  <div class="sheet-header" style="border-top:1px solid rgba(255,255,255,0.07); border-bottom:none;">
+    <div class="sheet-title" style="text-align:left;">Sparade platser</div>
   </div>
+  <div id="favoritePlacesList"></div>
+</div>
 
   <script>
     var activeMode="weather",
@@ -619,6 +688,8 @@ body{
     var latestWeatherRequestId = 0;
     var mobileSearchTimer = null;
     var mobileSearchRequestId = 0;
+    var selectedPlaceName = "";
+var favoritesStorageKey = "weatherFavorites";
 
 // Ingen JS-styrd viewport-höjd på mobil.
 // Appskalet låses med position: fixed i CSS i stället.
@@ -737,7 +808,113 @@ window.addEventListener('orientationchange', function(){
     function distanceKm(a,b,c,d){ var R=6371,dLat=toRad(c-a),dLon=toRad(d-b),x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toRad(a))*Math.cos(toRad(c))*Math.sin(dLon/2)*Math.sin(dLon/2); return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
     function buildVivaNearestCacheKey(lat,lon,names,lm){ return Number(lat).toFixed(3)+':'+Number(lon).toFixed(3)+':'+names.join('|')+':'+(lm?'light':'full'); }
     function buildWaveEvaluationCacheKey(s,lm){ return s.id+':'+(lm?'light':'full'); }
+function buildFavoriteId(lat, lon){
+  return Number(lat).toFixed(4) + ":" + Number(lon).toFixed(4);
+}
 
+function getStoredFavorites(){
+  try{
+    var raw = localStorage.getItem(favoritesStorageKey);
+    var parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveStoredFavorites(items){
+  localStorage.setItem(favoritesStorageKey, JSON.stringify(items));
+}
+
+function isFavorite(lat, lon){
+  var id = buildFavoriteId(lat, lon);
+  return getStoredFavorites().some(function(item){ return item.id === id; });
+}
+
+function addFavorite(place){
+  var items = getStoredFavorites();
+  if(items.some(function(item){ return item.id === place.id; })) return;
+  items.unshift(place);
+  saveStoredFavorites(items.slice(0, 20));
+  renderFavoritesList();
+}
+
+function removeFavorite(id){
+  var items = getStoredFavorites().filter(function(item){ return item.id !== id; });
+  saveStoredFavorites(items);
+  renderFavoritesList();
+}
+
+async function reverseGeocodePlace(lat, lon){
+  try{
+    var url =
+      "https://api.maptiler.com/geocoding/" +
+      encodeURIComponent(lon + "," + lat) +
+      ".json?key=" + MAPTILER_API_KEY +
+      "&language=sv&types=municipality,city,town,village,hamlet,locality";
+
+    var res = await fetch(url);
+    var data = await res.json();
+
+    var features = Array.isArray(data && data.features) ? data.features : [];
+    if(!features.length) return "";
+
+    var best = features[0];
+    return best.place_name_sv || best.place_name || best.text_sv || best.text || "";
+  }catch(e){
+    console.warn("Reverse geocoding misslyckades", e);
+    return "";
+  }
+}
+
+function renderFavoritesList(){
+  var list = document.getElementById("favoritePlacesList");
+  if(!list) return;
+
+  var items = getStoredFavorites();
+
+  if(!items.length){
+    list.innerHTML = '<div class="favorite-place-empty">Inga sparade platser ännu.</div>';
+    return;
+  }
+
+  list.innerHTML = "";
+  items.forEach(function(item){
+    var row = document.createElement("div");
+    row.className = "favorite-place-item";
+
+    var main = document.createElement("div");
+    main.className = "favorite-place-main";
+    main.innerHTML =
+      '<div class="favorite-place-name">' + item.name + '</div>' +
+      '<div class="favorite-place-coords">' + formatCoord(item.lat) + ', ' + formatCoord(item.lon) + '</div>';
+
+    main.onclick = function(){
+      closeSearch();
+      setTimeout(function(){
+        map.setView([item.lat, item.lon], 9);
+        if(maptilerMap){
+          maptilerMap.flyTo({center:[item.lon, item.lat], zoom:9});
+        }
+        handlePrimaryMapClick(item.lat, item.lon);
+        refreshMapSizeSoon();
+      }, 120);
+    };
+
+    var removeBtn = document.createElement("button");
+    removeBtn.className = "favorite-place-remove";
+    removeBtn.type = "button";
+    removeBtn.textContent = "Ta bort";
+    removeBtn.onclick = function(e){
+      e.stopPropagation();
+      removeFavorite(item.id);
+    };
+
+    row.appendChild(main);
+    row.appendChild(removeBtn);
+    list.appendChild(row);
+  });
+}
     function updateMapViewportOffsets(){
       if(!maptilerMap) return;
       try{
@@ -1032,7 +1209,15 @@ window.addEventListener('orientationchange', function(){
               {label:'Luftfuktighet',value:formatHumidity(humidity)}
             ])+'</div>';
           }
-          return '<div class="weather-overview"><div class="weather-icon">'+weatherIconFromSymbol(symbol)+'</div><div class="weather-main"><div class="weather-main-title">'+weatherLabelFromSymbol(symbol)+'</div><div class="weather-main-time">'+formatWeatherDateTime(pt)+'</div></div></div><div class="weather-temp-big">'+formatTemp(temp)+'</div><div class="weather-point-line">Punkt: '+formatCoord(lat)+', '+formatCoord(lon)+'</div><button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">'+detailsButtonText+'</button>'+detailsHtml;
+          return '<div class="weather-overview"><div class="weather-icon">'+weatherIconFromSymbol(symbol)+'</div><div class="weather-main"><div class="weather-main-title">'+weatherLabelFromSymbol(symbol)+'</div><div class="weather-main-time">'+formatWeatherDateTime(pt)+'</div></div></div><div class="weather-temp-big">'+formatTemp(temp)+'</div>'<div class="weather-point-line">' +
+  (selectedPlaceName ? selectedPlaceName : 'Vald plats') +
+  '<br><span style="color:var(--muted);">' + formatCoord(lat) + ', ' + formatCoord(lon) + '</span>' +
+'</div>' +
+'<div class="weather-point-actions">' +
+  '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
+    (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
+  '</button>' +
+'</div>'<button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">'+detailsButtonText+'</button>'+detailsHtml;
         }
 
         window.updateWeatherForSelectedTime=function(){
@@ -1205,18 +1390,40 @@ window.addEventListener('orientationchange', function(){
     }
     function toggleOverlayCollapsed(forceState){ if(!mapOverlayPanel) return; if(typeof forceState==='boolean'){ mapOverlayPanel.classList.toggle('is-collapsed',forceState); } else { mapOverlayPanel.classList.toggle('is-collapsed'); } updateOverlayCollapseButtonText(); refreshMapSizeSoon(); }
     if(overlayCollapseBtn){ overlayCollapseBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleOverlayCollapsed(); }); }
-    if(overlayContentEl){
-      overlayContentEl.addEventListener("click",function(e){
-        if(e.target && e.target.id==="weatherDetailsToggleBtn"){
-          e.stopPropagation();
-          weatherDetailsExpanded=!weatherDetailsExpanded;
-          syncWeatherOverlayExpandedState();
-          if(window.updateWeatherForSelectedTime){
-            window.updateWeatherForSelectedTime();
-          }
-        }
-      });
+ if(overlayContentEl){
+  overlayContentEl.addEventListener("click",function(e){
+    if(e.target && e.target.id==="weatherDetailsToggleBtn"){
+      e.stopPropagation();
+      weatherDetailsExpanded=!weatherDetailsExpanded;
+      syncWeatherOverlayExpandedState();
+      if(window.updateWeatherForSelectedTime){
+        window.updateWeatherForSelectedTime();
+      }
+      return;
     }
+
+    if(e.target && e.target.id==="saveFavoriteBtn"){
+      e.stopPropagation();
+
+      var sel = savedSelections.weather;
+      if(!sel) return;
+
+      var favId = buildFavoriteId(sel.lat, sel.lon);
+      if(isFavorite(sel.lat, sel.lon)) return;
+
+      addFavorite({
+        id: favId,
+        name: selectedPlaceName || ("Plats " + formatCoord(sel.lat) + ", " + formatCoord(sel.lon)),
+        lat: sel.lat,
+        lon: sel.lon
+      });
+
+      if(window.updateWeatherForSelectedTime){
+        window.updateWeatherForSelectedTime();
+      }
+    }
+  });
+}
     if(isMobileView()){ toggleOverlayCollapsed(false); } else { updateOverlayCollapseButtonText(); }
 
     var filterDrawer=document.getElementById('filterDrawer'), filterToggleBtn=document.getElementById('filterToggleBtn'), filterCloseBtn=document.getElementById('filterCloseBtn');
@@ -1260,17 +1467,27 @@ window.addEventListener('orientationchange', function(){
 
     function setMaptilerWeatherMarker(lat,lon){ if(!maptilerMap || !window.maptilersdk) return; if(maptilerWeatherMarker) maptilerWeatherMarker.remove(); maptilerWeatherMarker=new maptilersdk.Marker().setLngLat([lon,lat]).addTo(maptilerMap); }
 
-    function handlePrimaryMapClick(lat,lon){
-      if(Date.now()-lastObjectInteractionAt<500) return;
+async function handlePrimaryMapClick(lat,lon){
+  if(Date.now()-lastObjectInteractionAt<500) return;
 
-      weatherDetailsExpanded = false;
-      syncWeatherOverlayExpandedState();
+  weatherDetailsExpanded = false;
+  syncWeatherOverlayExpandedState();
 
-      saveSelection('weather',{lat:lat,lon:lon});
-      setWeatherMarker(lat,lon);
-      setMaptilerWeatherMarker(lat,lon);
-      loadWeatherForPoint(lat,lon);
-    }
+  saveSelection('weather',{lat:lat,lon:lon});
+  setWeatherMarker(lat,lon);
+  setMaptilerWeatherMarker(lat,lon);
+
+  selectedPlaceName = "";
+  updateMapOverlay("Laddar plats...", "Söker närmaste ort...");
+
+  try{
+    selectedPlaceName = await reverseGeocodePlace(lat, lon);
+  }catch(e){
+    selectedPlaceName = "";
+  }
+
+  loadWeatherForPoint(lat,lon);
+}
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
     window.addEventListener('resize',refreshMapSizeSoon);
@@ -1442,6 +1659,7 @@ window.addEventListener('orientationchange', function(){
 
     updateModeUI();
     updateActiveLayersBadge();
+    renderFavoritesList();
 
     // Ladda inte bojar/fyrar direkt vid sidstart.
     // De laddas först när användaren aktiverar respektive lager.
