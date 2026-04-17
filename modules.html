@@ -836,17 +836,20 @@
   </div>
 
   <script>
-    var activeMode="weather",
-        showWaveObjects=false,
-        showLighthouseObjects=false,
-        showAisObjects=false,
-        lastObjectInteractionAt=0,
-        forecastExpanded=false,
-        currentForecastDays=[],
-        weatherTimeseries=[],
-        selectedForecastTime=null,
-        timePlaybackTimer=null,
-        weatherDetailsExpanded=false;
+  <script>
+  var activeMode="weather",
+      showWaveObjects=false,
+      showLighthouseObjects=false,
+      showAisObjects=false,
+      lastObjectInteractionAt=0,
+      forecastExpanded=false,
+      currentForecastDays=[],
+      weatherTimeseries=[],
+      selectedForecastTime=null,
+      timePlaybackTimer=null,
+      weatherDetailsExpanded=false,
+      timelineApplyTimer=null,
+      pendingForecastTime=null;
 
     var savedSelections={weather:null,wave:null,lighthouse:null};
 
@@ -1929,13 +1932,180 @@ function renderFavoritesList(){
           function setDeskBtn(id,on){ var b=document.getElementById(id); if(!b) return; b.textContent=on ? 'På' : 'Av'; b.classList.toggle('is-on',on); b.classList.toggle('is-off',!on); }
           function setMobToggle(id,on){ var b=document.getElementById(id); if(b) b.classList.toggle('is-on',on); }
           function syncAllLayerButtons(){ setDeskBtn('toggleWindLayerBtn',windLayerVisible); setDeskBtn('togglePrecipLayerBtn',precipitationLayerVisible); setDeskBtn('toggleCloudLayerBtn',cloudLayerVisible); setDeskBtn('toggleRadarLayerBtn',radarLayerVisible); setDeskBtn('toggleTemperatureLayerBtn',temperatureLayerVisible); setDeskBtn('toggleWaveModeBtn',showWaveObjects); setDeskBtn('toggleLighthouseModeBtn',showLighthouseObjects); setMobToggle('mobileToggleWindBtn',windLayerVisible); setMobToggle('mobileTogglePrecipBtn',precipitationLayerVisible); setMobToggle('mobileToggleCloudBtn',cloudLayerVisible); setMobToggle('mobileToggleRadarBtn',radarLayerVisible); setMobToggle('mobileToggleTemperatureBtn',temperatureLayerVisible); setMobToggle('mobileToggleWaveBtn',showWaveObjects); setMobToggle('mobileToggleLighthouseBtn',showLighthouseObjects); updateActiveLayersBadge(); refreshMobileNavState(); }
-          function formatMapTime(v){ if(!v) return '--'; var d=new Date(v); if(isNaN(d.getTime())) return '--'; return d.toLocaleString('sv-SE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
-          function updateTimeLabel(){ if(timeValueLabel) timeValueLabel.textContent=selectedForecastTime ? formatMapTime(selectedForecastTime) : '--'; }
-          function updateTimeTicks(){ if(!forecastStartTime || !forecastEndTime) return; ['tick0','tick1','tick2','tick3','tick4'].forEach(function(id,i){ var el=document.getElementById(id); if(!el) return; var t=new Date(forecastStartTime+(forecastEndTime-forecastStartTime)*i/4); el.textContent=t.toLocaleString('sv-SE',{weekday:'short',hour:'2-digit',minute:'2-digit'}); }); }
-          function applySelectedForecastTime(){ if(!selectedForecastTime) return; var s=selectedForecastTime/1000; try{ if(maptilerTimelineLayer) maptilerTimelineLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerWindLayer) maptilerWindLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerPrecipitationLayer) maptilerPrecipitationLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerCloudLayer) maptilerCloudLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerRadarLayer) maptilerRadarLayer.setAnimationTime(s); }catch(e){} try{ if(maptilerTemperatureLayer) maptilerTemperatureLayer.setAnimationTime(s); }catch(e){} if(timeSlider) timeSlider.value=String(selectedForecastTime); updateTimeLabel(); if(window.updateWeatherForSelectedTime) window.updateWeatherForSelectedTime(); }
-          function stopTimePlayback(){ if(timePlaybackTimer){ clearInterval(timePlaybackTimer); timePlaybackTimer=null; } isTimePlaying=false; if(playIcon) playIcon.innerHTML='<polygon points="2,1 11,6 2,11"></polygon>'; if(playBtnText) playBtnText.textContent='Spela'; }
-          function getFirstReadyTimelineLayer(){ var candidates=[maptilerTimelineLayer,maptilerPrecipitationLayer,maptilerCloudLayer,maptilerRadarLayer,maptilerTemperatureLayer,maptilerWindLayer]; for(var i=0;i<candidates.length;i++){ var layer=candidates[i]; if(!layer) continue; var sd=layer.getAnimationStartDate && layer.getAnimationStartDate(), ed=layer.getAnimationEndDate && layer.getAnimationEndDate(), cd=layer.getAnimationTimeDate && layer.getAnimationTimeDate(); if(sd && ed && cd && isFinite(+sd) && isFinite(+ed) && isFinite(+cd)){ return {layer:layer,start:+sd,end:+ed,current:+cd}; } } return null; }
-          function initializeForecastTimeline(){ if(!timeSlider) return false; var timeline=getFirstReadyTimelineLayer(); if(!timeline) return false; forecastStartTime=timeline.start; forecastEndTime=timeline.end; selectedForecastTime=timeline.current; timeSlider.min=String(forecastStartTime); timeSlider.max=String(forecastEndTime); timeSlider.step=String(60*60*1000); timeSlider.value=String(selectedForecastTime); updateTimeLabel(); applySelectedForecastTime(); updateTimeTicks(); refreshMapSizeSoon(); return true; }
+      function formatMapTime(v){
+  if(!v) return '--';
+  var d = new Date(v);
+  if(isNaN(d.getTime())) return '--';
+  return d.toLocaleString('sv-SE',{
+    weekday:'short',
+    day:'2-digit',
+    month:'2-digit',
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+}
+
+function updateTimeLabel(){
+  if(timeValueLabel){
+    timeValueLabel.textContent = selectedForecastTime ? formatMapTime(selectedForecastTime) : '--';
+  }
+}
+
+function updateTimeTicks(){
+  if(!forecastStartTime || !forecastEndTime) return;
+
+  ['tick0','tick1','tick2','tick3','tick4'].forEach(function(id,i){
+    var el = document.getElementById(id);
+    if(!el) return;
+
+    var t = new Date(forecastStartTime + (forecastEndTime - forecastStartTime) * i / 4);
+    el.textContent = t.toLocaleString('sv-SE',{
+      weekday:'short',
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+  });
+}
+
+function applySelectedForecastTimeImmediate(timeValue){
+  if(!timeValue) return;
+
+  var s = timeValue / 1000;
+
+  try{
+    if(maptilerTimelineLayer) maptilerTimelineLayer.setAnimationTime(s);
+  }catch(e){}
+
+  try{
+    if(windLayerVisible && maptilerWindLayer) maptilerWindLayer.setAnimationTime(s);
+  }catch(e){}
+
+  try{
+    if(precipitationLayerVisible && maptilerPrecipitationLayer) maptilerPrecipitationLayer.setAnimationTime(s);
+  }catch(e){}
+
+  try{
+    if(cloudLayerVisible && maptilerCloudLayer) maptilerCloudLayer.setAnimationTime(s);
+  }catch(e){}
+
+  try{
+    if(radarLayerVisible && maptilerRadarLayer) maptilerRadarLayer.setAnimationTime(s);
+  }catch(e){}
+
+  try{
+    if(temperatureLayerVisible && maptilerTemperatureLayer) maptilerTemperatureLayer.setAnimationTime(s);
+  }catch(e){}
+
+  if(timeSlider){
+    timeSlider.value = String(timeValue);
+  }
+
+  updateTimeLabel();
+
+  if(window.updateWeatherForSelectedTime){
+    window.updateWeatherForSelectedTime();
+  }
+}
+
+function applySelectedForecastTime(forceImmediate){
+  if(!selectedForecastTime) return;
+
+  if(forceImmediate){
+    pendingForecastTime = null;
+
+    if(timelineApplyTimer){
+      clearTimeout(timelineApplyTimer);
+      timelineApplyTimer = null;
+    }
+
+    applySelectedForecastTimeImmediate(selectedForecastTime);
+    return;
+  }
+
+  pendingForecastTime = selectedForecastTime;
+
+  if(timelineApplyTimer) return;
+
+  timelineApplyTimer = setTimeout(function(){
+    timelineApplyTimer = null;
+
+    if(pendingForecastTime){
+      applySelectedForecastTimeImmediate(pendingForecastTime);
+      pendingForecastTime = null;
+    }
+  }, 90);
+}
+
+function stopTimePlayback(){
+  if(timePlaybackTimer){
+    clearInterval(timePlaybackTimer);
+    timePlaybackTimer = null;
+  }
+
+  isTimePlaying = false;
+
+  if(playIcon){
+    playIcon.innerHTML = '<polygon points="2,1 11,6 2,11"></polygon>';
+  }
+
+  if(playBtnText){
+    playBtnText.textContent = 'Spela';
+  }
+}
+
+function getFirstReadyTimelineLayer(){
+  var candidates = [
+    maptilerTimelineLayer,
+    maptilerPrecipitationLayer,
+    maptilerCloudLayer,
+    maptilerRadarLayer,
+    maptilerTemperatureLayer,
+    maptilerWindLayer
+  ];
+
+  for(var i=0; i<candidates.length; i++){
+    var layer = candidates[i];
+    if(!layer) continue;
+
+    var sd = layer.getAnimationStartDate && layer.getAnimationStartDate();
+    var ed = layer.getAnimationEndDate && layer.getAnimationEndDate();
+    var cd = layer.getAnimationTimeDate && layer.getAnimationTimeDate();
+
+    if(sd && ed && cd && isFinite(+sd) && isFinite(+ed) && isFinite(+cd)){
+      return {
+        layer: layer,
+        start: +sd,
+        end: +ed,
+        current: +cd
+      };
+    }
+  }
+
+  return null;
+}
+
+function initializeForecastTimeline(){
+  if(!timeSlider) return false;
+
+  var timeline = getFirstReadyTimelineLayer();
+  if(!timeline) return false;
+
+  forecastStartTime = timeline.start;
+  forecastEndTime = timeline.end;
+  selectedForecastTime = timeline.current;
+
+  timeSlider.min = String(forecastStartTime);
+  timeSlider.max = String(forecastEndTime);
+  timeSlider.step = String(60 * 60 * 1000);
+  timeSlider.value = String(selectedForecastTime);
+
+  updateTimeLabel();
+  applySelectedForecastTime(true);
+  updateTimeTicks();
+  refreshMapSizeSoon();
+
+  return true;
+}
           function onWindToggle(){ if(!maptilerWindLayer) return; if(windLayerVisible){ maptilerMap.removeLayer('main-wind-layer'); } else { maptilerMap.addLayer(maptilerWindLayer); if(selectedForecastTime) maptilerWindLayer.setAnimationTime(selectedForecastTime/1000); } windLayerVisible=!windLayerVisible; syncAllLayerButtons(); }
           function onPrecipToggle(){ if(!maptilerPrecipitationLayer) return; if(precipitationLayerVisible){ maptilerMap.removeLayer('main-precipitation-layer'); } else { maptilerMap.addLayer(maptilerPrecipitationLayer); if(selectedForecastTime) maptilerPrecipitationLayer.setAnimationTime(selectedForecastTime/1000); } precipitationLayerVisible=!precipitationLayerVisible; syncAllLayerButtons(); }
           function onCloudToggle(){ if(!maptilerCloudLayer) return; if(cloudLayerVisible){ maptilerMap.removeLayer('main-cloud-layer'); } else { maptilerMap.addLayer(maptilerCloudLayer); if(selectedForecastTime) maptilerCloudLayer.setAnimationTime(selectedForecastTime/1000); } cloudLayerVisible=!cloudLayerVisible; syncAllLayerButtons(); }
@@ -1957,48 +2127,84 @@ function renderFavoritesList(){
           setTimeout(function(){ initializeForecastTimeline(); },1400);
           syncAllLayerButtons();
 
-          if(timeSlider){
-            var handleChange=function(){ stopTimePlayback(); selectedForecastTime=parseInt(timeSlider.value,10); applySelectedForecastTime(); };
-            var stopTouch=function(e){ e.stopPropagation(); };
-            timeSlider.addEventListener('input',handleChange);
-            timeSlider.addEventListener('change',handleChange);
-            timeSlider.addEventListener('touchstart',stopTouch,{passive:true});
-            timeSlider.addEventListener('touchmove',stopTouch,{passive:true});
-            timeSlider.addEventListener('touchend',function(e){ stopTouch(e); handleChange(); },{passive:true});
-            timeSlider.addEventListener('pointerdown',stopTouch);
-            timeSlider.addEventListener('pointermove',stopTouch);
-            timeSlider.addEventListener('pointerup',stopTouch);
+         if(timeSlider){
+  var handleInput = function(){
+    stopTimePlayback();
+    selectedForecastTime = parseInt(timeSlider.value, 10);
+    applySelectedForecastTime(false);
+  };
 
-            var tc=document.getElementById('timeControl');
-            if(tc){
-              tc.addEventListener('touchstart',stopTouch,{passive:true});
-              tc.addEventListener('touchmove',stopTouch,{passive:true});
-              tc.addEventListener('pointerdown',stopTouch);
-            }
+  var handleFinalChange = function(){
+    stopTimePlayback();
+    selectedForecastTime = parseInt(timeSlider.value, 10);
+    applySelectedForecastTime(true);
+  };
 
-            if(timePlayPauseBtn){
-              timePlayPauseBtn.addEventListener('touchstart',stopTouch,{passive:true});
-              timePlayPauseBtn.addEventListener('touchend',stopTouch,{passive:true});
-              timePlayPauseBtn.addEventListener('pointerdown',stopTouch);
-              timePlayPauseBtn.addEventListener('click',stopTouch);
-            }
-          }
+  var stopTouch = function(e){
+    e.stopPropagation();
+  };
 
-          if(timePlayPauseBtn){
-            timePlayPauseBtn.addEventListener('click',function(){
-              if(!forecastStartTime || !forecastEndTime || !selectedForecastTime) return;
-              if(isTimePlaying){ stopTimePlayback(); return; }
-              isTimePlaying=true;
-              if(playIcon){ playIcon.innerHTML='<rect x="2" y="1" width="3.5" height="10" rx="1"></rect><rect x="6.5" y="1" width="3.5" height="10" rx="1"></rect>'; }
-              if(playBtnText) playBtnText.textContent='Pausa';
-              timePlaybackTimer=setInterval(function(){
-                if(!selectedForecastTime) return;
-                var next=selectedForecastTime+60*60*1000;
-                selectedForecastTime=next>forecastEndTime ? forecastStartTime : next;
-                applySelectedForecastTime();
-              },700);
-            });
-          }
+  timeSlider.addEventListener('input', handleInput);
+  timeSlider.addEventListener('change', handleFinalChange);
+
+  timeSlider.addEventListener('touchstart', stopTouch, {passive:true});
+  timeSlider.addEventListener('touchmove', stopTouch, {passive:true});
+  timeSlider.addEventListener('touchend', function(e){
+    stopTouch(e);
+    handleFinalChange();
+  }, {passive:true});
+
+  timeSlider.addEventListener('pointerdown', stopTouch);
+  timeSlider.addEventListener('pointermove', stopTouch);
+  timeSlider.addEventListener('pointerup', function(e){
+    stopTouch(e);
+    handleFinalChange();
+  });
+
+  var tc = document.getElementById('timeControl');
+  if(tc){
+    tc.addEventListener('touchstart', stopTouch, {passive:true});
+    tc.addEventListener('touchmove', stopTouch, {passive:true});
+    tc.addEventListener('pointerdown', stopTouch);
+  }
+
+  if(timePlayPauseBtn){
+    timePlayPauseBtn.addEventListener('touchstart', stopTouch, {passive:true});
+    timePlayPauseBtn.addEventListener('touchend', stopTouch, {passive:true});
+    timePlayPauseBtn.addEventListener('pointerdown', stopTouch);
+    timePlayPauseBtn.addEventListener('click', stopTouch);
+  }
+}
+
+       if(timePlayPauseBtn){
+  timePlayPauseBtn.addEventListener('click',function(){
+    if(!forecastStartTime || !forecastEndTime || !selectedForecastTime) return;
+
+    if(isTimePlaying){
+      stopTimePlayback();
+      return;
+    }
+
+    isTimePlaying = true;
+
+    if(playIcon){
+      playIcon.innerHTML = '<rect x="2" y="1" width="3.5" height="10" rx="1"></rect><rect x="6.5" y="1" width="3.5" height="10" rx="1"></rect>';
+    }
+
+    if(playBtnText){
+      playBtnText.textContent = 'Pausa';
+    }
+
+    timePlaybackTimer = setInterval(function(){
+      if(!selectedForecastTime) return;
+
+      var next = selectedForecastTime + 60 * 60 * 1000;
+      selectedForecastTime = next > forecastEndTime ? forecastStartTime : next;
+
+      applySelectedForecastTime(true);
+    },700);
+  });
+}
 
           refreshMapSizeSoon();
         }catch(err){ console.error('Fel vid skapande av väderlager.',err); }
