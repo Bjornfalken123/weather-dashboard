@@ -1000,58 +1000,101 @@
       renderFavoritesList();
     }
 
+function toRad(value){
+  return value * Math.PI / 180;
+}
+
+function distanceKmBetween(lat1, lon1, lat2, lon2){
+  var R = 6371;
+  var dLat = toRad(lat2 - lat1);
+  var dLon = toRad(lon2 - lon1);
+  var a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function extractPlaceLabel(feature){
+  if(!feature) return "";
+
+  var props = feature.properties || {};
+
+  var directName =
+    props.name_sv ||
+    props.name ||
+    feature.text_sv ||
+    feature.text ||
+    "";
+
+  if(directName && String(directName).trim()){
+    return String(directName).trim();
+  }
+
+  var placeName =
+    feature.place_name_sv ||
+    feature.place_name ||
+    "";
+
+  if(placeName && String(placeName).trim()){
+    return String(placeName).split(",")[0].trim();
+  }
+
+  return "";
+}
+
 async function reverseGeocodePlace(lat, lon){
   try{
-    var url =
+    var nearbyUrl =
       "https://api.maptiler.com/geocoding/" +
-      encodeURIComponent(lon + "," + lat) +
+      encodeURIComponent(String(lon) + "," + String(lat)) +
       ".json?key=" + MAPTILER_API_KEY +
-      "&language=sv&limit=5";
+      "&language=sv" +
+      "&limit=10" +
+      "&types=municipality,city,town,village,hamlet,locality,county";
 
-    var res = await fetch(url);
-    var data = await res.json();
+    var nearbyRes = await fetch(nearbyUrl);
+    var nearbyData = await nearbyRes.json();
 
-    var features = Array.isArray(data && data.features) ? data.features : [];
-    if(!features.length) return "";
+    var nearbyFeatures = Array.isArray(nearbyData && nearbyData.features) ? nearbyData.features : [];
 
-    var preferred = features.find(function(feature){
-      var props = feature && feature.properties ? feature.properties : {};
-      var category = String(props.category || "").toLowerCase();
-      var layer = String(props.layer || "").toLowerCase();
-      var placeType = String(feature && feature.place_type && feature.place_type[0] || "").toLowerCase();
+    if(nearbyFeatures.length){
+      var bestFeature = null;
+      var bestDistance = Infinity;
 
-      return (
-        category.includes("municipality") ||
-        layer.includes("municipality") ||
-        layer.includes("city") ||
-        layer.includes("town") ||
-        layer.includes("village") ||
-        placeType === "municipality" ||
-        placeType === "city" ||
-        placeType === "town" ||
-        placeType === "village" ||
-        placeType === "locality"
-      );
-    }) || features[0];
+      nearbyFeatures.forEach(function(feature){
+        if(!feature || !Array.isArray(feature.center) || feature.center.length < 2) return;
 
-    var props = preferred.properties || {};
+        var featureLon = Number(feature.center[0]);
+        var featureLat = Number(feature.center[1]);
 
-    var name =
-      props.name_sv ||
-      props.name ||
-      preferred.text_sv ||
-      preferred.text ||
-      "";
+        if(!isFinite(featureLat) || !isFinite(featureLon)) return;
 
-    if(name) return String(name).trim();
+        var dist = distanceKmBetween(lat, lon, featureLat, featureLon);
+        if(dist < bestDistance){
+          bestDistance = dist;
+          bestFeature = feature;
+        }
+      });
 
-    var placeName =
-      preferred.place_name_sv ||
-      preferred.place_name ||
-      "";
+      var bestName = extractPlaceLabel(bestFeature);
+      if(bestName) return bestName;
+    }
 
-    if(placeName){
-      return String(placeName).split(",")[0].trim();
+    var fallbackUrl =
+      "https://api.maptiler.com/geocoding/" +
+      encodeURIComponent(String(lon) + "," + String(lat)) +
+      ".json?key=" + MAPTILER_API_KEY +
+      "&language=sv" +
+      "&limit=1";
+
+    var fallbackRes = await fetch(fallbackUrl);
+    var fallbackData = await fallbackRes.json();
+
+    var fallbackFeatures = Array.isArray(fallbackData && fallbackData.features) ? fallbackData.features : [];
+    if(fallbackFeatures.length){
+      var fallbackName = extractPlaceLabel(fallbackFeatures[0]);
+      if(fallbackName) return fallbackName;
     }
 
     return "";
