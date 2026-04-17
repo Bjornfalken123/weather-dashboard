@@ -15,7 +15,7 @@
   <script src="https://cdn.maptiler.com/maptiler-weather/v3.1.1/maptiler-weather.umd.min.js"></script>
 
   <style>
-    :root{
+      :root{
       --bg-1:#040913;
       --bg-2:#08101d;
       --bg-3:#0c1727;
@@ -34,14 +34,35 @@
       --safe-bottom:env(safe-area-inset-bottom,0px);
       --safe-top:env(safe-area-inset-top,0px);
 
-             --app-height:100dvh;
+      --vvh:100vh;
+      --app-height:var(--vvh);
       --bottom-ui-offset:calc(var(--tab-bar-height) + var(--safe-bottom));
       --time-control-bottom:var(--bottom-ui-offset);
     }
 
     *{box-sizing:border-box;}
-    html,body{height:100%;margin:0;overflow-x:hidden;}
+
+    html{
+      height:100%;
+      height:-webkit-fill-available;
+      margin:0;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 8% 0%,rgba(123,199,255,0.16) 0%,transparent 24%),
+        radial-gradient(circle at 92% 8%,rgba(152,240,219,0.10) 0%,transparent 18%),
+        radial-gradient(circle at 50% 100%,rgba(180,199,255,0.10) 0%,transparent 20%),
+        linear-gradient(180deg,var(--bg-1) 0%,var(--bg-2) 42%,var(--bg-3) 100%);
+    }
+
     body{
+      min-height:100%;
+      min-height:-webkit-fill-available;
+      min-height:var(--app-height);
+      height:var(--app-height);
+      margin:0;
+      overflow:hidden;
+      overflow-x:hidden;
+      overscroll-behavior:none;
       font-family:Inter,Arial,Helvetica,sans-serif;
       color:var(--text);
       background:
@@ -55,20 +76,40 @@
 
     .container,.map-panel,.map-instance-wrap,#maptilerMap,#map{min-height:var(--app-height);}
 
-    .container{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:18px;}
-    .map-panel{
-      position:relative;overflow:hidden;border-radius:var(--radius-xl);
-      border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
-      backdrop-filter:blur(22px) saturate(155%);-webkit-backdrop-filter:blur(22px) saturate(155%);
-      box-shadow:var(--shadow-md);padding:18px;min-height:calc(100vh - 36px);
+    .container{
+      position:relative;
+      z-index:1;
+      max-width:1600px;
+      margin:0 auto;
+      padding:18px;
     }
+
+    .map-panel{
+      position:relative;
+      overflow:hidden;
+      border-radius:var(--radius-xl);
+      border:1px solid var(--border);
+      background:linear-gradient(180deg,rgba(255,255,255,0.075) 0%,rgba(255,255,255,0.045) 100%);
+      backdrop-filter:blur(22px) saturate(155%);
+      -webkit-backdrop-filter:blur(22px) saturate(155%);
+      box-shadow:var(--shadow-md);
+      padding:18px;
+      min-height:calc(var(--app-height) - 36px);
+    }
+
     .map-note{position:relative;z-index:1;margin-bottom:16px;color:var(--muted-soft);font-size:14px;line-height:1.6;}
     .map-stack{position:relative;z-index:1;}
     .map-instance-wrap{position:relative;isolation:isolate;}
 
     #map,#maptilerMap{
-      position:relative;z-index:1;width:100%;height:calc(100vh - 72px);min-height:620px;
-      border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);
+      position:relative;
+      z-index:1;
+      width:100%;
+      height:calc(var(--app-height) - 72px);
+      min-height:620px;
+      border-radius:24px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.12);
       box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 20px 42px rgba(0,0,0,0.24);
     }
 
@@ -423,9 +464,9 @@ border-right:none;
         maptilerTemperatureLayer=null,
         maptilerTimelineLayer=null;
 
-    var windLayerVisible=true,
-        precipitationLayerVisible=true,
-        cloudLayerVisible=true,
+       var windLayerVisible=true,
+        precipitationLayerVisible=false,
+        cloudLayerVisible=false,
         radarLayerVisible=false,
         temperatureLayerVisible=false;
 
@@ -555,6 +596,16 @@ border-right:none;
     function buildVivaNearestCacheKey(lat,lon,names,lm){ return Number(lat).toFixed(3)+':'+Number(lon).toFixed(3)+':'+names.join('|')+':'+(lm?'light':'full'); }
     function buildWaveEvaluationCacheKey(s,lm){ return s.id+':'+(lm?'light':'full'); }
 
+       var resizeRefreshTimer=null;
+    var lastAppliedMapPaddingKey='';
+
+    function setAppHeightVar(){
+      var viewportHeight=window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      if(!viewportHeight || !isFinite(viewportHeight)) return;
+      document.documentElement.style.setProperty('--vvh', viewportHeight + 'px');
+      document.documentElement.style.setProperty('--app-height', viewportHeight + 'px');
+    }
+
     function updateMapViewportOffsets(){
       if(!maptilerMap) return;
       try{
@@ -562,16 +613,58 @@ border-right:none;
         var overlay=document.getElementById('mapOverlayPanel');
         var timeControl=document.getElementById('timeControl');
         var padding={top:20,right:20,bottom:20,left:20};
-        if(overlay && overlay.offsetParent!==null){ padding.top=Math.max(20, overlay.offsetHeight + (mobile ? 22 : 26)); }
-        if(timeControl && timeControl.offsetParent!==null){ padding.bottom=Math.max(20, timeControl.offsetHeight + (mobile ? 24 : 26)); }
-        maptilerMap.easeTo({center:maptilerMap.getCenter(),zoom:maptilerMap.getZoom(),duration:0,padding:padding});
-      }catch(e){ console.warn('Kunde inte uppdatera map padding',e); }
+
+        if(overlay && overlay.offsetParent!==null){
+          padding.top=Math.max(20, overlay.offsetHeight + (mobile ? 22 : 26));
+        }
+
+        if(timeControl && timeControl.offsetParent!==null){
+          padding.bottom=Math.max(20, timeControl.offsetHeight + (mobile ? 24 : 26));
+        }
+
+        var paddingKey=[padding.top,padding.right,padding.bottom,padding.left].join(':');
+        if(paddingKey===lastAppliedMapPaddingKey) return;
+        lastAppliedMapPaddingKey=paddingKey;
+
+        maptilerMap.easeTo({
+          center:maptilerMap.getCenter(),
+          zoom:maptilerMap.getZoom(),
+          duration:0,
+          padding:padding
+        });
+      }catch(e){
+        console.warn('Kunde inte uppdatera map padding',e);
+      }
     }
 
-    function refreshMapSizeSoon(){ setTimeout(function(){ try{ map.invalidateSize(); }catch(e){} try{ if(maptilerMap) maptilerMap.resize(); }catch(e){} updateMapViewportOffsets(); },60); }
+    function refreshMapSizeSoon(){
+      if(resizeRefreshTimer){
+        clearTimeout(resizeRefreshTimer);
+      }
 
-    var map=L.map('map',{zoomControl:false}).setView([58.6,13.0],6);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+      resizeRefreshTimer=setTimeout(function(){
+        setAppHeightVar();
+
+        try{
+          var hiddenLeafletMap=document.getElementById('map');
+          if(hiddenLeafletMap && hiddenLeafletMap.offsetParent!==null){
+            map.invalidateSize(false);
+          }
+        }catch(e){}
+
+        try{
+          if(maptilerMap) maptilerMap.resize();
+        }catch(e){}
+
+        updateMapViewportOffsets();
+      },120);
+    }
+
+       var map=L.map('map',{
+      zoomControl:false,
+      attributionControl:false,
+      preferCanvas:true
+    }).setView([58.6,13.0],6);
 
     var MAPTILER_API_KEY='72WUquDNJCLDzyB9DSky';
 
@@ -1035,8 +1128,28 @@ border-right:none;
 }
 
     map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
+       setAppHeightVar();
+
     window.addEventListener('resize',refreshMapSizeSoon);
-    window.addEventListener('orientationchange',function(){ setTimeout(function(){ refreshMapSizeSoon(); },250); });
+
+    window.addEventListener('orientationchange',function(){
+      setTimeout(function(){
+        setAppHeightVar();
+        refreshMapSizeSoon();
+      },250);
+    });
+
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize',function(){
+        setAppHeightVar();
+        refreshMapSizeSoon();
+      });
+
+      window.visualViewport.addEventListener('scroll',function(){
+        setAppHeightVar();
+        refreshMapSizeSoon();
+      });
+    }
 
     if(mobileSearchInput){
       mobileSearchInput.addEventListener('input', async function(){
@@ -1075,12 +1188,51 @@ border-right:none;
       maptilerMap.on('load',function(){
         if(!window.maptilerweather){ console.error('MapTiler Weather ej tillgänglig'); return; }
         try{
-                       maptilerWindLayer=new maptilerweather.WindLayer({id:'main-wind-layer',colorramp:maptilerweather.ColorRamp.builtin.NULL,speed:0.001,fadeFactor:0.03,maxAmount:128,density:2,size:2.7,color:[80,220,120,90],fastColor:[255,70,70,180],fastSpeed:0.9});
-          maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({id:'main-precipitation-layer',colorramp:maptilerweather.ColorRamp.builtin.PRECIPITATION,opacity:0.95,smooth:true});
-          maptilerCloudLayer=new maptilerweather.RadarLayer({id:'main-cloud-layer',colorramp:maptilerweather.ColorRamp.builtin.RADAR_CLOUD,opacity:0.85,smooth:true});
-          maptilerRadarLayer=new maptilerweather.RadarLayer({id:'main-radar-layer',colorramp:maptilerweather.ColorRamp.builtin.RADAR,opacity:0.55,smooth:false});
-          maptilerTemperatureLayer=new maptilerweather.TemperatureLayer({id:'main-temperature-layer',colorramp:maptilerweather.ColorRamp.builtin.TEMPERATURE_2,opacity:0.45});
-                  maptilerTimelineLayer=new maptilerweather.PrecipitationLayer({id:'timeline-controller-layer',opacity:0,smooth:true});
+                               maptilerWindLayer=new maptilerweather.WindLayer({
+            id:'main-wind-layer',
+            colorramp:maptilerweather.ColorRamp.builtin.NULL,
+            speed:0.001,
+            fadeFactor:0.08,
+            maxAmount:48,
+            density:1.1,
+            size:2.0,
+            color:[80,220,120,80],
+            fastColor:[255,70,70,150],
+            fastSpeed:0.9
+          });
+
+          maptilerPrecipitationLayer=new maptilerweather.PrecipitationLayer({
+            id:'main-precipitation-layer',
+            colorramp:maptilerweather.ColorRamp.builtin.PRECIPITATION,
+            opacity:0.75,
+            smooth:false
+          });
+
+          maptilerCloudLayer=new maptilerweather.RadarLayer({
+            id:'main-cloud-layer',
+            colorramp:maptilerweather.ColorRamp.builtin.RADAR_CLOUD,
+            opacity:0.5,
+            smooth:false
+          });
+
+          maptilerRadarLayer=new maptilerweather.RadarLayer({
+            id:'main-radar-layer',
+            colorramp:maptilerweather.ColorRamp.builtin.RADAR,
+            opacity:0.45,
+            smooth:false
+          });
+
+          maptilerTemperatureLayer=new maptilerweather.TemperatureLayer({
+            id:'main-temperature-layer',
+            colorramp:maptilerweather.ColorRamp.builtin.TEMPERATURE_2,
+            opacity:0.32
+          });
+
+          maptilerTimelineLayer=new maptilerweather.PrecipitationLayer({
+            id:'timeline-controller-layer',
+            opacity:0,
+            smooth:false
+          });
           maptilerMap.addLayer(maptilerTimelineLayer);
 
           if(windLayerVisible){ maptilerMap.addLayer(maptilerWindLayer); }
@@ -1124,26 +1276,38 @@ border-right:none;
           refreshMapSizeSoon();
         }catch(err){ console.error('Fel vid skapande av väderlager.',err); }
       });
-      var isSyncMT=false,isSyncL=false;
-          maptilerMap.on('moveend',function(){
-        if(isSyncL) return;
-        isSyncMT=true;
-        var c=maptilerMap.getCenter();
-        map.setView([c.lat,c.lng],maptilerMap.getZoom(),{animate:false});
-        if(showAisObjects){ loadAisData(); }
-        setTimeout(function(){ isSyncMT=false; },0);
+           var aisLoadTimer=null;
+
+      function scheduleAisDataLoad(){
+        if(aisLoadTimer){
+          clearTimeout(aisLoadTimer);
+        }
+
+        aisLoadTimer=setTimeout(function(){
+          loadAisData();
+        },350);
+      }
+
+      maptilerMap.on('moveend',function(){
+        if(showAisObjects){
+          scheduleAisDataLoad();
+        }
       });
-      map.on('moveend',function(){ if(isSyncMT || !maptilerMap) return; isSyncL=true; var c=map.getCenter(); maptilerMap.jumpTo({center:[c.lng,c.lat],zoom:map.getZoom()}); setTimeout(function(){ isSyncL=false; },0); });
-      maptilerMap.on('click',function(e){ if(e.lngLat) handlePrimaryMapClick(e.lngLat.lat,e.lngLat.lng); });
+
+      maptilerMap.on('click',function(e){
+        if(e.lngLat) handlePrimaryMapClick(e.lngLat.lat,e.lngLat.lng);
+      });
     }else{
       console.error('MapTiler SDK ej tillgänglig');
     }
 
+       setAppHeightVar();
     updateModeUI();
     updateActiveLayersBadge();
-    Promise.all([ensureWaveStationsLoaded().catch(function(e){console.error('Preload bojar misslyckades',e);}),ensureLighthouseStationsLoaded().catch(function(e){console.error('Preload fyrar misslyckades',e);})]);
-    setTimeout(function(){ refreshMapSizeSoon(); },120);
-    setTimeout(function(){ refreshMapSizeSoon(); },500);
+    syncWeatherOverlayExpandedState();
+    refreshMapSizeSoon();
+    setTimeout(function(){ refreshMapSizeSoon(); },350);
+    setTimeout(function(){ refreshMapSizeSoon(); },900);
   </script>
 </body>
 </html>
