@@ -1206,17 +1206,14 @@ function renderFavoritesList(){
       '<div class="favorite-place-name">' + item.name + '</div>' +
       '<div class="favorite-place-coords">' + formatCoord(item.lat) + ', ' + formatCoord(item.lon) + '</div>';
 
-    main.onclick = function(){
-      closeSearch();
-      setTimeout(function(){
-        map.setView([item.lat, item.lon], 9);
-        if(maptilerMap){
-          maptilerMap.flyTo({center:[item.lon, item.lat], zoom:9});
-        }
-        handlePrimaryMapClick(item.lat, item.lon);
-        refreshMapSizeSoon();
-      }, 120);
-    };
+ main.onclick = function(){
+  closeSearch();
+  setTimeout(function(){
+    focusMapOnPoint(item.lat, item.lon, 9);
+    handlePrimaryMapClick(item.lat, item.lon);
+    refreshMapSizeSoon();
+  }, 120);
+};
 
     var actions = document.createElement("div");
     actions.className = "favorite-place-actions";
@@ -1248,12 +1245,20 @@ function renderFavoritesList(){
   });
 }
 
-  function updateMapViewportOffsets(){
+ function updateMapViewportOffsets(skipPadding){
   if(!maptilerMap) return;
+
   try{
+    if(typeof maptilerMap.setPadding !== "function") return;
+
+    if(skipPadding){
+      maptilerMap.setPadding({ top:0, right:0, bottom:0, left:0 });
+      return;
+    }
+
     var mobile = isMobileView();
-    var overlay = document.getElementById('mapOverlayPanel');
-    var timeControl = document.getElementById('timeControl');
+    var overlay = document.getElementById("mapOverlayPanel");
+    var timeControl = document.getElementById("timeControl");
 
     var padding = { top:20, right:20, bottom:20, left:20 };
 
@@ -1265,11 +1270,47 @@ function renderFavoritesList(){
       padding.bottom = Math.max(20, timeControl.offsetHeight + (mobile ? 24 : 26));
     }
 
-    if(typeof maptilerMap.setPadding === "function"){
-      maptilerMap.setPadding(padding);
-    }
+    maptilerMap.setPadding(padding);
   }catch(e){
-    console.warn('Kunde inte uppdatera map padding', e);
+    console.warn("Kunde inte uppdatera map padding", e);
+  }
+}
+
+function focusMapOnPoint(lat, lon, zoomLevel){
+  var zoom = zoomLevel || 9;
+
+  try{
+    map.setView([lat, lon], zoom, { animate:false });
+  }catch(e){}
+
+  if(!maptilerMap) return;
+
+  try{
+    updateMapViewportOffsets(true);
+
+    maptilerMap.flyTo({
+      center:[lon, lat],
+      zoom:zoom,
+      essential:true
+    });
+
+    setTimeout(function(){
+      try{
+        updateMapViewportOffsets(true);
+
+        maptilerMap.easeTo({
+          center:[lon, lat],
+          zoom:zoom,
+          duration:0
+        });
+      }catch(e){}
+    }, 450);
+
+    setTimeout(function(){
+      updateMapViewportOffsets(false);
+    }, 700);
+  }catch(e){
+    console.warn("Kunde inte fokusera kartan på punkt", e);
   }
 }
 
@@ -1884,16 +1925,15 @@ function renderFavoritesList(){
               var div=document.createElement('div');
               div.className='search-result-item';
               div.textContent=f.place_name || f.text || 'Okänd plats';
-              div.onclick=function(){
-                var lon=f.center[0], lat=f.center[1];
-                closeSearch();
-                setTimeout(function(){
-                  map.setView([lat,lon],9);
-                  if(maptilerMap){ maptilerMap.flyTo({center:[lon,lat],zoom:9}); }
-                  handlePrimaryMapClick(lat,lon);
-                  refreshMapSizeSoon();
-                },120);
-              };
+         div.onclick=function(){
+  var lon = f.center[0], lat = f.center[1];
+  closeSearch();
+  setTimeout(function(){
+    focusMapOnPoint(lat, lon, 9);
+    handlePrimaryMapClick(lat, lon);
+    refreshMapSizeSoon();
+  }, 120);
+};
               mobileSearchResults.appendChild(div);
             });
           }catch(err){
