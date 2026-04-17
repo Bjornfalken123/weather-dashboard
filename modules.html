@@ -437,7 +437,25 @@
     .favorite-place-main{min-width:0;flex:1;color:var(--text-soft);cursor:pointer;}
     .favorite-place-name{color:var(--text);font-size:14px;font-weight:700;line-height:1.3;}
     .favorite-place-coords{margin-top:3px;color:var(--muted);font-size:11px;}
-    .favorite-place-remove{appearance:none;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text);border-radius:10px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+    .favorite-place-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+
+.favorite-place-rename,
+.favorite-place-remove{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
     .favorite-place-empty{padding:8px 18px 14px;color:var(--muted);font-size:12px;}
    .weather-point-actions{
   display:flex;
@@ -999,6 +1017,21 @@
       saveStoredFavorites(items);
       renderFavoritesList();
     }
+    function renameFavorite(id){
+  var items = getStoredFavorites();
+  var item = items.find(function(entry){ return entry.id === id; });
+  if(!item) return;
+
+  var nextName = window.prompt("Nytt namn på platsen:", item.name || "");
+  if(nextName === null) return;
+
+  nextName = String(nextName).trim();
+  if(!nextName) return;
+
+  item.name = nextName;
+  saveStoredFavorites(items);
+  renderFavoritesList();
+}
 
 function toRad(value){
   return value * Math.PI / 180;
@@ -1108,54 +1141,69 @@ async function reverseGeocodePlace(lat, lon){
     return "";
   }
 }
-    function renderFavoritesList(){
-      var list = document.getElementById("favoritePlacesList");
-      if(!list) return;
+function renderFavoritesList(){
+  var list = document.getElementById("favoritePlacesList");
+  if(!list) return;
 
-      var items = getStoredFavorites();
+  var items = getStoredFavorites();
 
-      if(!items.length){
-        list.innerHTML = '<div class="favorite-place-empty">Inga sparade platser ännu.</div>';
-        return;
-      }
+  if(!items.length){
+    list.innerHTML = '<div class="favorite-place-empty">Inga sparade platser ännu.</div>';
+    return;
+  }
 
-      list.innerHTML = "";
-      items.forEach(function(item){
-        var row = document.createElement("div");
-        row.className = "favorite-place-item";
+  list.innerHTML = "";
+  items.forEach(function(item){
+    var row = document.createElement("div");
+    row.className = "favorite-place-item";
 
-        var main = document.createElement("div");
-        main.className = "favorite-place-main";
-        main.innerHTML =
-          '<div class="favorite-place-name">' + item.name + '</div>' +
-          '<div class="favorite-place-coords">' + formatCoord(item.lat) + ', ' + formatCoord(item.lon) + '</div>';
+    var main = document.createElement("div");
+    main.className = "favorite-place-main";
+    main.innerHTML =
+      '<div class="favorite-place-name">' + item.name + '</div>' +
+      '<div class="favorite-place-coords">' + formatCoord(item.lat) + ', ' + formatCoord(item.lon) + '</div>';
 
-        main.onclick = function(){
-          closeSearch();
-          setTimeout(function(){
-            map.setView([item.lat, item.lon], 9);
-            if(maptilerMap){
-              maptilerMap.flyTo({center:[item.lon, item.lat], zoom:9});
-            }
-            handlePrimaryMapClick(item.lat, item.lon);
-            refreshMapSizeSoon();
-          }, 120);
-        };
+    main.onclick = function(){
+      closeSearch();
+      setTimeout(function(){
+        map.setView([item.lat, item.lon], 9);
+        if(maptilerMap){
+          maptilerMap.flyTo({center:[item.lon, item.lat], zoom:9});
+        }
+        handlePrimaryMapClick(item.lat, item.lon);
+        refreshMapSizeSoon();
+      }, 120);
+    };
 
-        var removeBtn = document.createElement("button");
-        removeBtn.className = "favorite-place-remove";
-        removeBtn.type = "button";
-        removeBtn.textContent = "Ta bort";
-        removeBtn.onclick = function(e){
-          e.stopPropagation();
-          removeFavorite(item.id);
-        };
+    var actions = document.createElement("div");
+    actions.className = "favorite-place-actions";
 
-        row.appendChild(main);
-        row.appendChild(removeBtn);
-        list.appendChild(row);
-      });
-    }
+    var renameBtn = document.createElement("button");
+    renameBtn.className = "favorite-place-rename";
+    renameBtn.type = "button";
+    renameBtn.textContent = "Byt namn";
+    renameBtn.onclick = function(e){
+      e.stopPropagation();
+      renameFavorite(item.id);
+    };
+
+    var removeBtn = document.createElement("button");
+    removeBtn.className = "favorite-place-remove";
+    removeBtn.type = "button";
+    removeBtn.textContent = "Ta bort";
+    removeBtn.onclick = function(e){
+      e.stopPropagation();
+      removeFavorite(item.id);
+    };
+
+    actions.appendChild(renameBtn);
+    actions.appendChild(removeBtn);
+
+    row.appendChild(main);
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+}
 
     function updateMapViewportOffsets(){
       if(!maptilerMap) return;
