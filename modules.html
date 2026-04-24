@@ -304,60 +304,177 @@
     .layer-dot.precip{background:#7bc7ff;}
     .layer-dot.cloud{background:#b7c5d9;}
 
-    #timeControl{
-      position:absolute;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:16px;
-      z-index:1200;
-      width:min(760px, calc(100% - 32px));
-      padding:14px 16px;
-      border-radius:20px;
-      border:1px solid rgba(255,255,255,0.09);
-      background:rgba(5,11,22,0.86);
-      pointer-events:auto;
-      touch-action:none;
-    }
+   #timeControl{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:16px;
+  z-index:1200;
+  width:min(760px, calc(100% - 32px));
+  padding:12px 16px 13px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,0.09);
+  background:rgba(5,11,22,0.86);
+  pointer-events:auto;
+  touch-action:none;
+  box-shadow:0 16px 38px rgba(0,0,0,0.34);
+}
 
-    .time-compact-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
-    .time-compact-label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);}
-    #timeValueLabel{font-size:12px;color:var(--text);font-weight:800;text-align:right;min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .time-compact-bottom{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;}
-    #timePlayPauseBtn{
-      appearance:none;
-      border:1px solid rgba(255,255,255,0.1);
-      background:rgba(11,20,34,0.82);
-      color:var(--text);
-      border-radius:14px;
-      padding:10px 14px;
-      font-size:12px;
-      font-weight:800;
-      cursor:pointer;
-      min-width:84px;
-      min-height:44px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:6px;
-    }
+.time-module-top{
+  display:grid;
+  grid-template-columns:minmax(92px, 1fr) minmax(130px, 1.25fr) auto;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
 
-    #timeSlider{
-      width:100%;
-      margin:0;
-      touch-action:none;
-      -webkit-appearance:none;
-      appearance:none;
-      height:8px;
-      border-radius:999px;
-      background:linear-gradient(90deg,rgba(123,199,255,0.7) 0%,rgba(152,240,219,0.5) 55%,rgba(255,255,255,0.12) 100%);
-      border:1px solid rgba(255,255,255,0.055);
-      cursor:pointer;
-    }
-    #timeSlider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:999px;border:1.5px solid rgba(255,255,255,0.7);background:linear-gradient(180deg,#ffffff 0%,#c6e4ff 100%);}
-    #timeSlider::-moz-range-thumb{width:18px;height:18px;border-radius:999px;border:1.5px solid rgba(255,255,255,0.7);background:linear-gradient(180deg,#ffffff 0%,#c6e4ff 100%);}
-    #timeTickRow{display:flex;justify-content:space-between;margin-top:5px;padding:0 1px;gap:8px;}
-    .time-tick{font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.time-now-block,
+.time-selected-block{
+  min-width:0;
+}
 
+.time-small-value{
+  color:var(--text);
+  font-size:14px;
+  line-height:1.1;
+  font-weight:900;
+  letter-spacing:-0.01em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.time-small-caption,
+.time-selected-caption{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin-top:4px;
+  color:var(--muted-soft);
+  font-size:11px;
+  line-height:1.1;
+  font-weight:650;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#timeValueLabel{
+  color:var(--accent);
+  font-size:17px;
+  line-height:1.1;
+  font-weight:950;
+  letter-spacing:0.01em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.time-dot{
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  display:inline-block;
+  flex-shrink:0;
+}
+
+.time-dot-now{
+  background:#fff;
+  box-shadow:0 0 0 2px rgba(255,255,255,0.12);
+}
+
+.time-dot-selected{
+  background:#4098ff;
+  box-shadow:0 0 0 2px rgba(64,152,255,0.18);
+}
+
+#timePlayPauseBtn{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.065);
+  color:var(--text);
+  border-radius:999px;
+  padding:9px 13px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  min-width:74px;
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  flex-shrink:0;
+}
+
+#timePlayPauseBtn svg{
+  width:17px;
+  height:17px;
+  flex-shrink:0;
+}
+
+.time-module-slider{
+  position:relative;
+  padding:0 2px;
+}
+
+#timeSlider{
+  width:100%;
+  margin:0;
+  touch-action:none;
+  -webkit-appearance:none;
+  appearance:none;
+  height:7px;
+  border-radius:999px;
+  background:linear-gradient(90deg,rgba(123,199,255,0.82) 0%,rgba(64,152,255,0.72) 34%,rgba(255,255,255,0.18) 34%,rgba(255,255,255,0.12) 100%);
+  border:1px solid rgba(255,255,255,0.055);
+  cursor:pointer;
+}
+
+#timeSlider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  border:3px solid rgba(255,255,255,0.92);
+  background:#4098ff;
+  box-shadow:0 0 0 7px rgba(64,152,255,0.16),0 3px 10px rgba(0,0,0,0.35);
+}
+
+#timeSlider::-moz-range-thumb{
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  border:3px solid rgba(255,255,255,0.92);
+  background:#4098ff;
+  box-shadow:0 0 0 7px rgba(64,152,255,0.16),0 3px 10px rgba(0,0,0,0.35);
+}
+
+#timeTickRow{
+  display:flex;
+  justify-content:space-between;
+  margin-top:8px;
+  padding:0 2px;
+  gap:8px;
+}
+
+.time-tick{
+  font-size:11px;
+  color:var(--muted-soft);
+  font-weight:750;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.time-tick:first-child{
+  color:var(--text);
+}
+
+.time-tick.is-selected{
+  color:var(--accent);
+}
     #bottomTabBar{
       display:none;
       position:fixed;
@@ -563,7 +680,7 @@
     display:none !important;
   }
 
-  #timeTickRow{display:none;}
+ 
 
   #mapOverlayPanel{
     position:fixed !important;
@@ -597,26 +714,74 @@
     max-height:calc(100dvh - var(--bottom-ui-offset) - 100px);
   }
 
-  #timeControl{
-    position:fixed !important;
-    left:0 !important;
-    right:0 !important;
-    bottom:var(--time-control-bottom) !important;
-    transform:none !important;
-    width:100% !important;
-    z-index:7000 !important;
-    padding:9px 12px;
-    border-radius:14px 14px 0 0;
-    border-left:none;
-    border-right:none;
-  }
+#timeControl{
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:var(--time-control-bottom) !important;
+  transform:none !important;
+  width:100% !important;
+  z-index:7000 !important;
+  padding:10px 12px 11px;
+  border-radius:14px 14px 0 0;
+  border-left:none;
+  border-right:none;
+}
 
-  .time-compact-top{margin-bottom:7px;}
-  .time-compact-label{font-size:9px;}
-  #timeValueLabel{min-width:0;font-size:11px;}
-  .time-compact-bottom{grid-template-columns:64px 1fr;gap:7px;}
-  #timePlayPauseBtn{min-width:62px;min-height:36px;font-size:10px;padding:8px 8px;}
-  #timeSlider{height:7px;}
+.time-module-top{
+  grid-template-columns:minmax(82px, 0.9fr) minmax(116px, 1.25fr) auto;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.time-small-value{
+  font-size:13px;
+}
+
+.time-small-caption,
+.time-selected-caption{
+  font-size:10px;
+  margin-top:3px;
+}
+
+#timeValueLabel{
+  font-size:15px;
+}
+
+#timePlayPauseBtn{
+  min-width:64px;
+  min-height:34px;
+  font-size:11px;
+  padding:7px 10px;
+}
+
+#timePlayPauseBtn svg{
+  width:15px;
+  height:15px;
+}
+
+#timeSlider{
+  height:7px;
+}
+
+#timeSlider::-webkit-slider-thumb{
+  width:21px;
+  height:21px;
+}
+
+#timeSlider::-moz-range-thumb{
+  width:21px;
+  height:21px;
+}
+
+#timeTickRow{
+  display:flex;
+  margin-top:7px;
+}
+
+.time-tick{
+  font-size:10px;
+}
 
   .weather-temp-big{
     margin:6px 0 6px;
@@ -760,29 +925,45 @@
             </div>
           </div>
 
-          <div id="timeControl">
-            <div class="time-compact-top">
-              <div class="time-compact-label">Tid</div>
-              <div id="timeValueLabel">Laddar tid...</div>
-            </div>
-            <div class="time-compact-bottom">
-            <button id="timePlayPauseBtn" type="button" aria-label="Återställ till aktuell tid">
-  <svg id="resetTimeIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"></path>
-    <path d="M13.5 2.5v3.8H9.7"></path>
-  </svg>
-  <span id="resetTimeBtnText">Nu</span>
-</button>
-              <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-            </div>
-            <div id="timeTickRow">
-              <span class="time-tick" id="tick0">–</span>
-              <span class="time-tick" id="tick1">–</span>
-              <span class="time-tick" id="tick2">–</span>
-              <span class="time-tick" id="tick3">–</span>
-              <span class="time-tick" id="tick4">–</span>
-            </div>
-          </div>
+        <div id="timeControl">
+  <div class="time-module-top">
+    <div class="time-now-block">
+      <div class="time-small-value" id="timeNowLabel">Nu --:--</div>
+      <div class="time-small-caption">
+        <span class="time-dot time-dot-now"></span>
+        Aktuell tid
+      </div>
+    </div>
+
+    <div class="time-selected-block">
+      <div id="timeValueLabel">Laddar tid...</div>
+      <div class="time-selected-caption">
+        <span class="time-dot time-dot-selected"></span>
+        Vald prognostid
+      </div>
+    </div>
+
+    <button id="timePlayPauseBtn" type="button" aria-label="Återställ till aktuell tid">
+      <svg id="resetTimeIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"></path>
+        <path d="M13.5 2.5v3.8H9.7"></path>
+      </svg>
+      <span id="resetTimeBtnText">Nu</span>
+    </button>
+  </div>
+
+  <div class="time-module-slider">
+    <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
+  </div>
+
+  <div id="timeTickRow">
+    <span class="time-tick" id="tick0">Nu</span>
+    <span class="time-tick" id="tick1">–</span>
+    <span class="time-tick" id="tick2">–</span>
+    <span class="time-tick" id="tick3">–</span>
+    <span class="time-tick" id="tick4">–</span>
+  </div>
+</div>
 
           <div id="map" style="display:none;"></div>
         </div>
@@ -1974,14 +2155,30 @@ function focusMapOnPoint(lat, lon, zoomLevel){
           function setDeskBtn(id,on){ var b=document.getElementById(id); if(!b) return; b.textContent=on ? 'På' : 'Av'; b.classList.toggle('is-on',on); b.classList.toggle('is-off',!on); }
           function setMobToggle(id,on){ var b=document.getElementById(id); if(b) b.classList.toggle('is-on',on); }
           function syncAllLayerButtons(){ setDeskBtn('toggleWindLayerBtn',windLayerVisible); setDeskBtn('togglePrecipLayerBtn',precipitationLayerVisible); setDeskBtn('toggleCloudLayerBtn',cloudLayerVisible); setDeskBtn('toggleRadarLayerBtn',radarLayerVisible); setDeskBtn('toggleTemperatureLayerBtn',temperatureLayerVisible); setDeskBtn('toggleWaveModeBtn',showWaveObjects); setDeskBtn('toggleLighthouseModeBtn',showLighthouseObjects); setMobToggle('mobileToggleWindBtn',windLayerVisible); setMobToggle('mobileTogglePrecipBtn',precipitationLayerVisible); setMobToggle('mobileToggleCloudBtn',cloudLayerVisible); setMobToggle('mobileToggleRadarBtn',radarLayerVisible); setMobToggle('mobileToggleTemperatureBtn',temperatureLayerVisible); setMobToggle('mobileToggleWaveBtn',showWaveObjects); setMobToggle('mobileToggleLighthouseBtn',showLighthouseObjects); updateActiveLayersBadge(); refreshMobileNavState(); }
-      function formatMapTime(v){
+function formatMapTime(v){
   if(!v) return '--';
+
   var d = new Date(v);
   if(isNaN(d.getTime())) return '--';
-  return d.toLocaleString('sv-SE',{
-    weekday:'short',
-    day:'2-digit',
-    month:'2-digit',
+
+  var day = d.toLocaleDateString('sv-SE',{ weekday:'long' });
+  day = day.charAt(0).toUpperCase() + day.slice(1);
+
+  var time = d.toLocaleTimeString('sv-SE',{
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+
+  return day + ' ' + time;
+}
+
+function formatCompactTickTime(v){
+  if(!v) return '--';
+
+  var d = new Date(v);
+  if(isNaN(d.getTime())) return '--';
+
+  return d.toLocaleTimeString('sv-SE',{
     hour:'2-digit',
     minute:'2-digit'
   });
@@ -1991,22 +2188,61 @@ function updateTimeLabel(){
   if(timeValueLabel){
     timeValueLabel.textContent = selectedForecastTime ? formatMapTime(selectedForecastTime) : '--';
   }
+
+  var nowLabel = document.getElementById('timeNowLabel');
+  if(nowLabel){
+    var now = new Date();
+    nowLabel.textContent = 'Nu ' + now.toLocaleTimeString('sv-SE',{
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+  }
 }
 
 function updateTimeTicks(){
   if(!forecastStartTime || !forecastEndTime) return;
 
-  ['tick0','tick1','tick2','tick3','tick4'].forEach(function(id,i){
+  var tickIds = ['tick0','tick1','tick2','tick3','tick4'];
+
+  tickIds.forEach(function(id,i){
     var el = document.getElementById(id);
     if(!el) return;
 
+    el.classList.remove('is-selected');
+
+    if(i === 0){
+      el.textContent = 'Nu';
+      return;
+    }
+
+    if(i === 4){
+      el.textContent = 'Imorgon';
+      return;
+    }
+
     var t = new Date(forecastStartTime + (forecastEndTime - forecastStartTime) * i / 4);
-    el.textContent = t.toLocaleString('sv-SE',{
-      weekday:'short',
-      hour:'2-digit',
-      minute:'2-digit'
-    });
+    el.textContent = formatCompactTickTime(t);
   });
+
+  if(selectedForecastTime){
+    var closestIndex = 0;
+    var closestDistance = Infinity;
+
+    tickIds.forEach(function(id,i){
+      var tickTime = forecastStartTime + (forecastEndTime - forecastStartTime) * i / 4;
+      var distance = Math.abs(tickTime - selectedForecastTime);
+
+      if(distance < closestDistance){
+        closestDistance = distance;
+        closestIndex = i;
+      }
+    });
+
+    var selectedTick = document.getElementById(tickIds[closestIndex]);
+    if(selectedTick){
+      selectedTick.classList.add('is-selected');
+    }
+  }
 }
 
 function applySelectedForecastTimeImmediate(timeValue){
