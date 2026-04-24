@@ -1746,23 +1746,63 @@ function focusMapOnPoint(lat, lon, zoomLevel){
     detailsHtml;
 }
 
-        window.updateWeatherForSelectedTime=function(){
-          if(!weatherTimeseries.length || !selectedForecastTime) return;
-          var tms=new Date(selectedForecastTime).getTime();
-          var cl=weatherTimeseries[0], md=Math.abs(new Date(cl.time).getTime()-tms);
-          for(var i=0;i<weatherTimeseries.length;i++){
-            var df=Math.abs(new Date(weatherTimeseries[i].time).getTime()-tms);
-            if(df<md){ md=df; cl=weatherTimeseries[i]; }
-          }
-          var si=(cl.data && cl.data.instant && cl.data.instant.details) || {}, sn1=(cl.data && cl.data.next_1_hours) || {}, sn6=(cl.data && cl.data.next_6_hours) || {}, sn12=(cl.data && cl.data.next_12_hours) || {};
-          var ss=(sn1.summary && sn1.summary.symbol_code) || (sn6.summary && sn6.summary.symbol_code) || (sn12.summary && sn12.summary.symbol_code) || null;
-          var sp=null;
-          if(sn1.details && sn1.details.precipitation_amount != null){ sp=sn1.details.precipitation_amount; }
-          else if(sn6.details && sn6.details.precipitation_amount != null){ sp=sn6.details.precipitation_amount; }
-          else if(sn12.details && sn12.details.precipitation_amount != null){ sp=sn12.details.precipitation_amount; }
-          var gft=getGustForTime(tms);
-          updateMapOverlay(weatherLabelFromSymbol(ss),buildWeatherOverlay(cl.time,si.air_temperature,si.wind_speed,si.wind_from_direction,gft,sp,si.air_pressure_at_sea_level,si.relative_humidity,ss,lat,lon));
-        };
+       window.updateWeatherForSelectedTime=function(timeValue){
+  var targetTime = Number(timeValue || selectedForecastTime);
+  if(!weatherTimeseries.length || !targetTime || !isFinite(targetTime)) return;
+
+  var tms = new Date(targetTime).getTime();
+
+  var cl = weatherTimeseries[0];
+  var md = Math.abs(new Date(cl.time).getTime() - tms);
+
+  for(var i=0;i<weatherTimeseries.length;i++){
+    var df = Math.abs(new Date(weatherTimeseries[i].time).getTime() - tms);
+    if(df < md){
+      md = df;
+      cl = weatherTimeseries[i];
+    }
+  }
+
+  var si = (cl.data && cl.data.instant && cl.data.instant.details) || {};
+  var sn1 = (cl.data && cl.data.next_1_hours) || {};
+  var sn6 = (cl.data && cl.data.next_6_hours) || {};
+  var sn12 = (cl.data && cl.data.next_12_hours) || {};
+
+  var ss =
+    (sn1.summary && sn1.summary.symbol_code) ||
+    (sn6.summary && sn6.summary.symbol_code) ||
+    (sn12.summary && sn12.summary.symbol_code) ||
+    null;
+
+  var sp = null;
+
+  if(sn1.details && sn1.details.precipitation_amount != null){
+    sp = sn1.details.precipitation_amount;
+  }else if(sn6.details && sn6.details.precipitation_amount != null){
+    sp = sn6.details.precipitation_amount;
+  }else if(sn12.details && sn12.details.precipitation_amount != null){
+    sp = sn12.details.precipitation_amount;
+  }
+
+  var gft = getGustForTime(tms);
+
+  updateMapOverlay(
+    weatherLabelFromSymbol(ss),
+    buildWeatherOverlay(
+      targetTime,
+      si.air_temperature,
+      si.wind_speed,
+      si.wind_from_direction,
+      gft,
+      sp,
+      si.air_pressure_at_sea_level,
+      si.relative_humidity,
+      ss,
+      lat,
+      lon
+    )
+  );
+};
 
         if(requestId !== latestWeatherRequestId) return;
 
@@ -2172,7 +2212,10 @@ function updateTimeLabel(){
 function applySelectedForecastTimeImmediate(timeValue){
   if(!timeValue) return;
 
-  var s = timeValue / 1000;
+  selectedForecastTime = Number(timeValue);
+  if(!isFinite(selectedForecastTime)) return;
+
+  var s = selectedForecastTime / 1000;
 
   try{
     if(maptilerTimelineLayer) maptilerTimelineLayer.setAnimationTime(s);
@@ -2199,13 +2242,13 @@ function applySelectedForecastTimeImmediate(timeValue){
   }catch(e){}
 
   if(timeSlider){
-    timeSlider.value = String(timeValue);
+    timeSlider.value = String(selectedForecastTime);
   }
 
   updateTimeLabel();
 
   if(window.updateWeatherForSelectedTime){
-    window.updateWeatherForSelectedTime();
+    window.updateWeatherForSelectedTime(selectedForecastTime);
   }
 }
 
@@ -2329,18 +2372,14 @@ function initializeForecastTimeline(){
           syncAllLayerButtons();
 
          if(timeSlider){
- var handleInput = function(){
+var handleInput = function(){
   stopTimePlayback();
-  selectedForecastTime = parseInt(timeSlider.value, 10);
-  updateTimeLabel();
-  applySelectedForecastTime(false);
+  applySelectedForecastTimeImmediate(parseInt(timeSlider.value, 10));
 };
 
 var handleFinalChange = function(){
   stopTimePlayback();
-  selectedForecastTime = parseInt(timeSlider.value, 10);
-  updateTimeLabel();
-  applySelectedForecastTime(true);
+  applySelectedForecastTimeImmediate(parseInt(timeSlider.value, 10));
 };
 
   var stopTouch = function(e){
