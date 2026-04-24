@@ -623,11 +623,11 @@
   cursor:pointer;
 }
     .favorite-place-empty{padding:8px 18px 14px;color:var(--muted);font-size:12px;}
-   .weather-point-actions{
+  .weather-point-actions{
   display:flex;
   gap:8px;
   flex-wrap:wrap;
-  margin:6px 0 8px;
+  margin:8px 0 0;
 }
 .weather-favorite-btn{
   appearance:none;
@@ -1760,7 +1760,52 @@ function focusMapOnPoint(lat, lon, zoomLevel){
       refreshMobileNavState();
       refreshMapSizeSoon();
     }
+function isSameDateGlobal(a,b){
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate();
+}
 
+function formatClockDotGlobal(v){
+  if(!v) return '--.--';
+
+  var d = new Date(v);
+  if(isNaN(d.getTime())) return '--.--';
+
+  return d.toLocaleTimeString('sv-SE',{
+    hour:'2-digit',
+    minute:'2-digit'
+  }).replace(':','.');
+}
+
+function formatForecastLabelGlobal(v){
+  if(!v) return '--';
+
+  var d = new Date(v);
+  if(isNaN(d.getTime())) return '--';
+
+  var now = new Date();
+  var tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+
+  var time = formatClockDotGlobal(d);
+
+  if(isSameDateGlobal(d, now)){
+    return 'Idag ' + time;
+  }
+
+  if(isSameDateGlobal(d, tomorrow)){
+    return 'Imorgon ' + time;
+  }
+
+  var weekday = d.toLocaleDateString('sv-SE',{
+    weekday:'short'
+  });
+
+  weekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+  return weekday + ' ' + time;
+}
     function buildDailyForecast(ts){
       var dm=new Map();
       for(var i=0;i<ts.length;i++){
@@ -1834,7 +1879,7 @@ function focusMapOnPoint(lat, lon, zoomLevel){
   var placeName = (selectedPlaceName && selectedPlaceName.trim()) ? selectedPlaceName.trim() : 'Vald plats';
   var weatherText = weatherLabelFromSymbol(symbol);
   var weatherIcon = weatherIconFromSymbol(symbol);
-  var forecastLabel = formatForecastLabel(pt);
+var forecastLabel = formatForecastLabelGlobal(pt);
   var tempText = formatTemp(temp);
   var windText = formatWindWithDirection(ws,wd);
   var gustText = gust || '--';
