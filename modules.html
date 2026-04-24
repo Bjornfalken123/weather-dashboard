@@ -657,7 +657,161 @@
     @media (min-width:701px){
       #bottomTabBar,#mobileFilterSheet,#mobileSearchSheet{display:none !important;}
     }
+.overlay-card-list{
+  display:grid;
+  gap:7px;
+}
 
+.overlay-card{
+  border:1px solid rgba(255,255,255,0.075);
+  background:rgba(255,255,255,0.035);
+  border-radius:14px;
+  overflow:hidden;
+}
+
+.overlay-card.is-expanded{
+  background:rgba(255,255,255,0.055);
+  border-color:rgba(255,255,255,0.13);
+}
+
+.overlay-card-header{
+  width:100%;
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  display:grid;
+  grid-template-columns:28px 1fr auto;
+  align-items:center;
+  gap:8px;
+  padding:9px 10px;
+  cursor:pointer;
+  text-align:left;
+}
+
+.overlay-card-icon{
+  width:28px;
+  height:28px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+.overlay-card-main{
+  min-width:0;
+}
+
+.overlay-card-title{
+  font-size:11px;
+  font-weight:900;
+  color:var(--text);
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.overlay-card-summary{
+  margin-top:2px;
+  font-size:11px;
+  font-weight:700;
+  color:var(--muted-soft);
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.overlay-card-chevron{
+  color:var(--muted);
+  font-size:13px;
+  font-weight:900;
+}
+
+.overlay-card-detail{
+  padding:0 10px 10px;
+  color:var(--muted-soft);
+  font-size:12px;
+  line-height:1.55;
+}
+
+.overlay-card.weather .overlay-card-icon{
+  color:#7bc7ff;
+  box-shadow:0 0 0 3px rgba(123,199,255,0.12);
+}
+
+.overlay-card.wave .overlay-card-icon{
+  color:#4fc3ff;
+  box-shadow:0 0 0 3px rgba(79,195,255,0.14);
+}
+
+.overlay-card.lighthouse .overlay-card-icon{
+  color:#ff9f1c;
+  box-shadow:0 0 0 3px rgba(255,159,28,0.14);
+}
+
+.overlay-empty-message{
+  color:var(--muted-soft);
+  font-size:12px;
+  line-height:1.55;
+}
+
+.weather-detail-temp{
+  font-size:30px;
+  font-weight:950;
+  color:var(--text);
+  letter-spacing:-0.03em;
+  line-height:1;
+  margin:4px 0 8px;
+}
+
+.weather-detail-meta{
+  display:grid;
+  gap:4px;
+  margin-bottom:8px;
+}
+
+.weather-detail-line{
+  color:var(--text-soft);
+  font-size:12px;
+  font-weight:750;
+}
+
+.weather-detail-line strong{
+  color:var(--text);
+  font-weight:900;
+}
+
+@media (max-width:700px){
+  .overlay-card-header{
+    padding:8px 9px;
+    grid-template-columns:26px 1fr auto;
+  }
+
+  .overlay-card-icon{
+    width:26px;
+    height:26px;
+    border-radius:9px;
+    font-size:15px;
+  }
+
+  .overlay-card-title,
+  .overlay-card-summary{
+    font-size:10.5px;
+  }
+
+  .overlay-card-detail{
+    padding:0 9px 9px;
+  }
+
+  .weather-detail-temp{
+    font-size:25px;
+  }
+}
    @media (max-width:700px){
   html,body{
     width:100%;
@@ -1165,69 +1319,173 @@
       return '<div class="overlay-data-grid">'+ rows.filter(function(r){ return r.value && r.value!=="--"; }).map(function(r){ return '<div class="overlay-data-cell"><div class="overlay-data-label">'+r.label+'</div><div class="overlay-data-value'+(r.highlight?' highlight':'')+'">'+r.value+'</div></div>'; }).join("") + '</div>';
     }
 
-   function syncOverlayTitle(){
-  var titleEl=document.getElementById("overlayTitle");
-  var panel=document.getElementById("mapOverlayPanel");
+var overlayExpandedSection = "weather";
+
+var overlayCards = {
+  weather: null,
+  wave: null,
+  lighthouse: null
+};
+
+var overlayEmptyTitle = "Välj punkt";
+var overlayEmptyContent = "Klicka i kartan för väderdata";
+
+function joinAvailable(parts, separator){
+  return parts.filter(function(part){
+    return part && part !== "--" && String(part).trim() !== "";
+  }).join(separator || " · ");
+}
+
+function setOverlayCard(type, card){
+  overlayCards[type] = Object.assign({ type:type }, card || {});
+  if(!overlayExpandedSection || !overlayCards[overlayExpandedSection]){
+    overlayExpandedSection = type;
+  }
+  renderUnifiedOverlay();
+}
+
+function clearOverlayCard(type){
+  overlayCards[type] = null;
+
+  if(overlayExpandedSection === type){
+    if(overlayCards.weather) overlayExpandedSection = "weather";
+    else if(overlayCards.wave) overlayExpandedSection = "wave";
+    else if(overlayCards.lighthouse) overlayExpandedSection = "lighthouse";
+    else overlayExpandedSection = "weather";
+  }
+
+  renderUnifiedOverlay();
+}
+
+function getVisibleOverlayCards(){
+  return ["weather","wave","lighthouse"].map(function(type){
+    return overlayCards[type];
+  }).filter(Boolean);
+}
+
+function getCollapsedOverlayTitle(){
+  var cards = getVisibleOverlayCards();
+
+  if(!cards.length){
+    return overlayEmptyTitle || "Välj punkt";
+  }
+
+  return cards.map(function(card){
+    return card.shortTitle || card.summary || card.title || card.label;
+  }).filter(Boolean).join(" · ");
+}
+
+function syncOverlayTitle(){
+  var titleEl = document.getElementById("overlayTitle");
+  var panel = document.getElementById("mapOverlayPanel");
   if(!titleEl) return;
 
   var collapsed = panel && panel.classList.contains("is-collapsed");
 
-  if(titleEl.dataset.collapsedTitle || titleEl.dataset.expandedTitle){
-    titleEl.textContent = collapsed
-      ? (titleEl.dataset.collapsedTitle || titleEl.dataset.baseTitle || "Välj punkt")
-      : (titleEl.dataset.expandedTitle || titleEl.dataset.baseTitle || "Välj punkt");
+  if(collapsed){
+    titleEl.textContent = getCollapsedOverlayTitle();
     return;
   }
 
-  titleEl.textContent = titleEl.dataset.baseTitle || "Välj punkt";
+  var cards = getVisibleOverlayCards();
+  titleEl.textContent = cards.length ? "Valda punkter" : (overlayEmptyTitle || "Välj punkt");
 }
 
-function renderCombinedMapOverlay(){
-  var titleEl=document.getElementById("overlayTitle"), contentEl=document.getElementById("overlayContent");
-  if(!titleEl || !contentEl) return;
+function buildOverlayCardHtml(card){
+  var expanded = overlayExpandedSection === card.type;
+  var cssType = card.type || "";
+  var icon = card.icon || "•";
+  var label = card.label || card.title || "";
+  var summary = card.summary || "";
+  var detail = card.detail || "";
+  var chevron = expanded ? "−" : "+";
+
+  return '' +
+    '<div class="overlay-card ' + cssType + (expanded ? ' is-expanded' : '') + '">' +
+      '<button type="button" class="overlay-card-header" data-overlay-section="' + card.type + '">' +
+        '<div class="overlay-card-icon">' + icon + '</div>' +
+        '<div class="overlay-card-main">' +
+          '<div class="overlay-card-title">' + label + '</div>' +
+          '<div class="overlay-card-summary">' + summary + '</div>' +
+        '</div>' +
+        '<div class="overlay-card-chevron">' + chevron + '</div>' +
+      '</button>' +
+      (expanded && detail ? '<div class="overlay-card-detail">' + detail + '</div>' : '') +
+    '</div>';
+}
+
+function renderUnifiedOverlay(){
+  var contentEl = document.getElementById("overlayContent");
+  if(!contentEl) return;
 
   syncOverlayTitle();
 
-  var base=contentEl.dataset.baseContent || "Klicka i kartan för väderdata";
-  var waveTitle=contentEl.dataset.waveTitle || "";
-  var waveContent=contentEl.dataset.waveContent || "";
-  var lighthouseTitle=contentEl.dataset.lighthouseTitle || "";
-  var lighthouseContent=contentEl.dataset.lighthouseContent || "";
+  var cards = getVisibleOverlayCards();
 
-  var html='<div>'+base+'</div>';
-
-  if(waveTitle && waveContent){
-    html += '<div class="overlay-object-section"><div class="overlay-object-title">'+waveTitle+'</div><div>'+waveContent+'</div></div>';
+  if(!cards.length){
+    contentEl.innerHTML = '<div class="overlay-empty-message">' + (overlayEmptyContent || "Klicka i kartan för väderdata") + '</div>';
+    return;
   }
 
-  if(lighthouseTitle && lighthouseContent){
-    html += '<div class="overlay-object-section"><div class="overlay-object-title">'+lighthouseTitle+'</div><div>'+lighthouseContent+'</div></div>';
-  }
-
-  contentEl.innerHTML=html;
+  contentEl.innerHTML =
+    '<div class="overlay-card-list">' +
+      cards.map(buildOverlayCardHtml).join("") +
+    '</div>';
 }
 
-function updateMapOverlay(title,content,meta){
-  var t=document.getElementById("overlayTitle"), c=document.getElementById("overlayContent");
-  if(!t || !c) return;
+function updateMapOverlay(title, content, meta){
+  overlayEmptyTitle = title || "Välj punkt";
+  overlayEmptyContent = content || "Klicka i kartan för väderdata";
 
-  t.dataset.baseTitle=title;
-
-  if(meta && (meta.expandedTitle || meta.collapsedTitle)){
-    t.dataset.expandedTitle = meta.expandedTitle || title;
-    t.dataset.collapsedTitle = meta.collapsedTitle || title;
-  }else{
-    delete t.dataset.expandedTitle;
-    delete t.dataset.collapsedTitle;
+  if(meta && meta.cardType && meta.card){
+    setOverlayCard(meta.cardType, meta.card);
+    return;
   }
 
-  c.dataset.baseContent=content;
-  renderCombinedMapOverlay();
+  if(title === "Väderpunkt"){
+    renderUnifiedOverlay();
+    return;
+  }
+
+  setOverlayCard("weather", {
+    label: "Väder",
+    icon: "☁️",
+    title: title || "Väder",
+    summary: title || "Väder",
+    shortTitle: title || "Väder",
+    detail: content || ""
+  });
 }
-    function updateWaveOverlay(title,content){ var c=document.getElementById("overlayContent"); if(!c) return; c.dataset.waveTitle=title; c.dataset.waveContent=content; renderCombinedMapOverlay(); }
-    function updateLighthouseOverlay(title,content){ var c=document.getElementById("overlayContent"); if(!c) return; c.dataset.lighthouseTitle=title; c.dataset.lighthouseContent=content; renderCombinedMapOverlay(); }
-    function hideWaveOverlay(){ var c=document.getElementById("overlayContent"); if(!c) return; c.dataset.waveTitle=""; c.dataset.waveContent=""; renderCombinedMapOverlay(); }
-    function hideLighthouseOverlay(){ var c=document.getElementById("overlayContent"); if(!c) return; c.dataset.lighthouseTitle=""; c.dataset.lighthouseContent=""; renderCombinedMapOverlay(); }
+
+function updateWaveOverlay(title, content){
+  setOverlayCard("wave", {
+    label: "Boj / hav",
+    icon: "🌊",
+    title: title || "Boj / hav",
+    summary: title || "Boj / hav",
+    shortTitle: "🌊 " + (title || "Hav"),
+    detail: content || ""
+  });
+}
+
+function updateLighthouseOverlay(title, content){
+  setOverlayCard("lighthouse", {
+    label: "Fyr / station",
+    icon: "🗼",
+    title: title || "Fyr / station",
+    summary: title || "Fyr / station",
+    shortTitle: "🗼 " + (title || "Fyr"),
+    detail: content || ""
+  });
+}
+
+function hideWaveOverlay(){
+  clearOverlayCard("wave");
+}
+
+function hideLighthouseOverlay(){
+  clearOverlayCard("lighthouse");
+}
 
     function formatCoord(v){ return Number(v).toFixed(4); }
     function formatTemp(v){ return v==null ? "--" : Number(v).toFixed(1)+" °C"; }
@@ -1904,74 +2162,61 @@ function formatForecastLabelGlobal(v){
           return formatWind(cl.value);
         }
 
- function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
-  var detailsButtonText = weatherDetailsExpanded ? 'Visa mindre' : 'Se mer';
-
-  var placeName = (selectedPlaceName && selectedPlaceName.trim()) ? selectedPlaceName.trim() : 'Vald plats';
+function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
+  var placeName = (selectedPlaceName && selectedPlaceName.trim()) ? selectedPlaceName.trim() : "Vald plats";
   var weatherText = weatherLabelFromSymbol(symbol);
   var weatherIcon = weatherIconFromSymbol(symbol);
-var forecastLabel = formatForecastLabelGlobal(pt);
+  var forecastLabel = formatForecastLabelGlobal(pt);
+
   var tempText = formatTemp(temp);
   var windText = formatWindWithDirection(ws,wd);
-  var gustText = gust || '--';
+  var gustText = gust || "--";
   var rainText = formatRain(rain);
   var pressureText = formatPressure(pres);
   var humidityText = formatHumidity(humidity);
 
-  var detailsHtml = '';
+  var summary = joinAvailable([
+    weatherText,
+    tempText,
+    windText !== "--" ? "Vind " + windText : ""
+  ]);
 
-  if(weatherDetailsExpanded){
-    detailsHtml =
-      '<div class="weather-extra-details">' +
-        buildOverlayDataGrid([
-          {label:'Lufttryck',value:pressureText},
-          {label:'Luftfuktighet',value:humidityText},
-          {label:'Koordinater',value:formatCoord(lat)+', '+formatCoord(lon)}
-        ]) +
-      '</div>';
-  }
+  var detail = '' +
+    '<div class="weather-detail-temp">' + tempText + '</div>' +
 
-  var content = '' +
-    '<div class="weather-overview">' +
-      '<div class="weather-icon">' + weatherIcon + '</div>' +
-      '<div class="weather-main">' +
-        '<div class="weather-main-title">' + weatherText + '</div>' +
-        '<div class="weather-main-time">' + placeName + ' · ' + forecastLabel + '</div>' +
-      '</div>' +
+    '<div class="weather-detail-meta">' +
+      '<div class="weather-detail-line"><strong>Väder</strong> ' + weatherText + '</div>' +
+      '<div class="weather-detail-line"><strong>Tid</strong> ' + forecastLabel + '</div>' +
+      '<div class="weather-detail-line"><strong>Plats</strong> ' + placeName + '</div>' +
+      '<div class="weather-detail-line"><strong>Vind</strong> ' + windText + '</div>' +
+      '<div class="weather-detail-line"><strong>Byar</strong> ' + gustText + '</div>' +
+      '<div class="weather-detail-line"><strong>Regn</strong> ' + rainText + '</div>' +
     '</div>' +
 
-    '<div class="weather-temp-big">' + tempText + '</div>' +
-
-    '<div class="weather-primary-metrics">' +
-      '<div class="weather-metric-line"><strong>Vind</strong> ' + windText + '</div>' +
-      '<div class="weather-metric-line"><strong>Byar</strong> ' + gustText + ' <span class="weather-metric-muted">· Regn ' + rainText + '</span></div>' +
-    '</div>' +
+    buildOverlayDataGrid([
+      {label:'Lufttryck',value:pressureText},
+      {label:'Luftfuktighet',value:humidityText},
+      {label:'Koordinater',value:formatCoord(lat)+', '+formatCoord(lon)}
+    ]) +
 
     '<div class="weather-point-actions">' +
       '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
         (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
       '</button>' +
-      '<button type="button" class="weather-details-toggle" id="weatherDetailsToggleBtn">' + detailsButtonText + '</button>' +
-    '</div>' +
-
-    detailsHtml;
+    '</div>';
 
   return {
-    expandedTitle: placeName,
-    collapsedTitle: weatherIcon + ' ' + weatherText + ' · ' + tempText,
-    content: content
+    label: "Väderpunkt",
+    icon: weatherIcon,
+    title: placeName,
+    summary: summary,
+    shortTitle: weatherIcon + " " + tempText,
+    detail: detail
   };
 }
 
 function applyWeatherOverlay(payload){
-  updateMapOverlay(
-    payload.expandedTitle,
-    payload.content,
-    {
-      expandedTitle: payload.expandedTitle,
-      collapsedTitle: payload.collapsedTitle
-    }
-  );
+  setOverlayCard("weather", payload);
 }
 
        window.updateWeatherForSelectedTime=function(timeValue){
@@ -2212,40 +2457,40 @@ applyWeatherOverlay(
 }
     if(overlayCollapseBtn){ overlayCollapseBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleOverlayCollapsed(); }); }
 
-    if(overlayContentEl){
-      overlayContentEl.addEventListener("click",function(e){
-        if(e.target && e.target.id==="weatherDetailsToggleBtn"){
-          e.stopPropagation();
-          weatherDetailsExpanded=!weatherDetailsExpanded;
-          syncWeatherOverlayExpandedState();
-          if(window.updateWeatherForSelectedTime){
-            window.updateWeatherForSelectedTime();
-          }
-          return;
-        }
+  if(overlayContentEl){
+  overlayContentEl.addEventListener("click",function(e){
+    var sectionBtn = e.target && e.target.closest ? e.target.closest("[data-overlay-section]") : null;
 
-        if(e.target && e.target.id==="saveFavoriteBtn"){
-          e.stopPropagation();
-
-          var sel = savedSelections.weather;
-          if(!sel) return;
-
-          var favId = buildFavoriteId(sel.lat, sel.lon);
-          if(isFavorite(sel.lat, sel.lon)) return;
-
-          addFavorite({
-            id: favId,
-            name: selectedPlaceName || ("Plats " + formatCoord(sel.lat) + ", " + formatCoord(sel.lon)),
-            lat: sel.lat,
-            lon: sel.lon
-          });
-
-          if(window.updateWeatherForSelectedTime){
-            window.updateWeatherForSelectedTime();
-          }
-        }
-      });
+    if(sectionBtn){
+      e.stopPropagation();
+      overlayExpandedSection = sectionBtn.getAttribute("data-overlay-section") || "weather";
+      renderUnifiedOverlay();
+      refreshMapSizeSoon();
+      return;
     }
+
+    if(e.target && e.target.id==="saveFavoriteBtn"){
+      e.stopPropagation();
+
+      var sel = savedSelections.weather;
+      if(!sel) return;
+
+      var favId = buildFavoriteId(sel.lat, sel.lon);
+      if(isFavorite(sel.lat, sel.lon)) return;
+
+      addFavorite({
+        id: favId,
+        name: selectedPlaceName || ("Plats " + formatCoord(sel.lat) + ", " + formatCoord(sel.lon)),
+        lat: sel.lat,
+        lon: sel.lon
+      });
+
+      if(window.updateWeatherForSelectedTime){
+        window.updateWeatherForSelectedTime();
+      }
+    }
+  });
+}
 
     if(isMobileView()){ toggleOverlayCollapsed(false); } else { updateOverlayCollapseButtonText(); }
 
