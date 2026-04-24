@@ -1590,7 +1590,9 @@ function focusMapOnPoint(lat, lon, zoomLevel){
     function saveSelection(mode,payload){ savedSelections[mode]=payload; }
 
     function setWaveMarkerColorById(id,state,tip){
-      var isSelected=selectedWaveStationId===id; var baseColor=isSelected ? '#ffd24d' : '#ff8b8b';
+     var isSelected=selectedWaveStationId===id;
+var baseColor=isSelected ? '#ffd24d' : '#4fc3ff';
+var glowColor=isSelected ? 'rgba(255,210,77,0.28)' : 'rgba(79,195,255,0.22)';
       var m=waveMarkerMap.get(id);
       if(m){
         if(state==='active'){ m.setRadius(isSelected ? 9 : 7); m.setStyle({color:baseColor,fillColor:baseColor,fillOpacity:0.98,opacity:1,stroke:true,weight:isSelected ? 3 : 2}); }
@@ -1605,7 +1607,7 @@ function focusMapOnPoint(lat, lon, zoomLevel){
           el.style.background=baseColor;
           el.style.width=isSelected ? '18px' : '14px';
           el.style.height=isSelected ? '18px' : '14px';
-          el.style.boxShadow=isSelected ? '0 0 0 5px rgba(255,210,77,0.28)' : '0 0 0 4px rgba(255,139,139,0.18)';
+          el.style.boxShadow=isSelected ? '0 0 0 5px rgba(255,210,77,0.28)' : '0 0 0 4px rgba(79,195,255,0.22)';
           el.style.border=isSelected ? '2px solid rgba(255,255,255,0.95)' : '2px solid rgba(255,255,255,0.75)';
         }else{
           el.style.display='none';
@@ -1615,7 +1617,9 @@ function focusMapOnPoint(lat, lon, zoomLevel){
     }
 
     function setLighthouseMarkerColorById(id,state,tip){
-      var isSelected=selectedLighthouseStationId===id; var baseColor=isSelected ? '#ffd24d' : '#ff8b8b';
+     var isSelected=selectedLighthouseStationId===id;
+var baseColor=isSelected ? '#ffd24d' : '#ffb84d';
+var glowColor=isSelected ? 'rgba(255,210,77,0.28)' : 'rgba(255,184,77,0.22)';
       var m=lighthouseMarkerMap.get(id);
       if(m){
         if(state==='active'){ m.setRadius(isSelected ? 9 : 7); m.setStyle({color:baseColor,fillColor:baseColor,fillOpacity:0.98,opacity:1,stroke:true,weight:isSelected ? 3 : 2}); }
@@ -1630,7 +1634,7 @@ function focusMapOnPoint(lat, lon, zoomLevel){
           el.style.background=baseColor;
           el.style.width=isSelected ? '18px' : '14px';
           el.style.height=isSelected ? '18px' : '14px';
-          el.style.boxShadow=isSelected ? '0 0 0 5px rgba(255,210,77,0.28)' : '0 0 0 4px rgba(255,139,139,0.18)';
+          el.style.boxShadow=isSelected ? '0 0 0 5px rgba(255,210,77,0.28)' : '0 0 0 4px rgba(255,184,77,0.22)';
           el.style.border=isSelected ? '2px solid rgba(255,255,255,0.95)' : '2px solid rgba(255,255,255,0.75)';
         }else{
           el.style.display='none';
@@ -2048,13 +2052,13 @@ applyWeatherOverlay(
 
     function createWaveStationMarkers(s){
       if(waveMarkerMap.has(s.id) || waveMaptilerMarkerMap.has(s.id)) return;
-      var lm=L.circleMarker([s.latitude,s.longitude],{radius:7,weight:2,color:'#ff8b8b',fillColor:'#ff8b8b',fillOpacity:0.95,opacity:1,stroke:true});
+      var lm=L.circleMarker([s.latitude,s.longitude],{radius:7,weight:2,color:'#4fc3ff',fillColor:'#4fc3ff',fillOpacity:0.95,opacity:1,stroke:true});
       lm.bindTooltip(s.name+' • data tillgänglig',{direction:'top'});
       lm.on('click',function(e){ L.DomEvent.stopPropagation(e); selectWaveStation(s); });
       waveMarkerMap.set(s.id,lm); waveStationsLayer.addLayer(lm);
       if(maptilerMap && window.maptilersdk){
         var el=document.createElement('div');
-        Object.assign(el.style,{width:'14px',height:'14px',borderRadius:'999px',background:'#ff8b8b',border:'2px solid rgba(255,255,255,0.75)',boxShadow:'0 0 0 4px rgba(255,139,139,0.18)',cursor:'pointer',display:showWaveObjects ? 'block' : 'none'});
+        Object.assign(el.style,{width:'14px',height:'14px',borderRadius:'999px',background:'#4fc3ff',border:'2px solid rgba(255,255,255,0.75)',boxShadow:'0 0 0 4px rgba(79,195,255,0.22)',cursor:'pointer',display:showWaveObjects ? 'block' : 'none'});
         el.title=s.name+' • data tillgänglig';
         el.addEventListener('click',function(e){ e.stopPropagation(); selectWaveStation(s); });
         var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
@@ -2115,13 +2119,13 @@ applyWeatherOverlay(
 
     function createLighthouseStationMarkers(s){
       if(lighthouseMarkerMap.has(s.id) || lighthouseMaptilerMarkerMap.has(s.id)) return;
-      var lm=L.circleMarker([s.latitude,s.longitude],{radius:7,weight:2,color:'#ff8b8b',fillColor:'#ff8b8b',fillOpacity:0.95,opacity:1,stroke:true});
+      var lm=L.circleMarker([s.latitude,s.longitude],{radius:7,weight:2,color:'#ffb84d',fillColor:'#ffb84d',fillOpacity:0.95,opacity:1,stroke:true});
       lm.bindTooltip(s.name+' • data tillgänglig',{direction:'top'});
       lm.on('click',function(e){ L.DomEvent.stopPropagation(e); selectLighthouseStation(s); });
       lighthouseMarkerMap.set(s.id,lm); lighthouseStationsLayer.addLayer(lm);
       if(maptilerMap && window.maptilersdk){
         var el=document.createElement('div');
-        Object.assign(el.style,{width:'14px',height:'14px',borderRadius:'999px',background:'#ff8b8b',border:'2px solid rgba(255,255,255,0.75)',boxShadow:'0 0 0 4px rgba(255,139,139,0.18)',cursor:'pointer',display:showLighthouseObjects ? 'block' : 'none'});
+        Object.assign(el.style,{width:'14px',height:'14px',borderRadius:'999px',background:'#ffb84d',border:'2px solid rgba(255,255,255,0.75)',boxShadow:'0 0 0 4px rgba(255,184,77,0.22)',cursor:'pointer',display:showLighthouseObjects ? 'block' : 'none'});
         el.title=s.name+' • data tillgänglig';
         el.addEventListener('click',function(e){ e.stopPropagation(); selectLighthouseStation(s); });
         var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
