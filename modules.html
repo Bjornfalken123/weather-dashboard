@@ -204,29 +204,113 @@
     #overlayBody{padding:10px 14px 12px;max-height:min(68vh,680px);overflow:auto;-webkit-overflow-scrolling:touch;}
     #overlayContent{color:var(--muted-soft);font-size:12px;line-height:1.65;}
 
-    .weather-overview{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-    .weather-icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:22px;flex-shrink:0;}
-    .weather-main{min-width:0;flex:1;}
-    .weather-main-title{font-size:14px;font-weight:800;color:var(--text);line-height:1.2;}
-    .weather-main-time{margin-top:3px;font-size:11px;color:var(--muted-soft);line-height:1.3;}
-    .weather-temp-big{margin:8px 0 10px;font-size:28px;font-weight:900;color:var(--text);line-height:1;}
+   .weather-overview{
+  display:grid;
+  grid-template-columns:52px 1fr;
+  gap:12px;
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.weather-icon{
+  width:52px;
+  height:52px;
+  border-radius:17px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,0.075);
+  border:1px solid rgba(255,255,255,0.095);
+  font-size:30px;
+  flex-shrink:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.weather-main{
+  min-width:0;
+  flex:1;
+}
+
+.weather-main-title{
+  font-size:15px;
+  font-weight:900;
+  color:var(--text);
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.weather-main-time{
+  margin-top:4px;
+  font-size:11px;
+  color:var(--muted-soft);
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.weather-temp-big{
+  margin:6px 0 8px;
+  font-size:31px;
+  font-weight:950;
+  color:var(--text);
+  line-height:1;
+  letter-spacing:-0.03em;
+}
+
 .weather-point-line{
-  margin-bottom:4px;
+  margin:0 0 7px;
   font-size:11px;
   color:var(--muted);
   line-height:1.35;
 }
+
 .weather-place-name{
   color:var(--text);
   font-size:12px;
-  font-weight:800;
-  line-height:1.3;
+  font-weight:850;
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
+
 .weather-place-coords{
-  color:var(--muted);
-  font-size:10px;
+  display:none;
+}
+
+.weather-primary-metrics{
+  display:grid;
+  gap:5px;
   margin-top:2px;
 }
+
+.weather-metric-line{
+  color:var(--text-soft);
+  font-size:12px;
+  font-weight:750;
+  line-height:1.35;
+}
+
+.weather-metric-line strong{
+  color:var(--text);
+  font-weight:900;
+}
+
+.weather-metric-muted{
+  color:var(--muted-soft);
+  font-weight:700;
+}
+
+.weather-point-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:8px 0 0;
+}
+
 .weather-details-toggle{
   appearance:none;
   border:1px solid rgba(255,255,255,0.08);
@@ -1081,22 +1165,65 @@
       return '<div class="overlay-data-grid">'+ rows.filter(function(r){ return r.value && r.value!=="--"; }).map(function(r){ return '<div class="overlay-data-cell"><div class="overlay-data-label">'+r.label+'</div><div class="overlay-data-value'+(r.highlight?' highlight':'')+'">'+r.value+'</div></div>'; }).join("") + '</div>';
     }
 
-    function renderCombinedMapOverlay(){
-      var titleEl=document.getElementById("overlayTitle"), contentEl=document.getElementById("overlayContent");
-      if(!titleEl || !contentEl) return;
-      titleEl.textContent=titleEl.dataset.baseTitle || "Välj punkt";
-      var base=contentEl.dataset.baseContent || "Klicka i kartan för väderdata";
-      var waveTitle=contentEl.dataset.waveTitle || "";
-      var waveContent=contentEl.dataset.waveContent || "";
-      var lighthouseTitle=contentEl.dataset.lighthouseTitle || "";
-      var lighthouseContent=contentEl.dataset.lighthouseContent || "";
-      var html='<div>'+base+'</div>';
-      if(waveTitle && waveContent){ html += '<div class="overlay-object-section"><div class="overlay-object-title">'+waveTitle+'</div><div>'+waveContent+'</div></div>'; }
-      if(lighthouseTitle && lighthouseContent){ html += '<div class="overlay-object-section"><div class="overlay-object-title">'+lighthouseTitle+'</div><div>'+lighthouseContent+'</div></div>'; }
-      contentEl.innerHTML=html;
-    }
+   function syncOverlayTitle(){
+  var titleEl=document.getElementById("overlayTitle");
+  var panel=document.getElementById("mapOverlayPanel");
+  if(!titleEl) return;
 
-    function updateMapOverlay(title,content){ var t=document.getElementById("overlayTitle"), c=document.getElementById("overlayContent"); if(!t || !c) return; t.dataset.baseTitle=title; c.dataset.baseContent=content; renderCombinedMapOverlay(); }
+  var collapsed = panel && panel.classList.contains("is-collapsed");
+
+  if(titleEl.dataset.collapsedTitle || titleEl.dataset.expandedTitle){
+    titleEl.textContent = collapsed
+      ? (titleEl.dataset.collapsedTitle || titleEl.dataset.baseTitle || "Välj punkt")
+      : (titleEl.dataset.expandedTitle || titleEl.dataset.baseTitle || "Välj punkt");
+    return;
+  }
+
+  titleEl.textContent = titleEl.dataset.baseTitle || "Välj punkt";
+}
+
+function renderCombinedMapOverlay(){
+  var titleEl=document.getElementById("overlayTitle"), contentEl=document.getElementById("overlayContent");
+  if(!titleEl || !contentEl) return;
+
+  syncOverlayTitle();
+
+  var base=contentEl.dataset.baseContent || "Klicka i kartan för väderdata";
+  var waveTitle=contentEl.dataset.waveTitle || "";
+  var waveContent=contentEl.dataset.waveContent || "";
+  var lighthouseTitle=contentEl.dataset.lighthouseTitle || "";
+  var lighthouseContent=contentEl.dataset.lighthouseContent || "";
+
+  var html='<div>'+base+'</div>';
+
+  if(waveTitle && waveContent){
+    html += '<div class="overlay-object-section"><div class="overlay-object-title">'+waveTitle+'</div><div>'+waveContent+'</div></div>';
+  }
+
+  if(lighthouseTitle && lighthouseContent){
+    html += '<div class="overlay-object-section"><div class="overlay-object-title">'+lighthouseTitle+'</div><div>'+lighthouseContent+'</div></div>';
+  }
+
+  contentEl.innerHTML=html;
+}
+
+function updateMapOverlay(title,content,meta){
+  var t=document.getElementById("overlayTitle"), c=document.getElementById("overlayContent");
+  if(!t || !c) return;
+
+  t.dataset.baseTitle=title;
+
+  if(meta && (meta.expandedTitle || meta.collapsedTitle)){
+    t.dataset.expandedTitle = meta.expandedTitle || title;
+    t.dataset.collapsedTitle = meta.collapsedTitle || title;
+  }else{
+    delete t.dataset.expandedTitle;
+    delete t.dataset.collapsedTitle;
+  }
+
+  c.dataset.baseContent=content;
+  renderCombinedMapOverlay();
+}
     function updateWaveOverlay(title,content){ var c=document.getElementById("overlayContent"); if(!c) return; c.dataset.waveTitle=title; c.dataset.waveContent=content; renderCombinedMapOverlay(); }
     function updateLighthouseOverlay(title,content){ var c=document.getElementById("overlayContent"); if(!c) return; c.dataset.lighthouseTitle=title; c.dataset.lighthouseContent=content; renderCombinedMapOverlay(); }
     function hideWaveOverlay(){ var c=document.getElementById("overlayContent"); if(!c) return; c.dataset.waveTitle=""; c.dataset.waveContent=""; renderCombinedMapOverlay(); }
@@ -1701,39 +1828,47 @@ function focusMapOnPoint(lat, lon, zoomLevel){
           return formatWind(cl.value);
         }
 
-      function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
+ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lon){
   var detailsButtonText = weatherDetailsExpanded ? 'Visa mindre' : 'Se mer';
+
+  var placeName = (selectedPlaceName && selectedPlaceName.trim()) ? selectedPlaceName.trim() : 'Vald plats';
+  var weatherText = weatherLabelFromSymbol(symbol);
+  var weatherIcon = weatherIconFromSymbol(symbol);
+  var forecastLabel = formatForecastLabel(pt);
+  var tempText = formatTemp(temp);
+  var windText = formatWindWithDirection(ws,wd);
+  var gustText = gust || '--';
+  var rainText = formatRain(rain);
+  var pressureText = formatPressure(pres);
+  var humidityText = formatHumidity(humidity);
+
   var detailsHtml = '';
 
   if(weatherDetailsExpanded){
     detailsHtml =
       '<div class="weather-extra-details">' +
         buildOverlayDataGrid([
-          {label:'Vind',value:formatWindWithDirection(ws,wd)},
-          {label:'Vindbyar',value:gust},
-          {label:'Nederbörd',value:formatRain(rain)},
-          {label:'Lufttryck',value:formatPressure(pres)},
-          {label:'Luftfuktighet',value:formatHumidity(humidity)}
+          {label:'Lufttryck',value:pressureText},
+          {label:'Luftfuktighet',value:humidityText},
+          {label:'Koordinater',value:formatCoord(lat)+', '+formatCoord(lon)}
         ]) +
       '</div>';
   }
 
-  var placeName = (selectedPlaceName && selectedPlaceName.trim()) ? selectedPlaceName.trim() : 'Vald plats';
-
-  return '' +
+  var content = '' +
     '<div class="weather-overview">' +
-      '<div class="weather-icon">' + weatherIconFromSymbol(symbol) + '</div>' +
+      '<div class="weather-icon">' + weatherIcon + '</div>' +
       '<div class="weather-main">' +
-        '<div class="weather-main-title">' + weatherLabelFromSymbol(symbol) + '</div>' +
-        '<div class="weather-main-time">' + formatWeatherDateTime(pt) + '</div>' +
+        '<div class="weather-main-title">' + weatherText + '</div>' +
+        '<div class="weather-main-time">' + placeName + ' · ' + forecastLabel + '</div>' +
       '</div>' +
     '</div>' +
 
-    '<div class="weather-temp-big">' + formatTemp(temp) + '</div>' +
+    '<div class="weather-temp-big">' + tempText + '</div>' +
 
-    '<div class="weather-point-line">' +
-      '<div class="weather-place-name">' + placeName + '</div>' +
-      '<div class="weather-place-coords">' + formatCoord(lat) + ', ' + formatCoord(lon) + '</div>' +
+    '<div class="weather-primary-metrics">' +
+      '<div class="weather-metric-line"><strong>Vind</strong> ' + windText + '</div>' +
+      '<div class="weather-metric-line"><strong>Byar</strong> ' + gustText + ' <span class="weather-metric-muted">· Regn ' + rainText + '</span></div>' +
     '</div>' +
 
     '<div class="weather-point-actions">' +
@@ -1744,6 +1879,23 @@ function focusMapOnPoint(lat, lon, zoomLevel){
     '</div>' +
 
     detailsHtml;
+
+  return {
+    expandedTitle: placeName,
+    collapsedTitle: weatherIcon + ' ' + weatherText + ' · ' + tempText,
+    content: content
+  };
+}
+
+function applyWeatherOverlay(payload){
+  updateMapOverlay(
+    payload.expandedTitle,
+    payload.content,
+    {
+      expandedTitle: payload.expandedTitle,
+      collapsedTitle: payload.collapsedTitle
+    }
+  );
 }
 
        window.updateWeatherForSelectedTime=function(timeValue){
@@ -1786,29 +1938,44 @@ function focusMapOnPoint(lat, lon, zoomLevel){
 
   var gft = getGustForTime(tms);
 
-  updateMapOverlay(
-    weatherLabelFromSymbol(ss),
-    buildWeatherOverlay(
-      targetTime,
-      si.air_temperature,
-      si.wind_speed,
-      si.wind_from_direction,
-      gft,
-      sp,
-      si.air_pressure_at_sea_level,
-      si.relative_humidity,
-      ss,
-      lat,
-      lon
-    )
-  );
+applyWeatherOverlay(
+  buildWeatherOverlay(
+    targetTime,
+    si.air_temperature,
+    si.wind_speed,
+    si.wind_from_direction,
+    gft,
+    sp,
+    si.air_pressure_at_sea_level,
+    si.relative_humidity,
+    ss,
+    lat,
+    lon
+  )
+);
 };
 
         if(requestId !== latestWeatherRequestId) return;
 
-        if(selectedForecastTime){ window.updateWeatherForSelectedTime(); }
-        else{ updateMapOverlay(weatherLabelFromSymbol(sym),buildWeatherOverlay(cur.time,inst.air_temperature,inst.wind_speed,inst.wind_from_direction,gustFormatted,prec,inst.air_pressure_at_sea_level,inst.relative_humidity,sym,lat,lon)); }
-
+       if(selectedForecastTime){
+  window.updateWeatherForSelectedTime(selectedForecastTime);
+}else{
+  applyWeatherOverlay(
+    buildWeatherOverlay(
+      cur.time,
+      inst.air_temperature,
+      inst.wind_speed,
+      inst.wind_from_direction,
+      gustFormatted,
+      prec,
+      inst.air_pressure_at_sea_level,
+      inst.relative_humidity,
+      sym,
+      lat,
+      lon
+    )
+  );
+}
         currentForecastDays=buildDailyForecast(ts);
         setOverlayHeaderDot('ready');
       }).catch(function(err){
@@ -1954,7 +2121,19 @@ function focusMapOnPoint(lat, lon, zoomLevel){
       mapOverlayPanel.classList.toggle("weather-expanded", !!weatherDetailsExpanded);
       refreshMapSizeSoon();
     }
-    function toggleOverlayCollapsed(forceState){ if(!mapOverlayPanel) return; if(typeof forceState==='boolean'){ mapOverlayPanel.classList.toggle('is-collapsed',forceState); } else { mapOverlayPanel.classList.toggle('is-collapsed'); } updateOverlayCollapseButtonText(); refreshMapSizeSoon(); }
+    function toggleOverlayCollapsed(forceState){
+  if(!mapOverlayPanel) return;
+
+  if(typeof forceState==='boolean'){
+    mapOverlayPanel.classList.toggle('is-collapsed',forceState);
+  }else{
+    mapOverlayPanel.classList.toggle('is-collapsed');
+  }
+
+  updateOverlayCollapseButtonText();
+  syncOverlayTitle();
+  refreshMapSizeSoon();
+}
     if(overlayCollapseBtn){ overlayCollapseBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleOverlayCollapsed(); }); }
 
     if(overlayContentEl){
