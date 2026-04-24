@@ -766,10 +766,13 @@
               <div id="timeValueLabel">Laddar tid...</div>
             </div>
             <div class="time-compact-bottom">
-              <button id="timePlayPauseBtn" type="button">
-                <svg id="playIcon" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"></polygon></svg>
-                <span id="playBtnText">Spela</span>
-              </button>
+            <button id="timePlayPauseBtn" type="button" aria-label="Återställ till aktuell tid">
+  <svg id="resetTimeIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"></path>
+    <path d="M13.5 2.5v3.8H9.7"></path>
+  </svg>
+  <span id="resetTimeBtnText">Nu</span>
+</button>
               <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
             </div>
             <div id="timeTickRow">
@@ -2215,33 +2218,28 @@ function initializeForecastTimeline(){
   }
 }
 
-       if(timePlayPauseBtn){
-  timePlayPauseBtn.addEventListener('click',function(){
-    if(!forecastStartTime || !forecastEndTime || !selectedForecastTime) return;
+function resetForecastTimeToNow(){
+  if(!forecastStartTime || !forecastEndTime) return;
 
-    if(isTimePlaying){
-      stopTimePlayback();
-      return;
-    }
+  stopTimePlayback();
 
-    isTimePlaying = true;
+  var now = Date.now();
 
-    if(playIcon){
-      playIcon.innerHTML = '<rect x="2" y="1" width="3.5" height="10" rx="1"></rect><rect x="6.5" y="1" width="3.5" height="10" rx="1"></rect>';
-    }
+  if(now < forecastStartTime){
+    selectedForecastTime = forecastStartTime;
+  }else if(now > forecastEndTime){
+    selectedForecastTime = forecastEndTime;
+  }else{
+    selectedForecastTime = now;
+  }
 
-    if(playBtnText){
-      playBtnText.textContent = 'Pausa';
-    }
+  applySelectedForecastTime(true);
+}
 
-    timePlaybackTimer = setInterval(function(){
-      if(!selectedForecastTime) return;
-
-      var next = selectedForecastTime + 60 * 60 * 1000;
-      selectedForecastTime = next > forecastEndTime ? forecastStartTime : next;
-
-      applySelectedForecastTime(true);
-    },700);
+if(timePlayPauseBtn){
+  timePlayPauseBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    resetForecastTimeToNow();
   });
 }
 
