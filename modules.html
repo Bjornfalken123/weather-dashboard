@@ -785,6 +785,126 @@
   color:var(--text);
   font-weight:900;
 }
+    .weather-hero{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:end;
+  padding:10px;
+  border-radius:15px;
+  background:linear-gradient(180deg,rgba(123,199,255,0.12),rgba(255,255,255,0.045));
+  border:1px solid rgba(123,199,255,0.16);
+  margin-bottom:9px;
+}
+
+.weather-hero-main{
+  min-width:0;
+}
+
+.weather-hero-condition{
+  color:var(--text);
+  font-size:14px;
+  font-weight:950;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.weather-hero-time{
+  margin-top:4px;
+  color:var(--muted-soft);
+  font-size:10.5px;
+  font-weight:750;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.weather-hero-temp{
+  color:var(--text);
+  font-size:34px;
+  line-height:0.95;
+  font-weight:950;
+  letter-spacing:-0.045em;
+  white-space:nowrap;
+}
+
+.weather-priority-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  margin-bottom:8px;
+}
+
+.weather-priority-card{
+  min-width:0;
+  padding:9px 10px;
+  border-radius:13px;
+  background:rgba(255,255,255,0.045);
+  border:1px solid rgba(255,255,255,0.07);
+}
+
+.weather-priority-label{
+  color:var(--muted);
+  font-size:9.5px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:0.02em;
+  margin-bottom:3px;
+}
+
+.weather-priority-value{
+  color:var(--text);
+  font-size:14px;
+  font-weight:950;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.weather-priority-sub{
+  margin-top:2px;
+  color:var(--muted-soft);
+  font-size:10.5px;
+  font-weight:750;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.weather-secondary-title{
+  margin:9px 0 5px;
+  color:var(--muted);
+  font-size:9.5px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:0.02em;
+}
+
+@media (max-width:700px){
+  .weather-hero{
+    padding:9px;
+    border-radius:14px;
+  }
+
+  .weather-hero-temp{
+    font-size:29px;
+  }
+
+  .weather-priority-grid{
+    gap:6px;
+  }
+
+  .weather-priority-card{
+    padding:8px 9px;
+  }
+
+  .weather-priority-value{
+    font-size:13px;
+  }
+}
 
 @media (max-width:700px){
   .overlay-card-header{
@@ -1364,6 +1484,20 @@ function getVisibleOverlayCards(){
   }).filter(Boolean);
 }
 
+function getWeatherHeaderTitle(){
+  var weatherCard = overlayCards.weather;
+
+  if(weatherCard){
+    return weatherCard.headerTitle ||
+      weatherCard.shortTitle ||
+      weatherCard.summary ||
+      weatherCard.title ||
+      "Väderpunkt";
+  }
+
+  return "";
+}
+
 function getCollapsedOverlayTitle(){
   var cards = getVisibleOverlayCards();
 
@@ -1371,12 +1505,11 @@ function getCollapsedOverlayTitle(){
     return overlayEmptyTitle || "Välj punkt";
   }
 
-  var weatherCard = overlayCards.weather;
+  var weatherTitle = getWeatherHeaderTitle();
 
-  if(weatherCard){
+  if(weatherTitle){
     var extraCount = cards.length - 1;
-    return (weatherCard.shortTitle || weatherCard.summary || weatherCard.title || "Väder") +
-      (extraCount > 0 ? " · +" + extraCount : "");
+    return weatherTitle + (extraCount > 0 ? " · +" + extraCount : "");
   }
 
   return cards.map(function(card){
@@ -1386,15 +1519,7 @@ function getCollapsedOverlayTitle(){
 
 function syncOverlayTitle(){
   var titleEl = document.getElementById("overlayTitle");
-  var panel = document.getElementById("mapOverlayPanel");
   if(!titleEl) return;
-
-  var collapsed = panel && panel.classList.contains("is-collapsed");
-
-  if(collapsed){
-    titleEl.textContent = getCollapsedOverlayTitle();
-    return;
-  }
 
   var cards = getVisibleOverlayCards();
 
@@ -1403,12 +1528,15 @@ function syncOverlayTitle(){
     return;
   }
 
-  if(overlayCards.weather && overlayCards.weather.title){
-    titleEl.textContent = overlayCards.weather.title;
+  var weatherTitle = getWeatherHeaderTitle();
+
+  if(weatherTitle){
+    var extraCount = cards.length - 1;
+    titleEl.textContent = weatherTitle + (extraCount > 0 ? " · +" + extraCount : "");
     return;
   }
 
-  titleEl.textContent = "Valda punkter";
+  titleEl.textContent = cards.length ? "Valda punkter" : (overlayEmptyTitle || "Välj punkt");
 }
 
 function buildOverlayCardHtml(card){
@@ -1473,6 +1601,7 @@ function updateMapOverlay(title, content, meta){
     title: title || "Väder",
     summary: title || "Väder",
     shortTitle: title || "Väder",
+    headerTitle: title || "Väder",
     detail: content || ""
   });
 }
@@ -2189,28 +2318,67 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
   var forecastLabel = formatForecastLabelGlobal(pt);
 
   var tempText = formatTemp(temp);
-  var windText = formatWindWithDirection(ws,wd);
+  var windSpeedText = formatWind(ws);
+  var windDirectionText = formatWindDirection(wd);
+  var windCompass = degreesToCompass(wd);
   var gustText = gust || "--";
   var rainText = formatRain(rain);
   var pressureText = formatPressure(pres);
   var humidityText = formatHumidity(humidity);
 
-  var summary = joinAvailable([
-    weatherText,
+  var headerWind = windSpeedText !== "--"
+    ? windCompass + " " + windSpeedText
+    : "";
+
+  var headerTitle = joinAvailable([
+    weatherIcon + " " + placeName,
     tempText,
-    windText !== "--" ? "Vind " + windText : ""
+    headerWind
+  ]);
+
+  var summary = joinAvailable([
+    tempText,
+    weatherText,
+    windSpeedText !== "--" ? "Vind " + windSpeedText : "",
+    gustText !== "--" ? "Byar " + gustText : ""
   ]);
 
   var detail = '' +
-    '<div class="weather-detail-temp">' + tempText + '</div>' +
-
-    '<div class="weather-detail-meta">' +
-      '<div class="weather-detail-line"><strong>Väder</strong> ' + weatherText + '</div>' +
-      '<div class="weather-detail-line"><strong>Tid</strong> ' + forecastLabel + '</div>' +
-      '<div class="weather-detail-line"><strong>Vind</strong> ' + windText + '</div>' +
-      '<div class="weather-detail-line"><strong>Byar</strong> ' + gustText + '</div>' +
-      '<div class="weather-detail-line"><strong>Regn</strong> ' + rainText + '</div>' +
+    '<div class="weather-hero">' +
+      '<div class="weather-hero-main">' +
+        '<div class="weather-hero-condition">' + weatherIcon + ' ' + weatherText + '</div>' +
+        '<div class="weather-hero-time">' + forecastLabel + '</div>' +
+      '</div>' +
+      '<div class="weather-hero-temp">' + tempText + '</div>' +
     '</div>' +
+
+    '<div class="weather-priority-grid">' +
+      '<div class="weather-priority-card">' +
+        '<div class="weather-priority-label">Vind</div>' +
+        '<div class="weather-priority-value">' + windSpeedText + '</div>' +
+        '<div class="weather-priority-sub">' + windCompass + '</div>' +
+      '</div>' +
+
+      '<div class="weather-priority-card">' +
+        '<div class="weather-priority-label">Vindbyar</div>' +
+        '<div class="weather-priority-value">' + gustText + '</div>' +
+        '<div class="weather-priority-sub">Maxbyar</div>' +
+      '</div>' +
+
+      '<div class="weather-priority-card">' +
+        '<div class="weather-priority-label">Riktning</div>' +
+        '<div class="weather-priority-value">' + windCompass + '</div>' +
+        '<div class="weather-priority-sub">' + windDirectionText + '</div>' +
+      '</div>' +
+
+      '<div class="weather-priority-card">' +
+        '<div class="weather-priority-label">Regn</div>' +
+        '<div class="weather-priority-value">' + rainText + '</div>' +
+        '<div class="weather-priority-sub">Närmaste timme</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="weather-secondary-title">Extra</div>' +
 
     buildOverlayDataGrid([
       {label:'Lufttryck',value:pressureText},
@@ -2224,16 +2392,16 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       '</button>' +
     '</div>';
 
-return {
-  label: placeName,
-  icon: weatherIcon,
-  title: placeName,
-  summary: summary,
-  shortTitle: weatherIcon + " " + placeName + " · " + tempText,
-  detail: detail
-};
+  return {
+    label: "Väderpunkt",
+    icon: weatherIcon,
+    title: placeName,
+    summary: summary,
+    shortTitle: headerTitle,
+    headerTitle: headerTitle,
+    detail: detail
+  };
 }
-
 function applyWeatherOverlay(payload){
   setOverlayCard("weather", payload);
 }
