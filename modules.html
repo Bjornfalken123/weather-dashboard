@@ -303,15 +303,14 @@
     .layer-dot.wind{background:#dfe8f7;}
     .layer-dot.precip{background:#7bc7ff;}
     .layer-dot.cloud{background:#b7c5d9;}
-
-   #timeControl{
+#timeControl{
   position:absolute;
   left:50%;
   transform:translateX(-50%);
   bottom:16px;
   z-index:1200;
   width:min(760px, calc(100% - 32px));
-  padding:12px 16px 13px;
+  padding:10px 16px 11px;
   border-radius:20px;
   border:1px solid rgba(255,255,255,0.09);
   background:rgba(5,11,22,0.86);
@@ -322,10 +321,10 @@
 
 .time-module-top{
   display:grid;
-  grid-template-columns:minmax(92px, 1fr) minmax(130px, 1.25fr) auto;
+  grid-template-columns:minmax(86px, 1fr) minmax(124px, 1.25fr) auto;
   align-items:center;
   gap:12px;
-  margin-bottom:10px;
+  margin-bottom:8px;
 }
 
 .time-now-block,
@@ -346,12 +345,9 @@
 
 .time-small-caption,
 .time-selected-caption{
-  display:flex;
-  align-items:center;
-  gap:5px;
-  margin-top:4px;
+  margin-top:3px;
   color:var(--muted-soft);
-  font-size:11px;
+  font-size:10px;
   line-height:1.1;
   font-weight:650;
   white-space:nowrap;
@@ -370,36 +366,18 @@
   text-overflow:ellipsis;
 }
 
-.time-dot{
-  width:7px;
-  height:7px;
-  border-radius:999px;
-  display:inline-block;
-  flex-shrink:0;
-}
-
-.time-dot-now{
-  background:#fff;
-  box-shadow:0 0 0 2px rgba(255,255,255,0.12);
-}
-
-.time-dot-selected{
-  background:#4098ff;
-  box-shadow:0 0 0 2px rgba(64,152,255,0.18);
-}
-
 #timePlayPauseBtn{
   appearance:none;
   border:1px solid rgba(255,255,255,0.12);
   background:rgba(255,255,255,0.065);
   color:var(--text);
   border-radius:999px;
-  padding:9px 13px;
+  padding:8px 13px;
   font-size:12px;
   font-weight:900;
   cursor:pointer;
-  min-width:74px;
-  min-height:38px;
+  min-width:72px;
+  min-height:36px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -408,8 +386,8 @@
 }
 
 #timePlayPauseBtn svg{
-  width:17px;
-  height:17px;
+  width:16px;
+  height:16px;
   flex-shrink:0;
 }
 
@@ -419,6 +397,7 @@
 }
 
 #timeSlider{
+  --time-progress:0%;
   width:100%;
   margin:0;
   touch-action:none;
@@ -426,8 +405,14 @@
   appearance:none;
   height:7px;
   border-radius:999px;
-  background:linear-gradient(90deg,rgba(123,199,255,0.82) 0%,rgba(64,152,255,0.72) 34%,rgba(255,255,255,0.18) 34%,rgba(255,255,255,0.12) 100%);
-  border:1px solid rgba(255,255,255,0.055);
+  background:linear-gradient(
+    90deg,
+    rgba(123,199,255,0.88) 0%,
+    rgba(64,152,255,0.78) var(--time-progress),
+    rgba(255,255,255,0.16) var(--time-progress),
+    rgba(255,255,255,0.12) 100%
+  );
+  border:1px solid rgba(255,255,255,0.065);
   cursor:pointer;
 }
 
@@ -448,32 +433,6 @@
   border:3px solid rgba(255,255,255,0.92);
   background:#4098ff;
   box-shadow:0 0 0 7px rgba(64,152,255,0.16),0 3px 10px rgba(0,0,0,0.35);
-}
-
-#timeTickRow{
-  display:flex;
-  justify-content:space-between;
-  margin-top:8px;
-  padding:0 2px;
-  gap:8px;
-}
-
-.time-tick{
-  font-size:11px;
-  color:var(--muted-soft);
-  font-weight:750;
-  line-height:1.1;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-.time-tick:first-child{
-  color:var(--text);
-}
-
-.time-tick.is-selected{
-  color:var(--accent);
 }
     #bottomTabBar{
       display:none;
@@ -722,26 +681,26 @@
   transform:none !important;
   width:100% !important;
   z-index:7000 !important;
-  padding:10px 12px 11px;
+  padding:8px 12px 9px;
   border-radius:14px 14px 0 0;
   border-left:none;
   border-right:none;
 }
 
 .time-module-top{
-  grid-template-columns:minmax(82px, 0.9fr) minmax(116px, 1.25fr) auto;
+  grid-template-columns:minmax(76px, 0.9fr) minmax(104px, 1.25fr) auto;
   gap:8px;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 
 .time-small-value{
-  font-size:13px;
+  font-size:12px;
 }
 
 .time-small-caption,
 .time-selected-caption{
-  font-size:10px;
-  margin-top:3px;
+  font-size:9px;
+  margin-top:2px;
 }
 
 #timeValueLabel{
@@ -749,10 +708,10 @@
 }
 
 #timePlayPauseBtn{
-  min-width:64px;
-  min-height:34px;
+  min-width:62px;
+  min-height:32px;
   font-size:11px;
-  padding:7px 10px;
+  padding:6px 10px;
 }
 
 #timePlayPauseBtn svg{
@@ -772,15 +731,6 @@
 #timeSlider::-moz-range-thumb{
   width:21px;
   height:21px;
-}
-
-#timeTickRow{
-  display:flex;
-  margin-top:7px;
-}
-
-.time-tick{
-  font-size:10px;
 }
 
   .weather-temp-big{
@@ -925,22 +875,16 @@
             </div>
           </div>
 
-        <div id="timeControl">
+   <div id="timeControl">
   <div class="time-module-top">
     <div class="time-now-block">
-      <div class="time-small-value" id="timeNowLabel">Nu --:--</div>
-      <div class="time-small-caption">
-        <span class="time-dot time-dot-now"></span>
-        Aktuell tid
-      </div>
+      <div class="time-small-value" id="timeNowLabel">Nu --.--</div>
+      <div class="time-small-caption">Aktuell tid</div>
     </div>
 
     <div class="time-selected-block">
       <div id="timeValueLabel">Laddar tid...</div>
-      <div class="time-selected-caption">
-        <span class="time-dot time-dot-selected"></span>
-        Vald prognostid
-      </div>
+      <div class="time-selected-caption">Visar prognos</div>
     </div>
 
     <button id="timePlayPauseBtn" type="button" aria-label="Återställ till aktuell tid">
@@ -954,14 +898,6 @@
 
   <div class="time-module-slider">
     <input type="range" id="timeSlider" min="0" max="100" value="0" step="1" />
-  </div>
-
-  <div id="timeTickRow">
-    <span class="time-tick" id="tick0">Nu</span>
-    <span class="time-tick" id="tick1">–</span>
-    <span class="time-tick" id="tick2">–</span>
-    <span class="time-tick" id="tick3">–</span>
-    <span class="time-tick" id="tick4">–</span>
   </div>
 </div>
 
@@ -2155,94 +2091,82 @@ function focusMapOnPoint(lat, lon, zoomLevel){
           function setDeskBtn(id,on){ var b=document.getElementById(id); if(!b) return; b.textContent=on ? 'På' : 'Av'; b.classList.toggle('is-on',on); b.classList.toggle('is-off',!on); }
           function setMobToggle(id,on){ var b=document.getElementById(id); if(b) b.classList.toggle('is-on',on); }
           function syncAllLayerButtons(){ setDeskBtn('toggleWindLayerBtn',windLayerVisible); setDeskBtn('togglePrecipLayerBtn',precipitationLayerVisible); setDeskBtn('toggleCloudLayerBtn',cloudLayerVisible); setDeskBtn('toggleRadarLayerBtn',radarLayerVisible); setDeskBtn('toggleTemperatureLayerBtn',temperatureLayerVisible); setDeskBtn('toggleWaveModeBtn',showWaveObjects); setDeskBtn('toggleLighthouseModeBtn',showLighthouseObjects); setMobToggle('mobileToggleWindBtn',windLayerVisible); setMobToggle('mobileTogglePrecipBtn',precipitationLayerVisible); setMobToggle('mobileToggleCloudBtn',cloudLayerVisible); setMobToggle('mobileToggleRadarBtn',radarLayerVisible); setMobToggle('mobileToggleTemperatureBtn',temperatureLayerVisible); setMobToggle('mobileToggleWaveBtn',showWaveObjects); setMobToggle('mobileToggleLighthouseBtn',showLighthouseObjects); updateActiveLayersBadge(); refreshMobileNavState(); }
-function formatMapTime(v){
-  if(!v) return '--';
-
-  var d = new Date(v);
-  if(isNaN(d.getTime())) return '--';
-
-  var day = d.toLocaleDateString('sv-SE',{ weekday:'long' });
-  day = day.charAt(0).toUpperCase() + day.slice(1);
-
-  var time = d.toLocaleTimeString('sv-SE',{
-    hour:'2-digit',
-    minute:'2-digit'
-  });
-
-  return day + ' ' + time;
+function isSameDate(a,b){
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate();
 }
 
-function formatCompactTickTime(v){
-  if(!v) return '--';
+function formatClockDot(v){
+  if(!v) return '--.--';
 
   var d = new Date(v);
-  if(isNaN(d.getTime())) return '--';
+  if(isNaN(d.getTime())) return '--.--';
 
   return d.toLocaleTimeString('sv-SE',{
     hour:'2-digit',
     minute:'2-digit'
+  }).replace(':','.');
+}
+
+function formatForecastLabel(v){
+  if(!v) return '--';
+
+  var d = new Date(v);
+  if(isNaN(d.getTime())) return '--';
+
+  var now = new Date();
+  var tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+
+  var time = formatClockDot(d);
+
+  if(isSameDate(d, now)){
+    return 'Idag ' + time;
+  }
+
+  if(isSameDate(d, tomorrow)){
+    return 'Imorgon ' + time;
+  }
+
+  var weekday = d.toLocaleDateString('sv-SE',{
+    weekday:'short'
   });
+
+  weekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+  return weekday + ' ' + time;
+}
+
+function updateTimeSliderProgress(){
+  if(!timeSlider) return;
+
+  var min = Number(timeSlider.min);
+  var max = Number(timeSlider.max);
+  var value = Number(timeSlider.value);
+
+  if(!isFinite(min) || !isFinite(max) || max <= min || !isFinite(value)){
+    timeSlider.style.setProperty('--time-progress','0%');
+    return;
+  }
+
+  var progress = ((value - min) / (max - min)) * 100;
+  progress = Math.max(0, Math.min(100, progress));
+
+  timeSlider.style.setProperty('--time-progress', progress + '%');
 }
 
 function updateTimeLabel(){
   if(timeValueLabel){
-    timeValueLabel.textContent = selectedForecastTime ? formatMapTime(selectedForecastTime) : '--';
+    timeValueLabel.textContent = selectedForecastTime ? formatForecastLabel(selectedForecastTime) : '--';
   }
 
   var nowLabel = document.getElementById('timeNowLabel');
   if(nowLabel){
-    var now = new Date();
-    nowLabel.textContent = 'Nu ' + now.toLocaleTimeString('sv-SE',{
-      hour:'2-digit',
-      minute:'2-digit'
-    });
+    nowLabel.textContent = 'Nu ' + formatClockDot(new Date());
   }
-}
 
-function updateTimeTicks(){
-  if(!forecastStartTime || !forecastEndTime) return;
-
-  var tickIds = ['tick0','tick1','tick2','tick3','tick4'];
-
-  tickIds.forEach(function(id,i){
-    var el = document.getElementById(id);
-    if(!el) return;
-
-    el.classList.remove('is-selected');
-
-    if(i === 0){
-      el.textContent = 'Nu';
-      return;
-    }
-
-    if(i === 4){
-      el.textContent = 'Imorgon';
-      return;
-    }
-
-    var t = new Date(forecastStartTime + (forecastEndTime - forecastStartTime) * i / 4);
-    el.textContent = formatCompactTickTime(t);
-  });
-
-  if(selectedForecastTime){
-    var closestIndex = 0;
-    var closestDistance = Infinity;
-
-    tickIds.forEach(function(id,i){
-      var tickTime = forecastStartTime + (forecastEndTime - forecastStartTime) * i / 4;
-      var distance = Math.abs(tickTime - selectedForecastTime);
-
-      if(distance < closestDistance){
-        closestDistance = distance;
-        closestIndex = i;
-      }
-    });
-
-    var selectedTick = document.getElementById(tickIds[closestIndex]);
-    if(selectedTick){
-      selectedTick.classList.add('is-selected');
-    }
-  }
+  updateTimeSliderProgress();
 }
 
 function applySelectedForecastTimeImmediate(timeValue){
@@ -2379,7 +2303,6 @@ function initializeForecastTimeline(){
 
   updateTimeLabel();
   applySelectedForecastTime(true);
-  updateTimeTicks();
   refreshMapSizeSoon();
 
   return true;
@@ -2406,17 +2329,19 @@ function initializeForecastTimeline(){
           syncAllLayerButtons();
 
          if(timeSlider){
-  var handleInput = function(){
-    stopTimePlayback();
-    selectedForecastTime = parseInt(timeSlider.value, 10);
-    applySelectedForecastTime(false);
-  };
+ var handleInput = function(){
+  stopTimePlayback();
+  selectedForecastTime = parseInt(timeSlider.value, 10);
+  updateTimeLabel();
+  applySelectedForecastTime(false);
+};
 
-  var handleFinalChange = function(){
-    stopTimePlayback();
-    selectedForecastTime = parseInt(timeSlider.value, 10);
-    applySelectedForecastTime(true);
-  };
+var handleFinalChange = function(){
+  stopTimePlayback();
+  selectedForecastTime = parseInt(timeSlider.value, 10);
+  updateTimeLabel();
+  applySelectedForecastTime(true);
+};
 
   var stopTouch = function(e){
     e.stopPropagation();
