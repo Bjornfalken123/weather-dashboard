@@ -1397,7 +1397,18 @@ function syncOverlayTitle(){
   }
 
   var cards = getVisibleOverlayCards();
-  titleEl.textContent = cards.length ? "Valda punkter" : (overlayEmptyTitle || "Välj punkt");
+
+  if(!cards.length){
+    titleEl.textContent = overlayEmptyTitle || "Välj punkt";
+    return;
+  }
+
+  if(overlayCards.weather && overlayCards.weather.title){
+    titleEl.textContent = overlayCards.weather.title;
+    return;
+  }
+
+  titleEl.textContent = "Valda punkter";
 }
 
 function buildOverlayCardHtml(card){
@@ -2196,7 +2207,6 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
     '<div class="weather-detail-meta">' +
       '<div class="weather-detail-line"><strong>Väder</strong> ' + weatherText + '</div>' +
       '<div class="weather-detail-line"><strong>Tid</strong> ' + forecastLabel + '</div>' +
-      '<div class="weather-detail-line"><strong>Plats</strong> ' + placeName + '</div>' +
       '<div class="weather-detail-line"><strong>Vind</strong> ' + windText + '</div>' +
       '<div class="weather-detail-line"><strong>Byar</strong> ' + gustText + '</div>' +
       '<div class="weather-detail-line"><strong>Regn</strong> ' + rainText + '</div>' +
@@ -2214,14 +2224,14 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
       '</button>' +
     '</div>';
 
-  return {
-    label: "Väderpunkt",
-    icon: weatherIcon,
-    title: placeName,
-    summary: summary,
-    shortTitle: weatherIcon + " " + placeName + " · " + tempText,
-    detail: detail
-  };
+return {
+  label: placeName,
+  icon: weatherIcon,
+  title: placeName,
+  summary: summary,
+  shortTitle: weatherIcon + " " + placeName + " · " + tempText,
+  detail: detail
+};
 }
 
 function applyWeatherOverlay(payload){
