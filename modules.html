@@ -1618,8 +1618,8 @@ var glowColor=isSelected ? 'rgba(255,210,77,0.28)' : 'rgba(79,195,255,0.22)';
 
     function setLighthouseMarkerColorById(id,state,tip){
      var isSelected=selectedLighthouseStationId===id;
-var baseColor=isSelected ? '#ffd24d' : '#ffb84d';
-var glowColor=isSelected ? 'rgba(255,210,77,0.28)' : 'rgba(255,184,77,0.22)';
+var baseColor=isSelected ? '#ff5f57' : '#ffb84d';
+var glowColor=isSelected ? 'rgba(255,95,87,0.35)' : 'rgba(255,184,77,0.22)';
       var m=lighthouseMarkerMap.get(id);
       if(m){
         if(state==='active'){ m.setRadius(isSelected ? 9 : 7); m.setStyle({color:baseColor,fillColor:baseColor,fillOpacity:0.98,opacity:1,stroke:true,weight:isSelected ? 3 : 2}); }
