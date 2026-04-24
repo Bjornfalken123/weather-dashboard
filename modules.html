@@ -1319,7 +1319,11 @@
       return '<div class="overlay-data-grid">'+ rows.filter(function(r){ return r.value && r.value!=="--"; }).map(function(r){ return '<div class="overlay-data-cell"><div class="overlay-data-label">'+r.label+'</div><div class="overlay-data-value'+(r.highlight?' highlight':'')+'">'+r.value+'</div></div>'; }).join("") + '</div>';
     }
 
-var overlayExpandedSection = "weather";
+var overlayExpandedCards = {
+  weather: false,
+  wave: false,
+  lighthouse: false
+};
 
 var overlayCards = {
   weather: null,
@@ -1337,23 +1341,20 @@ function joinAvailable(parts, separator){
 }
 
 function setOverlayCard(type, card){
+  var wasMissing = !overlayCards[type];
+
   overlayCards[type] = Object.assign({ type:type }, card || {});
-  if(!overlayExpandedSection || !overlayCards[overlayExpandedSection]){
-    overlayExpandedSection = type;
+
+  if(wasMissing){
+    overlayExpandedCards[type] = true;
   }
+
   renderUnifiedOverlay();
 }
 
 function clearOverlayCard(type){
   overlayCards[type] = null;
-
-  if(overlayExpandedSection === type){
-    if(overlayCards.weather) overlayExpandedSection = "weather";
-    else if(overlayCards.wave) overlayExpandedSection = "wave";
-    else if(overlayCards.lighthouse) overlayExpandedSection = "lighthouse";
-    else overlayExpandedSection = "weather";
-  }
-
+  overlayExpandedCards[type] = false;
   renderUnifiedOverlay();
 }
 
@@ -1368,6 +1369,14 @@ function getCollapsedOverlayTitle(){
 
   if(!cards.length){
     return overlayEmptyTitle || "Välj punkt";
+  }
+
+  var weatherCard = overlayCards.weather;
+
+  if(weatherCard){
+    var extraCount = cards.length - 1;
+    return (weatherCard.shortTitle || weatherCard.summary || weatherCard.title || "Väder") +
+      (extraCount > 0 ? " · +" + extraCount : "");
   }
 
   return cards.map(function(card){
@@ -1392,7 +1401,7 @@ function syncOverlayTitle(){
 }
 
 function buildOverlayCardHtml(card){
-  var expanded = overlayExpandedSection === card.type;
+  var expanded = !!overlayExpandedCards[card.type];
   var cssType = card.type || "";
   var icon = card.icon || "•";
   var label = card.label || card.title || "";
@@ -1448,7 +1457,7 @@ function updateMapOverlay(title, content, meta){
   }
 
   setOverlayCard("weather", {
-    label: "Väder",
+    label: "Väderpunkt",
     icon: "☁️",
     title: title || "Väder",
     summary: title || "Väder",
@@ -2210,7 +2219,7 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
     icon: weatherIcon,
     title: placeName,
     summary: summary,
-    shortTitle: weatherIcon + " " + tempText,
+    shortTitle: weatherIcon + " " + placeName + " · " + tempText,
     detail: detail
   };
 }
@@ -2461,13 +2470,16 @@ applyWeatherOverlay(
   overlayContentEl.addEventListener("click",function(e){
     var sectionBtn = e.target && e.target.closest ? e.target.closest("[data-overlay-section]") : null;
 
-    if(sectionBtn){
-      e.stopPropagation();
-      overlayExpandedSection = sectionBtn.getAttribute("data-overlay-section") || "weather";
-      renderUnifiedOverlay();
-      refreshMapSizeSoon();
-      return;
-    }
+ if(sectionBtn){
+  e.stopPropagation();
+
+  var section = sectionBtn.getAttribute("data-overlay-section") || "weather";
+  overlayExpandedCards[section] = !overlayExpandedCards[section];
+
+  renderUnifiedOverlay();
+  refreshMapSizeSoon();
+  return;
+}
 
     if(e.target && e.target.id==="saveFavoriteBtn"){
       e.stopPropagation();
