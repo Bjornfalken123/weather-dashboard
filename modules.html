@@ -785,33 +785,48 @@
   color:var(--text);
   font-weight:900;
 }
-    .weather-hero{
+  .marine-weather-card{
   display:grid;
-  grid-template-columns:1fr auto;
-  gap:10px;
-  align-items:end;
-  padding:10px;
-  border-radius:15px;
-  background:linear-gradient(180deg,rgba(123,199,255,0.12),rgba(255,255,255,0.045));
-  border:1px solid rgba(123,199,255,0.16);
-  margin-bottom:9px;
+  gap:9px;
 }
 
-.weather-hero-main{
+.marine-weather-main{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:start;
+  padding:11px;
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 90% 10%,rgba(123,199,255,0.14),transparent 34%),
+    linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035));
+  border:1px solid rgba(255,255,255,0.09);
+}
+
+.marine-weather-left{
   min-width:0;
 }
 
-.weather-hero-condition{
+.marine-weather-temp{
   color:var(--text);
-  font-size:14px;
+  font-size:38px;
+  line-height:0.95;
   font-weight:950;
-  line-height:1.15;
+  letter-spacing:-0.055em;
+}
+
+.marine-weather-condition{
+  margin-top:7px;
+  color:var(--text);
+  font-size:13px;
+  font-weight:900;
+  line-height:1.2;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 
-.weather-hero-time{
+.marine-weather-time{
   margin-top:4px;
   color:var(--muted-soft);
   font-size:10.5px;
@@ -821,87 +836,115 @@
   text-overflow:ellipsis;
 }
 
-.weather-hero-temp{
-  color:var(--text);
-  font-size:34px;
-  line-height:0.95;
-  font-weight:950;
-  letter-spacing:-0.045em;
-  white-space:nowrap;
+.marine-weather-icon{
+  width:46px;
+  height:46px;
+  border-radius:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:27px;
+  background:rgba(255,255,255,0.065);
+  border:1px solid rgba(255,255,255,0.085);
 }
 
-.weather-priority-grid{
+.marine-weather-rows{
   display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:7px;
-  margin-bottom:8px;
+  gap:6px;
 }
 
-.weather-priority-card{
-  min-width:0;
-  padding:9px 10px;
+.marine-weather-row{
+  display:grid;
+  grid-template-columns:62px 1fr auto;
+  gap:8px;
+  align-items:center;
+  min-height:34px;
+  padding:8px 10px;
   border-radius:13px;
-  background:rgba(255,255,255,0.045);
-  border:1px solid rgba(255,255,255,0.07);
+  background:rgba(255,255,255,0.043);
+  border:1px solid rgba(255,255,255,0.065);
 }
 
-.weather-priority-label{
+.marine-weather-label{
   color:var(--muted);
-  font-size:9.5px;
+  font-size:10px;
   font-weight:850;
   text-transform:uppercase;
-  letter-spacing:0.02em;
-  margin-bottom:3px;
+  letter-spacing:0.025em;
 }
 
-.weather-priority-value{
+.marine-weather-value{
   color:var(--text);
   font-size:14px;
   font-weight:950;
-  line-height:1.2;
+  line-height:1.1;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 
-.weather-priority-sub{
-  margin-top:2px;
+.marine-weather-side{
   color:var(--muted-soft);
-  font-size:10.5px;
-  font-weight:750;
+  font-size:11px;
+  font-weight:850;
   white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
 }
 
-.weather-secondary-title{
-  margin:9px 0 5px;
-  color:var(--muted);
-  font-size:9.5px;
-  font-weight:850;
-  text-transform:uppercase;
-  letter-spacing:0.02em;
+.marine-weather-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:1px;
+}
+
+.weather-details-toggle,
+.weather-favorite-btn{
+  appearance:none;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.045);
+  color:var(--text-soft);
+  border-radius:11px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+  min-height:34px;
+}
+
+.weather-details-toggle.is-open{
+  color:var(--accent);
+  border-color:rgba(123,199,255,0.22);
+  background:rgba(123,199,255,0.08);
+}
+
+.marine-weather-details{
+  padding-top:2px;
 }
 
 @media (max-width:700px){
-  .weather-hero{
-    padding:9px;
-    border-radius:14px;
+  .marine-weather-main{
+    padding:10px;
+    border-radius:15px;
   }
 
-  .weather-hero-temp{
-    font-size:29px;
+  .marine-weather-temp{
+    font-size:33px;
   }
 
-  .weather-priority-grid{
-    gap:6px;
+  .marine-weather-icon{
+    width:42px;
+    height:42px;
+    border-radius:15px;
+    font-size:24px;
   }
 
-  .weather-priority-card{
-    padding:8px 9px;
+  .marine-weather-row{
+    grid-template-columns:56px 1fr auto;
+    padding:7px 9px;
+    min-height:32px;
   }
 
-  .weather-priority-value{
+  .marine-weather-value{
     font-size:13px;
   }
 }
@@ -1498,24 +1541,7 @@ function getWeatherHeaderTitle(){
   return "";
 }
 
-function getCollapsedOverlayTitle(){
-  var cards = getVisibleOverlayCards();
 
-  if(!cards.length){
-    return overlayEmptyTitle || "Välj punkt";
-  }
-
-  var weatherTitle = getWeatherHeaderTitle();
-
-  if(weatherTitle){
-    var extraCount = cards.length - 1;
-    return weatherTitle + (extraCount > 0 ? " · +" + extraCount : "");
-  }
-
-  return cards.map(function(card){
-    return card.shortTitle || card.summary || card.title || card.label;
-  }).filter(Boolean).join(" · ");
-}
 
 function syncOverlayTitle(){
   var titleEl = document.getElementById("overlayTitle");
@@ -1528,15 +1554,22 @@ function syncOverlayTitle(){
     return;
   }
 
-  var weatherTitle = getWeatherHeaderTitle();
+  var isCollapsed = mapOverlayPanel && mapOverlayPanel.classList.contains("is-collapsed");
+  var weatherCard = overlayCards.weather;
+  var extraCount = cards.length - (weatherCard ? 1 : 0);
 
-  if(weatherTitle){
-    var extraCount = cards.length - 1;
-    titleEl.textContent = weatherTitle + (extraCount > 0 ? " · +" + extraCount : "");
+  if(weatherCard){
+    if(isCollapsed){
+      titleEl.textContent = getWeatherHeaderTitle() + (extraCount > 0 ? " · +" + extraCount : "");
+    }else{
+      titleEl.textContent = (weatherCard.title || "Väder") + (extraCount > 0 ? " · +" + extraCount : "");
+    }
     return;
   }
 
-  titleEl.textContent = cards.length ? "Valda punkter" : (overlayEmptyTitle || "Välj punkt");
+  titleEl.textContent = cards.map(function(card){
+    return card.title || card.label;
+  }).filter(Boolean).join(" · ");
 }
 
 function buildOverlayCardHtml(card){
@@ -1544,7 +1577,7 @@ function buildOverlayCardHtml(card){
   var cssType = card.type || "";
   var icon = card.icon || "•";
   var label = card.label || card.title || "";
-  var summary = card.summary || "";
+   var summary = expanded && card.expandedSummary ? card.expandedSummary : (card.summary || "");
   var detail = card.detail || "";
   var chevron = expanded ? "−" : "+";
 
@@ -2326,87 +2359,101 @@ function buildWeatherOverlay(pt,temp,ws,wd,gust,rain,pres,humidity,symbol,lat,lo
   var pressureText = formatPressure(pres);
   var humidityText = formatHumidity(humidity);
 
-  var headerWind = windSpeedText !== "--"
-    ? windCompass + " " + windSpeedText
+  var compactWind = windSpeedText !== "--"
+    ? joinAvailable([windCompass, windSpeedText], " ")
     : "";
 
-  var headerTitle = joinAvailable([
+  var collapsedTitle = joinAvailable([
     weatherIcon + " " + placeName,
     tempText,
-    headerWind
+    compactWind
   ]);
 
-  var summary = joinAvailable([
-    tempText,
+  var cardSummary = joinAvailable([
     weatherText,
-    windSpeedText !== "--" ? "Vind " + windSpeedText : "",
-    gustText !== "--" ? "Byar " + gustText : ""
+    tempText,
+    compactWind
   ]);
+
+  var detailsButtonText = weatherDetailsExpanded ? "Dölj detaljer" : "Detaljer";
+
+  var extraDetails = "";
+
+  if(weatherDetailsExpanded){
+    extraDetails =
+      '<div class="marine-weather-details">' +
+        buildOverlayDataGrid([
+          {label:'Riktning',value:windDirectionText},
+          {label:'Lufttryck',value:pressureText},
+          {label:'Luftfuktighet',value:humidityText},
+          {label:'Koordinater',value:formatCoord(lat)+', '+formatCoord(lon)}
+        ]) +
+      '</div>';
+  }
 
   var detail = '' +
-    '<div class="weather-hero">' +
-      '<div class="weather-hero-main">' +
-        '<div class="weather-hero-condition">' + weatherIcon + ' ' + weatherText + '</div>' +
-        '<div class="weather-hero-time">' + forecastLabel + '</div>' +
-      '</div>' +
-      '<div class="weather-hero-temp">' + tempText + '</div>' +
-    '</div>' +
+    '<div class="marine-weather-card">' +
 
-    '<div class="weather-priority-grid">' +
-      '<div class="weather-priority-card">' +
-        '<div class="weather-priority-label">Vind</div>' +
-        '<div class="weather-priority-value">' + windSpeedText + '</div>' +
-        '<div class="weather-priority-sub">' + windCompass + '</div>' +
+      '<div class="marine-weather-main">' +
+        '<div class="marine-weather-left">' +
+          '<div class="marine-weather-temp">' + tempText + '</div>' +
+          '<div class="marine-weather-condition">' + weatherText + '</div>' +
+          '<div class="marine-weather-time">' + forecastLabel + '</div>' +
+        '</div>' +
+        '<div class="marine-weather-icon">' + weatherIcon + '</div>' +
       '</div>' +
 
-      '<div class="weather-priority-card">' +
-        '<div class="weather-priority-label">Vindbyar</div>' +
-        '<div class="weather-priority-value">' + gustText + '</div>' +
-        '<div class="weather-priority-sub">Maxbyar</div>' +
+      '<div class="marine-weather-rows">' +
+        '<div class="marine-weather-row">' +
+          '<div class="marine-weather-label">Vind</div>' +
+          '<div class="marine-weather-value">' + windSpeedText + '</div>' +
+          '<div class="marine-weather-side">' + windCompass + '</div>' +
+        '</div>' +
+
+        '<div class="marine-weather-row">' +
+          '<div class="marine-weather-label">Byar</div>' +
+          '<div class="marine-weather-value">' + gustText + '</div>' +
+          '<div class="marine-weather-side">max</div>' +
+        '</div>' +
+
+        '<div class="marine-weather-row">' +
+          '<div class="marine-weather-label">Regn</div>' +
+          '<div class="marine-weather-value">' + rainText + '</div>' +
+          '<div class="marine-weather-side">1 h</div>' +
+        '</div>' +
       '</div>' +
 
-      '<div class="weather-priority-card">' +
-        '<div class="weather-priority-label">Riktning</div>' +
-        '<div class="weather-priority-value">' + windCompass + '</div>' +
-        '<div class="weather-priority-sub">' + windDirectionText + '</div>' +
+      '<div class="marine-weather-actions">' +
+        '<button type="button" class="weather-details-toggle' + (weatherDetailsExpanded ? ' is-open' : '') + '" id="weatherDetailsToggleBtn">' +
+          detailsButtonText +
+        '</button>' +
+        '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
+          (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
+        '</button>' +
       '</div>' +
 
-      '<div class="weather-priority-card">' +
-        '<div class="weather-priority-label">Regn</div>' +
-        '<div class="weather-priority-value">' + rainText + '</div>' +
-        '<div class="weather-priority-sub">Närmaste timme</div>' +
-      '</div>' +
-    '</div>' +
+      extraDetails +
 
-    '<div class="weather-secondary-title">Extra</div>' +
-
-    buildOverlayDataGrid([
-      {label:'Lufttryck',value:pressureText},
-      {label:'Luftfuktighet',value:humidityText},
-      {label:'Koordinater',value:formatCoord(lat)+', '+formatCoord(lon)}
-    ]) +
-
-    '<div class="weather-point-actions">' +
-      '<button type="button" class="weather-favorite-btn" id="saveFavoriteBtn">' +
-        (isFavorite(lat, lon) ? 'Sparad' : 'Spara plats') +
-      '</button>' +
     '</div>';
 
-  return {
-    label: "Väderpunkt",
-    icon: weatherIcon,
-    title: placeName,
-    summary: summary,
-    shortTitle: headerTitle,
-    headerTitle: headerTitle,
-    detail: detail
-  };
+return {
+  label: "Väder",
+  icon: weatherIcon,
+  title: placeName,
+  summary: cardSummary,
+  expandedSummary: forecastLabel,
+  shortTitle: collapsedTitle,
+  collapsedTitle: collapsedTitle,
+  headerTitle: collapsedTitle,
+  detail: detail
+};
 }
+
 function applyWeatherOverlay(payload){
   setOverlayCard("weather", payload);
 }
 
-       window.updateWeatherForSelectedTime=function(timeValue){
+window.updateWeatherForSelectedTime=function(timeValue){
   var targetTime = Number(timeValue || selectedForecastTime);
   if(!weatherTimeseries.length || !targetTime || !isFinite(targetTime)) return;
 
@@ -2446,21 +2493,21 @@ function applyWeatherOverlay(payload){
 
   var gft = getGustForTime(tms);
 
-applyWeatherOverlay(
-  buildWeatherOverlay(
-    targetTime,
-    si.air_temperature,
-    si.wind_speed,
-    si.wind_from_direction,
-    gft,
-    sp,
-    si.air_pressure_at_sea_level,
-    si.relative_humidity,
-    ss,
-    lat,
-    lon
-  )
-);
+  applyWeatherOverlay(
+    buildWeatherOverlay(
+      targetTime,
+      si.air_temperature,
+      si.wind_speed,
+      si.wind_from_direction,
+      gft,
+      sp,
+      si.air_pressure_at_sea_level,
+      si.relative_humidity,
+      ss,
+      lat,
+      lon
+    )
+  );
 };
 
         if(requestId !== latestWeatherRequestId) return;
@@ -2494,142 +2541,617 @@ applyWeatherOverlay(
       });
     }
 
-    async function ensureWaveStationsLoaded(){
-      if(waveStationsLoaded) return;
-      if(waveStationsLoadingPromise) return waveStationsLoadingPromise;
-      waveStationsLoadingPromise=(async function(){
-        try{
-          var res=await fetch('/api/ocean-wave-stations'), data=await res.json(), stations=Array.isArray(data && data.stations) ? data.stations : [];
-          stations.forEach(function(s){ waveStationsCache.set(s.id,s); });
-          waveStationsLoaded=true;
-          startWaveBackgroundCheck();
-        }catch(e){ console.error(e); }
-        finally{ waveStationsLoadingPromise=null; }
-      })();
-      return waveStationsLoadingPromise;
-    }
+   async function ensureWaveStationsLoaded(){
+  if(waveStationsLoaded) return;
+  if(waveStationsLoadingPromise) return waveStationsLoadingPromise;
 
-    function createWaveStationMarkers(s){
-      if(waveMarkerMap.has(s.id) || waveMaptilerMarkerMap.has(s.id)) return;
-      var lm=L.circleMarker([s.latitude,s.longitude],{radius:7,weight:2,color:'#4fc3ff',fillColor:'#4fc3ff',fillOpacity:0.95,opacity:1,stroke:true});
-      lm.bindTooltip(s.name+' • data tillgänglig',{direction:'top'});
-      lm.on('click',function(e){ L.DomEvent.stopPropagation(e); selectWaveStation(s); });
-      waveMarkerMap.set(s.id,lm); waveStationsLayer.addLayer(lm);
-      if(maptilerMap && window.maptilersdk){
-        var el=document.createElement('div');
-        Object.assign(el.style,{width:'14px',height:'14px',borderRadius:'999px',background:'#4fc3ff',border:'2px solid rgba(255,255,255,0.75)',boxShadow:'0 0 0 4px rgba(79,195,255,0.22)',cursor:'pointer',display:showWaveObjects ? 'block' : 'none'});
-        el.title=s.name+' • data tillgänglig';
-        el.addEventListener('click',function(e){ e.stopPropagation(); selectWaveStation(s); });
-        var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
-        waveMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
+  waveStationsLoadingPromise=(async function(){
+    try{
+      var res=await fetch('/api/ocean-wave-stations');
+      var data=await res.json();
+      var stations=Array.isArray(data && data.stations) ? data.stations : [];
+
+      stations.forEach(function(s){
+        waveStationsCache.set(s.id,s);
+      });
+
+      waveStationsLoaded=true;
+      startWaveBackgroundCheck();
+    }catch(e){
+      console.error(e);
+    }finally{
+      waveStationsLoadingPromise=null;
+    }
+  })();
+
+  return waveStationsLoadingPromise;
+}
+
+function createWaveStationMarkers(s){
+  if(waveMarkerMap.has(s.id) || waveMaptilerMarkerMap.has(s.id)) return;
+
+  var lm=L.circleMarker([s.latitude,s.longitude],{
+    radius:7,
+    weight:2,
+    color:'#4fc3ff',
+    fillColor:'#4fc3ff',
+    fillOpacity:0.95,
+    opacity:1,
+    stroke:true
+  });
+
+  lm.bindTooltip(s.name+' • data tillgänglig',{direction:'top'});
+  lm.on('click',function(e){
+    L.DomEvent.stopPropagation(e);
+    selectWaveStation(s);
+  });
+
+  waveMarkerMap.set(s.id,lm);
+  waveStationsLayer.addLayer(lm);
+
+  if(maptilerMap && window.maptilersdk){
+    var el=document.createElement('div');
+
+    Object.assign(el.style,{
+      width:'14px',
+      height:'14px',
+      borderRadius:'999px',
+      background:'#4fc3ff',
+      border:'2px solid rgba(255,255,255,0.75)',
+      boxShadow:'0 0 0 4px rgba(79,195,255,0.22)',
+      cursor:'pointer',
+      display:showWaveObjects ? 'block' : 'none'
+    });
+
+    el.title=s.name+' • data tillgänglig';
+    el.addEventListener('click',function(e){
+      e.stopPropagation();
+      selectWaveStation(s);
+    });
+
+    var mm=new maptilersdk.Marker({element:el})
+      .setLngLat([s.longitude,s.latitude])
+      .addTo(maptilerMap);
+
+    waveMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
+  }
+}
+
+async function fetchWaveDataForStation(id){
+  for(var p of ['latest-hour','latest-day','latest-months']){
+    var res=await fetch('/api/ocean-wave-height?stationId='+id+'&period='+p);
+    var data=await res.json();
+
+    if(!res.ok) continue;
+
+    var l=extractLatestValue(data);
+
+    if(l && l.value!=null && l.value!==''){
+      return {latest:l,period:p,source:'SMHI'};
+    }
+  }
+
+  return null;
+}
+
+async function getWaterLevelStations(){
+  if(!waterLevelStationsPromise){
+    waterLevelStationsPromise=(async function(){
+      var res=await fetch('/api/ocean-stations');
+      var data=await res.json();
+
+      var st=
+        Array.isArray(data && data.station) ? data.station :
+        Array.isArray(data && data.stations) ? data.stations :
+        Array.isArray(data && data.resource) ? data.resource :
+        [];
+
+      return st.map(function(s){
+        var id=s.id || s.key || s.stationId;
+        var lat=Number(s.latitude);
+        var lon=Number(s.longitude);
+
+        if(!id || isNaN(lat) || isNaN(lon)) return null;
+
+        return {
+          id:id,
+          name:s.name || 'Okänd station',
+          latitude:lat,
+          longitude:lon
+        };
+      }).filter(Boolean);
+    })();
+  }
+
+  return waterLevelStationsPromise;
+}
+
+async function getVivaStations(){
+  if(!vivaStationsPromise){
+    vivaStationsPromise=(async function(){
+      var res=await fetch('/api/viva-stations');
+      var data=await res.json();
+
+      if(!res.ok) throw new Error(data && data.message || 'Fel');
+
+      return Array.isArray(data && data.stations) ? data.stations : [];
+    })();
+  }
+
+  return vivaStationsPromise;
+}
+
+async function fetchVivaStationData(id){
+  if(vivaStationDataCache.has(id)) return vivaStationDataCache.get(id);
+
+  var p=(async function(){
+    var res=await fetch('/api/viva-station?stationId='+id);
+    var data=await res.json();
+
+    if(!res.ok) throw new Error(data && data.message || 'Fel');
+
+    return data.station || null;
+  })();
+
+  vivaStationDataCache.set(id,p);
+
+  try{
+    return await p;
+  }catch(e){
+    vivaStationDataCache.delete(id);
+    throw e;
+  }
+}
+
+async function findNearestVivaObservationForPoint(lat,lon,names,lm){
+  var ck=buildVivaNearestCacheKey(lat,lon,names,lm);
+
+  if(vivaNearestCache.has(ck)) return vivaNearestCache.get(ck);
+
+  var p=(async function(){
+    var st=await getVivaStations();
+
+    var rk=st.map(function(s){
+      return Object.assign({},s,{
+        distanceKm:distanceKm(lat,lon,s.latitude,s.longitude)
+      });
+    }).sort(function(a,b){
+      return a.distanceKm-b.distanceKm;
+    }).slice(0,lm ? 4 : 10);
+
+    for(var s of rk){
+      if(s.distanceKm>80) continue;
+
+      try{
+        var sd=await fetchVivaStationData(s.id);
+        var sa=extractVivaSample(sd,names);
+
+        if(sa){
+          return {
+            station:s,
+            latest:{
+              value:sa.numericValue,
+              time:sa.Updated || null
+            },
+            source:'VIVA',
+            sampleName:sa.Name
+          };
+        }
+      }catch(e){
+        console.warn('VIVA misslyckades',s.id,e);
       }
     }
 
-    async function fetchWaveDataForStation(id){ for(var p of ['latest-hour','latest-day','latest-months']){ var res=await fetch('/api/ocean-wave-height?stationId='+id+'&period='+p), data=await res.json(); if(!res.ok) continue; var l=extractLatestValue(data); if(l && l.value!=null && l.value!=='') return {latest:l,period:p,source:'SMHI'}; } return null; }
-    async function getWaterLevelStations(){ if(!waterLevelStationsPromise){ waterLevelStationsPromise=(async function(){ var res=await fetch('/api/ocean-stations'), data=await res.json(); var st=Array.isArray(data && data.station) ? data.station : Array.isArray(data && data.stations) ? data.stations : Array.isArray(data && data.resource) ? data.resource : []; return st.map(function(s){ var id=s.id || s.key || s.stationId, lat=Number(s.latitude), lon=Number(s.longitude); if(!id || isNaN(lat) || isNaN(lon)) return null; return {id:id,name:s.name || 'Okänd station',latitude:lat,longitude:lon}; }).filter(Boolean); })(); } return waterLevelStationsPromise; }
-    async function getVivaStations(){ if(!vivaStationsPromise){ vivaStationsPromise=(async function(){ var res=await fetch('/api/viva-stations'), data=await res.json(); if(!res.ok) throw new Error(data && data.message || 'Fel'); return Array.isArray(data && data.stations) ? data.stations : []; })(); } return vivaStationsPromise; }
-    async function fetchVivaStationData(id){ if(vivaStationDataCache.has(id)) return vivaStationDataCache.get(id); var p=(async function(){ var res=await fetch('/api/viva-station?stationId='+id), data=await res.json(); if(!res.ok) throw new Error(data && data.message || 'Fel'); return data.station || null; })(); vivaStationDataCache.set(id,p); try{ return await p; }catch(e){ vivaStationDataCache.delete(id); throw e; } }
-    async function findNearestVivaObservationForPoint(lat,lon,names,lm){ var ck=buildVivaNearestCacheKey(lat,lon,names,lm); if(vivaNearestCache.has(ck)) return vivaNearestCache.get(ck); var p=(async function(){ var st=await getVivaStations(); var rk=st.map(function(s){ return Object.assign({},s,{distanceKm:distanceKm(lat,lon,s.latitude,s.longitude)}); }).sort(function(a,b){ return a.distanceKm-b.distanceKm; }).slice(0,lm?4:10); for(var s of rk){ if(s.distanceKm>80) continue; try{ var sd=await fetchVivaStationData(s.id), sa=extractVivaSample(sd,names); if(sa){ return {station:s,latest:{value:sa.numericValue,time:sa.Updated || null},source:'VIVA',sampleName:sa.Name}; } }catch(e){ console.warn('VIVA misslyckades',s.id,e); } } return null; })(); vivaNearestCache.set(ck,p); try{ return await p; }catch(e){ vivaNearestCache.delete(ck); throw e; } }
-    async function findNearestWaterLevelForPoint(lat,lon,lm){ var st=await getWaterLevelStations(); var rk=st.map(function(s){ return Object.assign({},s,{distanceKm:distanceKm(lat,lon,s.latitude,s.longitude)}); }).sort(function(a,b){ return a.distanceKm-b.distanceKm; }).slice(0,lm?5:15); var periods=lm ? ['latest-hour','latest-day'] : ['latest-hour','latest-day','latest-months']; for(var s of rk){ for(var per of periods){ var res=await fetch('/api/ocean-water-level?stationId='+s.id+'&period='+per), data=await res.json(); if(!res.ok) continue; var l=extractLatestValue(data); if(l && l.value!=null && l.value!==''){ return {station:s,latest:l,period:per,source:'SMHI'}; } } } return null; }
-    async function evaluateWaveStation(s,lm){ var ck=buildWaveEvaluationCacheKey(s,lm); if(waveEvaluationCache.has(ck)) return waveEvaluationCache.get(ck); var p=(async function(){ var results=await Promise.all([findNearestVivaObservationForPoint(s.latitude,s.longitude,['Våghöjd'],lm),findNearestVivaObservationForPoint(s.latitude,s.longitude,['Vattenstånd'],lm),findNearestVivaObservationForPoint(s.latitude,s.longitude,['Vattentemperatur','Vatten Temperatur','Ytvattentemperatur'],lm)]); var vw=results[0], vwt=results[1], vwtp=results[2]; var fallbackResults=await Promise.all([vw ? Promise.resolve(null) : fetchWaveDataForStation(s.id), vwt ? Promise.resolve(null) : findNearestWaterLevelForPoint(s.latitude,s.longitude,lm)]); var sw=fallbackResults[0], swt=fallbackResults[1]; var wr=vw || sw, wtr=vwt || swt, wtrp=vwtp || null; return {waveResult:wr,waterResult:wtr,waterTempResult:wtrp,hasAnySeaData:Boolean(wr || wtr)}; })(); waveEvaluationCache.set(ck,p); try{ return await p; }catch(e){ waveEvaluationCache.delete(ck); throw e; } }
+    return null;
+  })();
 
-    async function selectWaveStation(s){
-      markObjectInteraction();
-      if(selectedWaveStationId===s.id){ clearWaveSelection(); return; }
-      selectedWaveStationId=s.id;
-      saveSelection('wave',{id:s.id,name:s.name,lat:s.latitude,lon:s.longitude});
-      setWaveSelectionMarker(s.latitude,s.longitude,s.name);
-      updateWaveOverlay(s.name || 'Boj / våg','Laddar havsdata...');
-      try{
-        var result=await evaluateWaveStation(s,false), wr=result.waveResult, wtr=result.waterResult, wtrp=result.waterTempResult, has=result.hasAnySeaData;
-        var wv=wr ? formatObservedValue(formatWave(wr.latest.value),wr.latest) : '--';
-        var wo=wr ? formatObsTime(wr.latest.date || wr.latest.time)+' ('+formatWaveSourceLabel(wr)+')' : '--';
-        var wlv=wtr ? formatObservedValue(formatWaterLevel(wtr.latest.value),wtr.latest) : '--';
-        var wtv=wtrp ? formatObservedValue(formatTemp(wtrp.latest.value),wtrp.latest) : '--';
-        updateWaveOverlay(s.name || 'Boj / våg', buildOverlayDataGrid([{label:'Våghöjd',value:wv,highlight:true},{label:'Vattentemp',value:wtv},{label:'Vattenst.',value:wlv},{label:'Obs',value:wo}]));
-        setWaveMarkerColorById(s.id, has ? 'active' : 'inactive', s.name+' • '+(has ? 'data tillgänglig' : 'ingen data'));
-        waveMarkerMap.forEach(function(_, otherId){ if(otherId!==s.id){ var otherStation=waveStationsCache.get(otherId); if(otherStation){ setWaveMarkerColorById(otherId,'active',otherStation.name+' • data tillgänglig'); } } });
-        refreshMapSizeSoon();
-      }catch(e){ console.error(e); updateWaveOverlay(s.name || 'Boj / våg','Det gick inte att hämta havsdata.'); setWaveMarkerColorById(s.id,'inactive',s.name+' • kunde inte hämtas'); }
-    }
+  vivaNearestCache.set(ck,p);
 
-    async function startWaveBackgroundCheck(){
-      if(waveBackgroundCheckStarted) return;
-      waveBackgroundCheckStarted=true;
-      var stations=Array.from(waveStationsCache.values()), index=0;
-      async function worker(){ while(index<stations.length){ var s=stations[index++]; try{ var r=await evaluateWaveStation(s,true); if(r.hasAnySeaData){ createWaveStationMarkers(s); } }catch(e){ console.warn('Boj kunde inte verifieras',s.id,e); } } }
-      await Promise.all(Array.from({length:3},function(){ return worker(); }));
-    }
+  try{
+    return await p;
+  }catch(e){
+    vivaNearestCache.delete(ck);
+    throw e;
+  }
+}
 
-    async function ensureLighthouseStationsLoaded(){
-      if(lighthouseStationsLoaded) return;
-      if(lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
-      lighthouseStationsLoadingPromise=(async function(){
-        try{
-          var res=await fetch('/api/lighthouse-stations'), data=await res.json(), stations=Array.isArray(data && data.stations) ? data.stations : [];
-          stations.forEach(function(s){ lighthouseStationsCache.set(s.id,s); });
-          lighthouseStationsLoaded=true;
-          startLighthouseBackgroundCheck();
-        }catch(e){ console.error(e); }
-        finally{ lighthouseStationsLoadingPromise=null; }
-      })();
-      return lighthouseStationsLoadingPromise;
-    }
+async function findNearestWaterLevelForPoint(lat,lon,lm){
+  var st=await getWaterLevelStations();
 
-    function createLighthouseStationMarkers(s){
-      if(lighthouseMarkerMap.has(s.id) || lighthouseMaptilerMarkerMap.has(s.id)) return;
-      var lm=L.circleMarker([s.latitude,s.longitude],{radius:7,weight:2,color:'#ff9f1c',fillColor:'#ff9f1c',fillOpacity:0.95,opacity:1,stroke:true});
-      lm.bindTooltip(s.name+' • data tillgänglig',{direction:'top'});
-      lm.on('click',function(e){ L.DomEvent.stopPropagation(e); selectLighthouseStation(s); });
-      lighthouseMarkerMap.set(s.id,lm); lighthouseStationsLayer.addLayer(lm);
-      if(maptilerMap && window.maptilersdk){
-        var el=document.createElement('div');
-        Object.assign(el.style,{width:'14px',height:'14px',borderRadius:'999px',background:'#ff9f1c',border:'2px solid rgba(255,255,255,0.75)',boxShadow:'0 0 0 4px rgba(255,159,28,0.24)',cursor:'pointer',display:showLighthouseObjects ? 'block' : 'none'});
-        el.title=s.name+' • data tillgänglig';
-        el.addEventListener('click',function(e){ e.stopPropagation(); selectLighthouseStation(s); });
-        var mm=new maptilersdk.Marker({element:el}).setLngLat([s.longitude,s.latitude]).addTo(maptilerMap);
-        lighthouseMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
+  var rk=st.map(function(s){
+    return Object.assign({},s,{
+      distanceKm:distanceKm(lat,lon,s.latitude,s.longitude)
+    });
+  }).sort(function(a,b){
+    return a.distanceKm-b.distanceKm;
+  }).slice(0,lm ? 5 : 15);
+
+  var periods=lm ? ['latest-hour','latest-day'] : ['latest-hour','latest-day','latest-months'];
+
+  for(var s of rk){
+    for(var per of periods){
+      var res=await fetch('/api/ocean-water-level?stationId='+s.id+'&period='+per);
+      var data=await res.json();
+
+      if(!res.ok) continue;
+
+      var l=extractLatestValue(data);
+
+      if(l && l.value!=null && l.value!==''){
+        return {
+          station:s,
+          latest:l,
+          period:per,
+          source:'SMHI'
+        };
       }
     }
+  }
 
-    async function fetchLighthouseObservations(id){ if(lighthouseObservationCache.has(id)) return lighthouseObservationCache.get(id); var p=(async function(){ var res=await fetch('/api/lighthouse-observations?stationId='+id), data=await res.json(); if(!res.ok) throw new Error(data && data.message || 'Fel'); var obs=data.observations || {}; var has=Boolean((obs.temp && obs.temp.value!=null) || (obs.windSpeed && obs.windSpeed.value!=null) || (obs.windDir && obs.windDir.value!=null) || (obs.pressure && obs.pressure.value!=null) || (obs.gust && obs.gust.value!=null)); return {obs:obs,hasAnyData:has}; })(); lighthouseObservationCache.set(id,p); try{ return await p; }catch(e){ lighthouseObservationCache.delete(id); throw e; } }
+  return null;
+}
 
-    async function selectLighthouseStation(s){
-      markObjectInteraction();
-      if(selectedLighthouseStationId===s.id){ clearLighthouseSelection(); return; }
-      selectedLighthouseStationId=s.id;
-      saveSelection('lighthouse',{id:s.id,name:s.name,lat:s.latitude,lon:s.longitude});
-      setLighthouseSelectionMarker(s.latitude,s.longitude,s.name);
-      updateLighthouseOverlay(s.name || 'Fyr / station','Laddar data...');
+async function evaluateWaveStation(s,lm){
+  var ck=buildWaveEvaluationCacheKey(s,lm);
+
+  if(waveEvaluationCache.has(ck)) return waveEvaluationCache.get(ck);
+
+  var p=(async function(){
+    var results=await Promise.all([
+      findNearestVivaObservationForPoint(s.latitude,s.longitude,['Våghöjd'],lm),
+      findNearestVivaObservationForPoint(s.latitude,s.longitude,['Vattenstånd'],lm),
+      findNearestVivaObservationForPoint(s.latitude,s.longitude,['Vattentemperatur','Vatten Temperatur','Ytvattentemperatur'],lm)
+    ]);
+
+    var vw=results[0];
+    var vwt=results[1];
+    var vwtp=results[2];
+
+    var fallbackResults=await Promise.all([
+      vw ? Promise.resolve(null) : fetchWaveDataForStation(s.id),
+      vwt ? Promise.resolve(null) : findNearestWaterLevelForPoint(s.latitude,s.longitude,lm)
+    ]);
+
+    var sw=fallbackResults[0];
+    var swt=fallbackResults[1];
+
+    var wr=vw || sw;
+    var wtr=vwt || swt;
+    var wtrp=vwtp || null;
+
+    return {
+      waveResult:wr,
+      waterResult:wtr,
+      waterTempResult:wtrp,
+      hasAnySeaData:Boolean(wr || wtr)
+    };
+  })();
+
+  waveEvaluationCache.set(ck,p);
+
+  try{
+    return await p;
+  }catch(e){
+    waveEvaluationCache.delete(ck);
+    throw e;
+  }
+}
+
+async function selectWaveStation(s){
+  markObjectInteraction();
+
+  if(selectedWaveStationId===s.id){
+    clearWaveSelection();
+    return;
+  }
+
+  selectedWaveStationId=s.id;
+
+  saveSelection('wave',{
+    id:s.id,
+    name:s.name,
+    lat:s.latitude,
+    lon:s.longitude
+  });
+
+  setWaveSelectionMarker(s.latitude,s.longitude,s.name);
+  updateWaveOverlay(s.name || 'Boj / våg','Laddar havsdata...');
+
+  try{
+    var result=await evaluateWaveStation(s,false);
+    var wr=result.waveResult;
+    var wtr=result.waterResult;
+    var wtrp=result.waterTempResult;
+    var has=result.hasAnySeaData;
+
+    var wv=wr ? formatObservedValue(formatWave(wr.latest.value),wr.latest) : '--';
+    var wo=wr ? formatObsTime(wr.latest.date || wr.latest.time)+' ('+formatWaveSourceLabel(wr)+')' : '--';
+    var wlv=wtr ? formatObservedValue(formatWaterLevel(wtr.latest.value),wtr.latest) : '--';
+    var wtv=wtrp ? formatObservedValue(formatTemp(wtrp.latest.value),wtrp.latest) : '--';
+
+    updateWaveOverlay(
+      s.name || 'Boj / våg',
+      buildOverlayDataGrid([
+        {label:'Våghöjd',value:wv,highlight:true},
+        {label:'Vattentemp',value:wtv},
+        {label:'Vattenst.',value:wlv},
+        {label:'Obs',value:wo}
+      ])
+    );
+
+    setWaveMarkerColorById(
+      s.id,
+      has ? 'active' : 'inactive',
+      s.name+' • '+(has ? 'data tillgänglig' : 'ingen data')
+    );
+
+    waveMarkerMap.forEach(function(_, otherId){
+      if(otherId!==s.id){
+        var otherStation=waveStationsCache.get(otherId);
+        if(otherStation){
+          setWaveMarkerColorById(otherId,'active',otherStation.name+' • data tillgänglig');
+        }
+      }
+    });
+
+    refreshMapSizeSoon();
+  }catch(e){
+    console.error(e);
+    updateWaveOverlay(s.name || 'Boj / våg','Det gick inte att hämta havsdata.');
+    setWaveMarkerColorById(s.id,'inactive',s.name+' • kunde inte hämtas');
+  }
+}
+
+async function startWaveBackgroundCheck(){
+  if(waveBackgroundCheckStarted) return;
+
+  waveBackgroundCheckStarted=true;
+
+  var stations=Array.from(waveStationsCache.values());
+  var index=0;
+
+  async function worker(){
+    while(index<stations.length){
+      var s=stations[index++];
+
       try{
-        var result=await fetchLighthouseObservations(s.id), obs=result.obs, has=result.hasAnyData;
-        var tv=formatObservedValue(formatTemp(obs.temp && obs.temp.value),obs.temp), wv=formatObservedValue(formatWind(obs.windSpeed && obs.windSpeed.value),obs.windSpeed), dv=formatObservedValue(formatWindDirection(obs.windDir && obs.windDir.value),obs.windDir), gv=formatObservedValue(formatWind(obs.gust && obs.gust.value),obs.gust), pv=formatObservedValue(formatPressure(obs.pressure && obs.pressure.value),obs.pressure);
-        updateLighthouseOverlay(s.name || 'Fyr / station', buildOverlayDataGrid([{label:'Temp',value:tv,highlight:true},{label:'Vind',value:wv},{label:'Byar',value:gv},{label:'Riktning',value:dv},{label:'Tryck',value:pv}]));
-        setLighthouseMarkerColorById(s.id, has ? 'active' : 'inactive', s.name+' • '+(has ? 'data tillgänglig' : 'ingen data'));
-        lighthouseMarkerMap.forEach(function(_, otherId){ if(otherId!==s.id){ var otherStation=lighthouseStationsCache.get(otherId); if(otherStation){ setLighthouseMarkerColorById(otherId,'active',otherStation.name+' • data tillgänglig'); } } });
-        refreshMapSizeSoon();
-      }catch(e){ console.error(e); updateLighthouseOverlay(s.name || 'Fyr / station','Det gick inte att hämta data.'); setLighthouseMarkerColorById(s.id,'inactive',s.name+' • kunde inte hämtas'); }
-    }
+        var r=await evaluateWaveStation(s,true);
 
-    async function startLighthouseBackgroundCheck(){
-      if(lighthouseBackgroundCheckStarted) return;
-      lighthouseBackgroundCheckStarted=true;
-      var stations=Array.from(lighthouseStationsCache.values()), index=0;
-      async function worker(){ while(index<stations.length){ var s=stations[index++]; try{ var result=await fetchLighthouseObservations(s.id); if(result.hasAnyData){ createLighthouseStationMarkers(s); } }catch(e){ console.warn('Fyr kunde inte verifieras',s.id,e); } } }
-      await Promise.all(Array.from({length:5},function(){ return worker(); }));
+        if(r.hasAnySeaData){
+          createWaveStationMarkers(s);
+        }
+      }catch(e){
+        console.warn('Boj kunde inte verifieras',s.id,e);
+      }
     }
+  }
 
-    var overlayCollapseBtn=document.getElementById('overlayCollapseBtn');
-    var mapOverlayPanel=document.getElementById('mapOverlayPanel');
-    var overlayContentEl=document.getElementById('overlayContent');
+  await Promise.all(Array.from({length:3},function(){
+    return worker();
+  }));
+}
 
-    function updateOverlayCollapseButtonText(){ if(!overlayCollapseBtn || !mapOverlayPanel) return; overlayCollapseBtn.textContent=mapOverlayPanel.classList.contains('is-collapsed') ? 'Visa' : 'Dölj'; }
-    function syncWeatherOverlayExpandedState(){
-      if(!mapOverlayPanel) return;
-      mapOverlayPanel.classList.toggle("weather-expanded", !!weatherDetailsExpanded);
-      refreshMapSizeSoon();
+async function ensureLighthouseStationsLoaded(){
+  if(lighthouseStationsLoaded) return;
+  if(lighthouseStationsLoadingPromise) return lighthouseStationsLoadingPromise;
+
+  lighthouseStationsLoadingPromise=(async function(){
+    try{
+      var res=await fetch('/api/lighthouse-stations');
+      var data=await res.json();
+      var stations=Array.isArray(data && data.stations) ? data.stations : [];
+
+      stations.forEach(function(s){
+        lighthouseStationsCache.set(s.id,s);
+      });
+
+      lighthouseStationsLoaded=true;
+      startLighthouseBackgroundCheck();
+    }catch(e){
+      console.error(e);
+    }finally{
+      lighthouseStationsLoadingPromise=null;
     }
-    function toggleOverlayCollapsed(forceState){
+  })();
+
+  return lighthouseStationsLoadingPromise;
+}
+
+function createLighthouseStationMarkers(s){
+  if(lighthouseMarkerMap.has(s.id) || lighthouseMaptilerMarkerMap.has(s.id)) return;
+
+  var lm=L.circleMarker([s.latitude,s.longitude],{
+    radius:7,
+    weight:2,
+    color:'#ff9f1c',
+    fillColor:'#ff9f1c',
+    fillOpacity:0.95,
+    opacity:1,
+    stroke:true
+  });
+
+  lm.bindTooltip(s.name+' • data tillgänglig',{direction:'top'});
+  lm.on('click',function(e){
+    L.DomEvent.stopPropagation(e);
+    selectLighthouseStation(s);
+  });
+
+  lighthouseMarkerMap.set(s.id,lm);
+  lighthouseStationsLayer.addLayer(lm);
+
+  if(maptilerMap && window.maptilersdk){
+    var el=document.createElement('div');
+
+    Object.assign(el.style,{
+      width:'14px',
+      height:'14px',
+      borderRadius:'999px',
+      background:'#ff9f1c',
+      border:'2px solid rgba(255,255,255,0.75)',
+      boxShadow:'0 0 0 4px rgba(255,159,28,0.24)',
+      cursor:'pointer',
+      display:showLighthouseObjects ? 'block' : 'none'
+    });
+
+    el.title=s.name+' • data tillgänglig';
+    el.addEventListener('click',function(e){
+      e.stopPropagation();
+      selectLighthouseStation(s);
+    });
+
+    var mm=new maptilersdk.Marker({element:el})
+      .setLngLat([s.longitude,s.latitude])
+      .addTo(maptilerMap);
+
+    lighthouseMaptilerMarkerMap.set(s.id,{marker:mm,element:el});
+  }
+}
+
+async function fetchLighthouseObservations(id){
+  if(lighthouseObservationCache.has(id)) return lighthouseObservationCache.get(id);
+
+  var p=(async function(){
+    var res=await fetch('/api/lighthouse-observations?stationId='+id);
+    var data=await res.json();
+
+    if(!res.ok) throw new Error(data && data.message || 'Fel');
+
+    var obs=data.observations || {};
+
+    var has=Boolean(
+      (obs.temp && obs.temp.value!=null) ||
+      (obs.windSpeed && obs.windSpeed.value!=null) ||
+      (obs.windDir && obs.windDir.value!=null) ||
+      (obs.pressure && obs.pressure.value!=null) ||
+      (obs.gust && obs.gust.value!=null)
+    );
+
+    return {
+      obs:obs,
+      hasAnyData:has
+    };
+  })();
+
+  lighthouseObservationCache.set(id,p);
+
+  try{
+    return await p;
+  }catch(e){
+    lighthouseObservationCache.delete(id);
+    throw e;
+  }
+}
+
+async function selectLighthouseStation(s){
+  markObjectInteraction();
+
+  if(selectedLighthouseStationId===s.id){
+    clearLighthouseSelection();
+    return;
+  }
+
+  selectedLighthouseStationId=s.id;
+
+  saveSelection('lighthouse',{
+    id:s.id,
+    name:s.name,
+    lat:s.latitude,
+    lon:s.longitude
+  });
+
+  setLighthouseSelectionMarker(s.latitude,s.longitude,s.name);
+  updateLighthouseOverlay(s.name || 'Fyr / station','Laddar data...');
+
+  try{
+    var result=await fetchLighthouseObservations(s.id);
+    var obs=result.obs;
+    var has=result.hasAnyData;
+
+    var tv=formatObservedValue(formatTemp(obs.temp && obs.temp.value),obs.temp);
+    var wv=formatObservedValue(formatWind(obs.windSpeed && obs.windSpeed.value),obs.windSpeed);
+    var dv=formatObservedValue(formatWindDirection(obs.windDir && obs.windDir.value),obs.windDir);
+    var gv=formatObservedValue(formatWind(obs.gust && obs.gust.value),obs.gust);
+    var pv=formatObservedValue(formatPressure(obs.pressure && obs.pressure.value),obs.pressure);
+
+    updateLighthouseOverlay(
+      s.name || 'Fyr / station',
+      buildOverlayDataGrid([
+        {label:'Temp',value:tv,highlight:true},
+        {label:'Vind',value:wv},
+        {label:'Byar',value:gv},
+        {label:'Riktning',value:dv},
+        {label:'Tryck',value:pv}
+      ])
+    );
+
+    setLighthouseMarkerColorById(
+      s.id,
+      has ? 'active' : 'inactive',
+      s.name+' • '+(has ? 'data tillgänglig' : 'ingen data')
+    );
+
+    lighthouseMarkerMap.forEach(function(_, otherId){
+      if(otherId!==s.id){
+        var otherStation=lighthouseStationsCache.get(otherId);
+        if(otherStation){
+          setLighthouseMarkerColorById(otherId,'active',otherStation.name+' • data tillgänglig');
+        }
+      }
+    });
+
+    refreshMapSizeSoon();
+  }catch(e){
+    console.error(e);
+    updateLighthouseOverlay(s.name || 'Fyr / station','Det gick inte att hämta data.');
+    setLighthouseMarkerColorById(s.id,'inactive',s.name+' • kunde inte hämtas');
+  }
+}
+
+async function startLighthouseBackgroundCheck(){
+  if(lighthouseBackgroundCheckStarted) return;
+
+  lighthouseBackgroundCheckStarted=true;
+
+  var stations=Array.from(lighthouseStationsCache.values());
+  var index=0;
+
+  async function worker(){
+    while(index<stations.length){
+      var s=stations[index++];
+
+      try{
+        var result=await fetchLighthouseObservations(s.id);
+
+        if(result.hasAnyData){
+          createLighthouseStationMarkers(s);
+        }
+      }catch(e){
+        console.warn('Fyr kunde inte verifieras',s.id,e);
+      }
+    }
+  }
+
+  await Promise.all(Array.from({length:5},function(){
+    return worker();
+  }));
+}
+
+var overlayCollapseBtn=document.getElementById('overlayCollapseBtn');
+var mapOverlayPanel=document.getElementById('mapOverlayPanel');
+var overlayContentEl=document.getElementById('overlayContent');
+
+function updateOverlayCollapseButtonText(){
+  if(!overlayCollapseBtn || !mapOverlayPanel) return;
+  overlayCollapseBtn.textContent=mapOverlayPanel.classList.contains('is-collapsed') ? 'Visa' : 'Dölj';
+}
+
+function syncWeatherOverlayExpandedState(){
+  if(!mapOverlayPanel) return;
+  mapOverlayPanel.classList.toggle("weather-expanded", !!weatherDetailsExpanded);
+  refreshMapSizeSoon();
+}
+
+function toggleOverlayCollapsed(forceState){
   if(!mapOverlayPanel) return;
 
   if(typeof forceState==='boolean'){
@@ -2642,22 +3164,42 @@ applyWeatherOverlay(
   syncOverlayTitle();
   refreshMapSizeSoon();
 }
-    if(overlayCollapseBtn){ overlayCollapseBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleOverlayCollapsed(); }); }
 
-  if(overlayContentEl){
+if(overlayCollapseBtn){
+  overlayCollapseBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    toggleOverlayCollapsed();
+  });
+}
+
+if(overlayContentEl){
   overlayContentEl.addEventListener("click",function(e){
     var sectionBtn = e.target && e.target.closest ? e.target.closest("[data-overlay-section]") : null;
 
- if(sectionBtn){
-  e.stopPropagation();
+    if(sectionBtn){
+      e.stopPropagation();
 
-  var section = sectionBtn.getAttribute("data-overlay-section") || "weather";
-  overlayExpandedCards[section] = !overlayExpandedCards[section];
+      var section = sectionBtn.getAttribute("data-overlay-section") || "weather";
+      overlayExpandedCards[section] = !overlayExpandedCards[section];
 
-  renderUnifiedOverlay();
-  refreshMapSizeSoon();
-  return;
-}
+      renderUnifiedOverlay();
+      refreshMapSizeSoon();
+      return;
+    }
+
+    if(e.target && e.target.id==="weatherDetailsToggleBtn"){
+      e.stopPropagation();
+
+      weatherDetailsExpanded = !weatherDetailsExpanded;
+      syncWeatherOverlayExpandedState();
+
+      if(window.updateWeatherForSelectedTime){
+        window.updateWeatherForSelectedTime();
+      }
+
+      refreshMapSizeSoon();
+      return;
+    }
 
     if(e.target && e.target.id==="saveFavoriteBtn"){
       e.stopPropagation();
@@ -2682,119 +3224,297 @@ applyWeatherOverlay(
   });
 }
 
-    if(isMobileView()){ toggleOverlayCollapsed(false); } else { updateOverlayCollapseButtonText(); }
+if(isMobileView()){
+  toggleOverlayCollapsed(false);
+}else{
+  updateOverlayCollapseButtonText();
+}
 
-    var filterDrawer=document.getElementById('filterDrawer'), filterToggleBtn=document.getElementById('filterToggleBtn'), filterCloseBtn=document.getElementById('filterCloseBtn');
-    function closeFilterDrawer(){ if(filterDrawer) filterDrawer.classList.add('is-hidden'); }
-    if(filterDrawer){ filterDrawer.addEventListener('click',function(e){ e.stopPropagation(); }); }
-    if(filterToggleBtn){ filterToggleBtn.addEventListener('click',function(e){ e.stopPropagation(); if(filterDrawer) filterDrawer.classList.toggle('is-hidden'); refreshMapSizeSoon(); }); }
-    if(filterCloseBtn){ filterCloseBtn.addEventListener('click',function(e){ e.stopPropagation(); closeFilterDrawer(); refreshMapSizeSoon(); }); }
+var filterDrawer=document.getElementById('filterDrawer');
+var filterToggleBtn=document.getElementById('filterToggleBtn');
+var filterCloseBtn=document.getElementById('filterCloseBtn');
 
-    var toggleWaveModeBtn=document.getElementById('toggleWaveModeBtn');
-    if(toggleWaveModeBtn){ toggleWaveModeBtn.addEventListener('click',function(){ showWaveObjects=!showWaveObjects; updateModeUI(); }); }
+function closeFilterDrawer(){
+  if(filterDrawer) filterDrawer.classList.add('is-hidden');
+}
 
-    var toggleLighthouseModeBtn=document.getElementById('toggleLighthouseModeBtn');
-    if(toggleLighthouseModeBtn){ toggleLighthouseModeBtn.addEventListener('click',function(){ showLighthouseObjects=!showLighthouseObjects; updateModeUI(); }); }
+if(filterDrawer){
+  filterDrawer.addEventListener('click',function(e){
+    e.stopPropagation();
+  });
+}
 
-    function openMobileFilterSheet(){ if(!mobileFilterSheet) return; if(mobileSearchSheet) mobileSearchSheet.classList.remove('is-open'); mobileFilterSheet.classList.add('is-open'); refreshMobileNavState(); refreshMapSizeSoon(); }
-    function closeMobileFilterSheet(){ if(!mobileFilterSheet) return; mobileFilterSheet.classList.remove('is-open'); refreshMobileNavState(); refreshMapSizeSoon(); }
-    function openSearch(){ if(mobileFilterSheet) mobileFilterSheet.classList.remove('is-open'); if(!mobileSearchSheet) return; mobileSearchSheet.classList.add('is-open'); refreshMobileNavState(); if(mobileSearchInput){ setTimeout(function(){ mobileSearchInput.focus(); },80); } }
-    function closeSearch(){ if(!mobileSearchSheet) return; mobileSearchSheet.classList.remove('is-open'); if(mobileSearchInput){ mobileSearchInput.blur(); } refreshMobileNavState(); setTimeout(function(){ refreshMapSizeSoon(); },120); }
+if(filterToggleBtn){
+  filterToggleBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(filterDrawer) filterDrawer.classList.toggle('is-hidden');
+    refreshMapSizeSoon();
+  });
+}
 
-    if(mobileSearchCloseBtn){ mobileSearchCloseBtn.addEventListener('click',function(e){ e.stopPropagation(); closeSearch(); }); }
-    if(mobileFilterCloseBtn){ mobileFilterCloseBtn.addEventListener('click',function(e){ e.stopPropagation(); closeMobileFilterSheet(); }); }
+if(filterCloseBtn){
+  filterCloseBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    closeFilterDrawer();
+    refreshMapSizeSoon();
+  });
+}
 
-    var tabWeather=document.getElementById('tabWeather'); if(tabWeather){ tabWeather.addEventListener('click',function(){ closeMobileFilterSheet(); closeSearch(); refreshMobileNavState(); refreshMapSizeSoon(); }); }
-    var tabWave=document.getElementById('tabWave'); if(tabWave){ tabWave.addEventListener('click',function(){ closeMobileFilterSheet(); closeSearch(); showWaveObjects=!showWaveObjects; updateModeUI(); refreshMobileNavState(); }); }
-    var tabLighthouse=document.getElementById('tabLighthouse'); if(tabLighthouse){ tabLighthouse.addEventListener('click',function(){ closeMobileFilterSheet(); closeSearch(); showLighthouseObjects=!showLighthouseObjects; updateModeUI(); refreshMobileNavState(); }); }
-    var tabFilter=document.getElementById('tabFilter'); if(tabFilter){ tabFilter.addEventListener('click',function(e){ e.stopPropagation(); if(!mobileFilterSheet) return; if(mobileFilterSheet.classList.contains('is-open')){ closeMobileFilterSheet(); }else{ openMobileFilterSheet(); } }); }
-    var tabSearch=document.getElementById('tabSearch'); if(tabSearch){ tabSearch.addEventListener('click',function(e){ e.stopPropagation(); if(!mobileSearchSheet) return; if(mobileSearchSheet.classList.contains('is-open')){ closeSearch(); }else{ openSearch(); } }); }
+var toggleWaveModeBtn=document.getElementById('toggleWaveModeBtn');
 
-    document.addEventListener('click',function(e){
-      var clickedFilterTab = e.target && e.target.closest ? e.target.closest('#tabFilter') : null;
-      var clickedSearchTab = e.target && e.target.closest ? e.target.closest('#tabSearch') : null;
+if(toggleWaveModeBtn){
+  toggleWaveModeBtn.addEventListener('click',function(){
+    showWaveObjects=!showWaveObjects;
+    updateModeUI();
+  });
+}
 
-      if(mobileFilterSheet && mobileFilterSheet.classList.contains('is-open') && !mobileFilterSheet.contains(e.target) && !clickedFilterTab){
-        closeMobileFilterSheet();
+var toggleLighthouseModeBtn=document.getElementById('toggleLighthouseModeBtn');
+
+if(toggleLighthouseModeBtn){
+  toggleLighthouseModeBtn.addEventListener('click',function(){
+    showLighthouseObjects=!showLighthouseObjects;
+    updateModeUI();
+  });
+}
+
+function openMobileFilterSheet(){
+  if(!mobileFilterSheet) return;
+
+  if(mobileSearchSheet) mobileSearchSheet.classList.remove('is-open');
+
+  mobileFilterSheet.classList.add('is-open');
+  refreshMobileNavState();
+  refreshMapSizeSoon();
+}
+
+function closeMobileFilterSheet(){
+  if(!mobileFilterSheet) return;
+
+  mobileFilterSheet.classList.remove('is-open');
+  refreshMobileNavState();
+  refreshMapSizeSoon();
+}
+
+function openSearch(){
+  if(mobileFilterSheet) mobileFilterSheet.classList.remove('is-open');
+  if(!mobileSearchSheet) return;
+
+  mobileSearchSheet.classList.add('is-open');
+  refreshMobileNavState();
+
+  if(mobileSearchInput){
+    setTimeout(function(){
+      mobileSearchInput.focus();
+    },80);
+  }
+}
+
+function closeSearch(){
+  if(!mobileSearchSheet) return;
+
+  mobileSearchSheet.classList.remove('is-open');
+
+  if(mobileSearchInput){
+    mobileSearchInput.blur();
+  }
+
+  refreshMobileNavState();
+
+  setTimeout(function(){
+    refreshMapSizeSoon();
+  },120);
+}
+
+if(mobileSearchCloseBtn){
+  mobileSearchCloseBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    closeSearch();
+  });
+}
+
+if(mobileFilterCloseBtn){
+  mobileFilterCloseBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    closeMobileFilterSheet();
+  });
+}
+
+var tabWeather=document.getElementById('tabWeather');
+
+if(tabWeather){
+  tabWeather.addEventListener('click',function(){
+    closeMobileFilterSheet();
+    closeSearch();
+    refreshMobileNavState();
+    refreshMapSizeSoon();
+  });
+}
+
+var tabWave=document.getElementById('tabWave');
+
+if(tabWave){
+  tabWave.addEventListener('click',function(){
+    closeMobileFilterSheet();
+    closeSearch();
+    showWaveObjects=!showWaveObjects;
+    updateModeUI();
+    refreshMobileNavState();
+  });
+}
+
+var tabLighthouse=document.getElementById('tabLighthouse');
+
+if(tabLighthouse){
+  tabLighthouse.addEventListener('click',function(){
+    closeMobileFilterSheet();
+    closeSearch();
+    showLighthouseObjects=!showLighthouseObjects;
+    updateModeUI();
+    refreshMobileNavState();
+  });
+}
+
+var tabFilter=document.getElementById('tabFilter');
+
+if(tabFilter){
+  tabFilter.addEventListener('click',function(e){
+    e.stopPropagation();
+
+    if(!mobileFilterSheet) return;
+
+    if(mobileFilterSheet.classList.contains('is-open')){
+      closeMobileFilterSheet();
+    }else{
+      openMobileFilterSheet();
+    }
+  });
+}
+
+var tabSearch=document.getElementById('tabSearch');
+
+if(tabSearch){
+  tabSearch.addEventListener('click',function(e){
+    e.stopPropagation();
+
+    if(!mobileSearchSheet) return;
+
+    if(mobileSearchSheet.classList.contains('is-open')){
+      closeSearch();
+    }else{
+      openSearch();
+    }
+  });
+}
+
+document.addEventListener('click',function(e){
+  var clickedFilterTab = e.target && e.target.closest ? e.target.closest('#tabFilter') : null;
+  var clickedSearchTab = e.target && e.target.closest ? e.target.closest('#tabSearch') : null;
+
+  if(mobileFilterSheet && mobileFilterSheet.classList.contains('is-open') && !mobileFilterSheet.contains(e.target) && !clickedFilterTab){
+    closeMobileFilterSheet();
+  }
+
+  if(mobileSearchSheet && mobileSearchSheet.classList.contains('is-open') && !mobileSearchSheet.contains(e.target) && !clickedSearchTab){
+    closeSearch();
+  }
+});
+
+function setMaptilerWeatherMarker(lat,lon){
+  if(!maptilerMap || !window.maptilersdk) return;
+
+  if(maptilerWeatherMarker) maptilerWeatherMarker.remove();
+
+  maptilerWeatherMarker=new maptilersdk.Marker()
+    .setLngLat([lon,lat])
+    .addTo(maptilerMap);
+}
+
+async function handlePrimaryMapClick(lat,lon){
+  if(Date.now()-lastObjectInteractionAt<500) return;
+
+  weatherDetailsExpanded = false;
+  syncWeatherOverlayExpandedState();
+
+  saveSelection('weather',{lat:lat,lon:lon});
+  setWeatherMarker(lat,lon);
+  setMaptilerWeatherMarker(lat,lon);
+
+  selectedPlaceName = "";
+  updateMapOverlay("Laddar plats...", "Söker närmaste ort...");
+
+  try{
+    selectedPlaceName = await reverseGeocodePlace(lat, lon);
+  }catch(e){
+    selectedPlaceName = "";
+  }
+
+  loadWeatherForPoint(lat,lon);
+}
+
+map.on('click',function(e){
+  handlePrimaryMapClick(e.latlng.lat,e.latlng.lng);
+});
+
+window.addEventListener('resize',refreshMapSizeSoon);
+
+window.addEventListener('orientationchange',function(){
+  setTimeout(function(){
+    refreshMapSizeSoon();
+  },250);
+});
+
+if(mobileSearchInput){
+  mobileSearchInput.addEventListener('input', function(){
+    clearTimeout(mobileSearchTimer);
+
+    mobileSearchTimer = setTimeout(async function(){
+      var q = mobileSearchInput.value.trim();
+      var requestId = ++mobileSearchRequestId;
+
+      if(q.length < 2){
+        mobileSearchResults.innerHTML = '';
+        return;
       }
-
-      if(mobileSearchSheet && mobileSearchSheet.classList.contains('is-open') && !mobileSearchSheet.contains(e.target) && !clickedSearchTab){
-        closeSearch();
-      }
-    });
-
-    function setMaptilerWeatherMarker(lat,lon){ if(!maptilerMap || !window.maptilersdk) return; if(maptilerWeatherMarker) maptilerWeatherMarker.remove(); maptilerWeatherMarker=new maptilersdk.Marker().setLngLat([lon,lat]).addTo(maptilerMap); }
-
-    async function handlePrimaryMapClick(lat,lon){
-      if(Date.now()-lastObjectInteractionAt<500) return;
-
-      weatherDetailsExpanded = false;
-      syncWeatherOverlayExpandedState();
-
-      saveSelection('weather',{lat:lat,lon:lon});
-      setWeatherMarker(lat,lon);
-      setMaptilerWeatherMarker(lat,lon);
-
-      selectedPlaceName = "";
-      updateMapOverlay("Laddar plats...", "Söker närmaste ort...");
 
       try{
-        selectedPlaceName = await reverseGeocodePlace(lat, lon);
-      }catch(e){
-        selectedPlaceName = "";
+        var res = await fetch('https://api.maptiler.com/geocoding/' + encodeURIComponent(q) + '.json?key=' + MAPTILER_API_KEY + '&language=sv');
+
+        if(requestId !== mobileSearchRequestId) return;
+
+        var data = await res.json();
+
+        mobileSearchResults.innerHTML='';
+
+        (data.features || []).forEach(function(f){
+          var div=document.createElement('div');
+          div.className='search-result-item';
+          div.textContent=f.place_name || f.text || 'Okänd plats';
+
+          div.onclick=function(){
+            var lon = f.center[0];
+            var lat = f.center[1];
+
+            closeSearch();
+
+            setTimeout(function(){
+              focusMapOnPoint(lat, lon, 9);
+              handlePrimaryMapClick(lat, lon);
+              refreshMapSizeSoon();
+            }, 120);
+          };
+
+          mobileSearchResults.appendChild(div);
+        });
+      }catch(err){
+        if(requestId !== mobileSearchRequestId) return;
+
+        console.error('Sökfel',err);
+        mobileSearchResults.innerHTML='<div class="search-result-item">Kunde inte söka just nu</div>';
       }
-
-      loadWeatherForPoint(lat,lon);
-    }
-
-    map.on('click',function(e){ handlePrimaryMapClick(e.latlng.lat,e.latlng.lng); });
-    window.addEventListener('resize',refreshMapSizeSoon);
-    window.addEventListener('orientationchange',function(){ setTimeout(function(){ refreshMapSizeSoon(); },250); });
-
-    if(mobileSearchInput){
-      mobileSearchInput.addEventListener('input', function(){
-        clearTimeout(mobileSearchTimer);
-
-        mobileSearchTimer = setTimeout(async function(){
-          var q = mobileSearchInput.value.trim();
-          var requestId = ++mobileSearchRequestId;
-
-          if(q.length < 2){
-            mobileSearchResults.innerHTML = '';
-            return;
-          }
-
-          try{
-            var res = await fetch('https://api.maptiler.com/geocoding/' + encodeURIComponent(q) + '.json?key=' + MAPTILER_API_KEY + '&language=sv');
-            if(requestId !== mobileSearchRequestId) return;
-
-            var data = await res.json();
-            mobileSearchResults.innerHTML='';
-
-            (data.features || []).forEach(function(f){
-              var div=document.createElement('div');
-              div.className='search-result-item';
-              div.textContent=f.place_name || f.text || 'Okänd plats';
-         div.onclick=function(){
-  var lon = f.center[0], lat = f.center[1];
-  closeSearch();
-  setTimeout(function(){
-    focusMapOnPoint(lat, lon, 9);
-    handlePrimaryMapClick(lat, lon);
-    refreshMapSizeSoon();
-  }, 120);
-};
-              mobileSearchResults.appendChild(div);
-            });
-          }catch(err){
-            if(requestId !== mobileSearchRequestId) return;
-            console.error('Sökfel',err);
-            mobileSearchResults.innerHTML='<div class="search-result-item">Kunde inte söka just nu</div>';
-          }
-        }, 250);
-      });
-    }
-
+    }, 250);
+  });
+}
     if(window.maptilersdk){
       maptilersdk.config.apiKey=MAPTILER_API_KEY;
       maptilerMap=new maptilersdk.Map({container:'maptilerMap',style:maptilersdk.MapStyle.STREETS.DARK,center:[13.0,58.6],zoom:5});
@@ -2815,7 +3535,7 @@ applyWeatherOverlay(
           if(radarLayerVisible){ maptilerMap.addLayer(maptilerRadarLayer); }
           if(temperatureLayerVisible){ maptilerMap.addLayer(maptilerTemperatureLayer); }
 
-          var timeSlider=document.getElementById('timeSlider'), timeValueLabel=document.getElementById('timeValueLabel'), timePlayPauseBtn=document.getElementById('timePlayPauseBtn'), playIcon=document.getElementById('playIcon'), playBtnText=document.getElementById('playBtnText');
+         var timeSlider=document.getElementById('timeSlider'), timeValueLabel=document.getElementById('timeValueLabel'), timePlayPauseBtn=document.getElementById('timePlayPauseBtn');
           var forecastStartTime=null, forecastEndTime=null, isTimePlaying=false;
 
           function setDeskBtn(id,on){ var b=document.getElementById(id); if(!b) return; b.textContent=on ? 'På' : 'Av'; b.classList.toggle('is-on',on); b.classList.toggle('is-off',!on); }
@@ -2978,14 +3698,6 @@ function stopTimePlayback(){
   }
 
   isTimePlaying = false;
-
-  if(playIcon){
-    playIcon.innerHTML = '<polygon points="2,1 11,6 2,11"></polygon>';
-  }
-
-  if(playBtnText){
-    playBtnText.textContent = 'Spela';
-  }
 }
 
 function getFirstReadyTimelineLayer(){
